@@ -1,0 +1,16 @@
+{
+  "intent_classification": "entanglement",
+  "vocal_prose_script": "When two qubits become entangled, measuring the state of the first qubit immediately determines the outcome of the second qubit regardless of the distance between them. This correlated pair is created by applying a Hadamard gate to place the control qubit into equal superposition, followed by a controlled not gate targeting the second qubit.",
+  "mathematical_latex_formula": "|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)",
+  "qiskit_executable_code": "from qiskit import QuantumCircuit\nfrom qiskit_aer import AerSimulator\n\nqc = QuantumCircuit(2, 2)\nqc.h(0)\nqc.cx(0, 1)\nqc.measure([0, 1], [0, 1])\n\nsimulator = AerSimulator()\nresult = simulator.run(qc, shots=1024).result()\ncounts = result.get_counts()\nprint(\"Measurement counts:\", counts)",
+  "quiz_generation_object": {
+    "question_string": "What quantum state is produced when a two-qubit system initialized to state zero zero undergoes a Hadamard gate on qubit zero followed by a controlled NOT gate with qubit zero as control and qubit one as target?",
+    "options_array": [
+      "A product state of zero zero and zero one",
+      "A maximally entangled Bell state where the qubits are correlated as zero zero or one one",
+      "A completely decoherent mixed state with zero correlation",
+      "An unentangled superposition state of one zero"
+    ],
+    "valid_index_pointer": 1
+  }
+}
