@@ -6,6 +6,7 @@ import BlochSphere from "./components/BlochSphere";
 import MeasurementView from "./components/MeasurementView";
 import AITutorChat from "./components/AITutorChat";
 import CurriculumView from "./components/CurriculumView";
+import LearningHub from "./components/LearningHub";
 import ExportModal from "./components/ExportModal";
 import AuthModal from "./components/AuthModal";
 
@@ -88,7 +89,9 @@ function QuantumLeapApp() {
         backendStatus={backendStatus}
       />
 
-      {activeTab === "studio" ? (
+      {activeTab === "learning" ? (
+        <LearningHub onSwitchToStudio={() => setActiveTab("studio")} />
+      ) : activeTab === "studio" ? (
         <main style={{
           display: "grid",
           gridTemplateColumns: "minmax(580px, 1fr) 380px",

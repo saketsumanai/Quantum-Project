@@ -3,7 +3,20 @@
    Aesthetic: Cybernetic Deep-Space Quantum Laboratory
    ============================================================================== */
 
+/* ── IBM Quantum Learning-inspired palette for LearningHub ── */
 :root {
+  --ql-bg: #161616;
+  --ql-layer-01: #1c1c1c;
+  --ql-layer-02: #262626;
+  --ql-layer-hover: #333333;
+  --ql-border: #393939;
+  --ql-text-primary: #f4f4f4;
+  --ql-text-secondary: #c6c6c6;
+  --ql-text-helper: #8d8d8d;
+  --ql-blue: #0F62FE;
+  --ql-blue-dark: #78A9FF;
+  --ql-purple: #8A3FFC;
+  --ql-purple-dark: #A56EFF;
   /* Color Palette - HSL Tailored */
   --bg-space: #07090e;
   --bg-subtle: #0d111a;

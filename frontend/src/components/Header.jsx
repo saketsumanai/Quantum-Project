@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Atom, Cpu, BookOpen, Code2, LogIn, LogOut, Award, ChevronDown } from "lucide-react";
+import { Atom, Cpu, BookOpen, Code2, GraduationCap, LogIn, LogOut, Award, ChevronDown } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAuth, backendStatus }) {
@@ -61,6 +61,13 @@ export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAu
           style={{ padding: "7px 16px", fontSize: "0.82rem" }}
         >
           <Cpu size={15} /> Circuit Studio
+        </button>
+        <button
+          className={`btn ${activeTab === "learning" ? "btn-primary" : "btn-glass"}`}
+          onClick={() => setActiveTab("learning")}
+          style={{ padding: "7px 16px", fontSize: "0.82rem" }}
+        >
+          <GraduationCap size={15} /> Learning
         </button>
         <button
           className={`btn ${activeTab === "curriculum" ? "btn-primary" : "btn-glass"}`}
