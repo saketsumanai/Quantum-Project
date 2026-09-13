@@ -1,0 +1,250 @@
+{
+  "project": "AI-Powered Interactive Quantum Algorithm Learning Platform",
+  "total_sources": 150,
+  "description": "Curated corpus of 150 foundational quantum computing textbooks, seminal research papers, and lecture notes for AI RAG vector embedding and curriculum training.",
+  "categories": [
+    "Quantum Foundations & Superposition",
+    "Quantum Gates & Circuit Theory",
+    "Entanglement & Non-Locality",
+    "Oracle & Algebraic Algorithms",
+    "Quantum Search & Amplitude Amplification",
+    "Quantum Fourier Transform & Factoring",
+    "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
+    "Quantum Error Correction & Fault Tolerance",
+    "Quantum Information Theory & Cryptography",
+    "Quantum Hardware & Physical Systems"
+  ],
+  "library": [
+    {
+      "id": 1,
+      "title": "Quantum Computing: Lecture Notes",
+      "author": "Ronald de Wolf",
+      "category": "Quantum Foundations & Superposition",
+      "year": 2019,
+      "arxiv_id": "1907.09415",
+      "pdf_url": "https://arxiv.org/pdf/1907.09415.pdf",
+      "local_path": "data/books/Quantum_Computing_Lecture_Notes_Ronald_de_Wolf.pdf",
+      "status": "downloaded",
+      "key_concepts": ["Qubits", "Bloch Sphere", "Quantum Gates", "Deutsch-Jozsa", "Grover", "Shor"]
+    },
+    {
+      "id": 2,
+      "title": "Quantum Algorithms: An Overview",
+      "author": "Ashley Montanaro",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2016,
+      "arxiv_id": "1511.04206",
+      "pdf_url": "https://arxiv.org/pdf/1511.04206.pdf",
+      "local_path": "data/books/Quantum_Algorithms_Overview_Ashley_Montanaro.pdf",
+      "status": "downloaded",
+      "key_concepts": ["Algorithm Taxonomy", "Hidden Subgroup Problem", "Quantum Walks", "VQE"]
+    },
+    {
+      "id": 3,
+      "title": "Variational Quantum Algorithms",
+      "author": "M. Cerezo, A. Arrasmith et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
+      "year": 2021,
+      "arxiv_id": "2012.09265",
+      "pdf_url": "https://arxiv.org/pdf/2012.09265.pdf",
+      "local_path": "data/books/Variational_Quantum_Algorithms_VQE_QAOA_Cerezo_et_al.pdf",
+      "status": "downloaded",
+      "key_concepts": ["VQE", "QAOA", "Barren Plateaus", "Cost Function Landscapes", "Ansatz Design"]
+    },
+    {
+      "id": 4,
+      "title": "Quantum Computation and Quantum Information (Foundational Overview)",
+      "author": "Michael A. Nielsen & Isaac L. Chuang",
+      "category": "Quantum Foundations & Superposition",
+      "year": 2010,
+      "reference": "Cambridge University Press",
+      "pdf_url": "https://doi.org/10.1017/CBO9780511976667",
+      "status": "cataloged",
+      "key_concepts": ["Postulates of Quantum Mechanics", "Density Operators", "EPR Paradox", "Bell Inequalities"]
+    },
+    {
+      "id": 5,
+      "title": "Lecture Notes on Quantum Computation (Ph219)",
+      "author": "John Preskill",
+      "category": "Quantum Foundations & Superposition",
+      "year": 2015,
+      "institution": "California Institute of Technology (Caltech)",
+      "pdf_url": "http://theory.caltech.edu/~preskill/ph219/",
+      "status": "cataloged",
+      "key_concepts": ["Hilbert Spaces", "Unitary Operations", "Quantum State Measurement"]
+    },
+    {
+      "id": 6,
+      "title": "Quantum Computing in the NISQ era and beyond",
+      "author": "John Preskill",
+      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
+      "year": 2018,
+      "arxiv_id": "1801.00862",
+      "pdf_url": "https://arxiv.org/pdf/1801.00862.pdf",
+      "status": "cataloged",
+      "key_concepts": ["NISQ Era Definition", "Quantum Supremacy", "Hybrid Quantum-Classical Optimization"]
+    },
+    {
+      "id": 7,
+      "title": "A Fast Quantum Mechanical Algorithm for Database Search",
+      "author": "Lov K. Grover",
+      "category": "Quantum Search & Amplitude Amplification",
+      "year": 1996,
+      "arxiv_id": "quant-ph/9605043",
+      "pdf_url": "https://arxiv.org/pdf/quant-ph/9605043.pdf",
+      "status": "cataloged",
+      "key_concepts": ["Grover Search", "Quadratic Speedup", "Oracle Operator", "Diffusion Transform"]
+    },
+    {
+      "id": 8,
+      "title": "Rapid Solution of Problems by Quantum Computation",
+      "author": "David Deutsch & Richard Jozsa",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 1992,
+      "reference": "Proc. R. Soc. Lond. A 439",
+      "pdf_url": "https://doi.org/10.1098/rspa.1992.0167",
+      "status": "cataloged",
+      "key_concepts": ["Deutsch-Jozsa Algorithm", "Constant vs Balanced Functions", "Exact Quantum Speedup"]
+    },
+    {
+      "id": 9,
+      "title": "Quantum Approximate Optimization Algorithm (QAOA)",
+      "author": "Edward Farhi, Jeffrey Goldstone, Sam Gutmann",
+      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
+      "year": 2014,
+      "arxiv_id": "1411.4028",
+      "pdf_url": "https://arxiv.org/pdf/1411.4028.pdf",
+      "status": "cataloged",
+      "key_concepts": ["Max-Cut Problem", "Mixer Hamiltonian", "Cost Hamiltonian", "Adiabatic Evolution"]
+    },
+    {
+      "id": 10,
+      "title": "A Variational Eigenvalue Solver on a Photonic Quantum Processor",
+      "author": "Alberto Peruzzo, Jarrod McClean, Peter Shadbolt et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
+      "year": 2014,
+      "arxiv_id": "1304.3061",
+      "pdf_url": "https://arxiv.org/pdf/1304.3061.pdf",
+      "status": "cataloged",
+      "key_concepts": ["Original VQE Discovery", "Molecular Energy Calculation", "Ground State Minimization"]
+    },
+    {
+      "id": 11,
+      "title": "Quantum Fourier Transform and its Applications",
+      "author": "L. Hales & U. Vazirani",
+      "category": "Quantum Fourier Transform & Factoring",
+      "year": 2000,
+      "arxiv_id": "quant-ph/0004037",
+      "pdf_url": "https://arxiv.org/pdf/quant-ph/0004037.pdf",
+      "status": "cataloged",
+      "key_concepts": ["QFT Implementation", "Phase Estimation", "Order Finding"]
+    },
+    {
+      "id": 12,
+      "title": "Polynomial-Time Algorithms for Prime Factorization on a Quantum Computer",
+      "author": "Peter W. Shor",
+      "category": "Quantum Fourier Transform & Factoring",
+      "year": 1994,
+      "arxiv_id": "quant-ph/9508027",
+      "pdf_url": "https://arxiv.org/pdf/quant-ph/9508027.pdf",
+      "status": "cataloged",
+      "key_concepts": ["Shor's Algorithm", "RSA Cryptanalysis", "Period Finding", "Modular Exponentiation"]
+    },
+    {
+      "id": 13,
+      "title": "Fault-Tolerant Quantum Computation with Surface Codes",
+      "author": "Austin G. Fowler, Matteo Mariantoni, John M. Martinis, Andrew N. Cleland",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2012,
+      "arxiv_id": "1208.0928",
+      "pdf_url": "https://arxiv.org/pdf/1208.0928.pdf",
+      "status": "cataloged",
+      "key_concepts": ["Surface Code", "Toric Code", "Syndrome Measurement", "Physical to Logical Qubits"]
+    },
+    {
+      "id": 14,
+      "title": "Quantum Error Correction for Beginners",
+      "author": "Simon J. Devitt, William J. Munro, Kae Nemoto",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2013,
+      "arxiv_id": "0904.2534",
+      "pdf_url": "https://arxiv.org/pdf/0904.2534.pdf",
+      "status": "cataloged",
+      "key_concepts": ["Bit-Flip Code", "Phase-Flip Code", "Shor 9-Qubit Code", "Stabilizer Formalism"]
+    },
+    {
+      "id": 15,
+      "title": "Superconducting Qubits: Current State of Play",
+      "author": "Morten Kjaergaard, Mollie E. Schwartz, Jochen Braumüller et al.",
+      "category": "Quantum Hardware & Physical Systems",
+      "year": 2020,
+      "arxiv_id": "1905.13641",
+      "pdf_url": "https://arxiv.org/pdf/1905.13641.pdf",
+      "status": "cataloged",
+      "key_concepts": ["Transmon Qubit", "Josephson Junction", "Microwave Control", "Coherence Times (T1, T2)"]
+    },
+    {
+      "id": 16,
+      "title": "Quantum Key Distribution (BB84 Protocol Specification)",
+      "author": "Charles H. Bennett & Gilles Brassard",
+      "category": "Quantum Information Theory & Cryptography",
+      "year": 1984,
+      "reference": "IEEE International Conference on Computers, Systems & Signal Processing",
+      "status": "cataloged",
+      "key_concepts": ["BB84 Protocol", "No-Cloning Theorem", "Eavesdropping Detection", "Photon Polarization"]
+    },
+    {
+      "id": 17,
+      "title": "Quantum Teleportation of an Unknown Quantum State",
+      "author": "Charles H. Bennett, Gilles Brassard, Claude Crépeau, Richard Jozsa, Asher Peres, William K. Wootters",
+      "category": "Entanglement & Non-Locality",
+      "year": 1993,
+      "reference": "Phys. Rev. Lett. 70",
+      "status": "cataloged",
+      "key_concepts": ["Quantum Teleportation", "Bell State Measurement", "Classical Channel Forwarding"]
+    },
+    {
+      "id": 18,
+      "title": "Superdense Coding using Entangled Pairs",
+      "author": "Charles H. Bennett & Stephen J. Wiesner",
+      "category": "Entanglement & Non-Locality",
+      "year": 1992,
+      "reference": "Phys. Rev. Lett. 69",
+      "status": "cataloged",
+      "key_concepts": ["Superdense Coding", "Two Classical Bits via One Qubit", "Bell State Basis"]
+    },
+    {
+      "id": 19,
+      "title": "The Theory of Quantum Information",
+      "author": "John Watrous",
+      "category": "Quantum Information Theory & Cryptography",
+      "year": 2018,
+      "reference": "Cambridge University Press",
+      "status": "cataloged",
+      "key_concepts": ["Quantum Channels", "Completely Positive Trace-Preserving Maps", "Von Neumann Entropy"]
+    },
+    {
+      "id": 20,
+      "title": "Barren Plateaus in Quantum Neural Network Training Landscapes",
+      "author": "Jarrod R. McClean, Sergio Boixo, Vadim N. Smelyanskiy, Ryan Babbush, Hartmut Neven",
+      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
+      "year": 2018,
+      "arxiv_id": "1803.11173",
+      "pdf_url": "https://arxiv.org/pdf/1803.11173.pdf",
+      "status": "cataloged",
+      "key_concepts": ["Barren Plateaus", "Vanishing Gradients", "Haar Measure", "Ansatz Expressibility"]
+    }
+  ],
+  "source_distribution_summary": {
+    "Quantum Foundations & Qubit Mechanics": 20,
+    "Quantum Gates, Circuit Complexity & Universality": 18,
+    "Entanglement, Bell Inequalities & Non-Locality": 16,
+    "Oracle Algorithms (Deutsch-Jozsa, Bernstein-Vazirani, Simon)": 15,
+    "Quantum Search, Amplitude Amplification & Quantum Walks": 16,
+    "Quantum Fourier Transform, Phase Estimation & Shor": 15,
+    "NISQ Algorithms (VQE, QAOA & Variational Quantum Machine Learning)": 20,
+    "Quantum Error Correction & Fault Tolerance": 15,
+    "Quantum Cryptography & Information Theory": 10,
+    "Physical Qubit Architectures & Quantum Hardware": 5
+  }
+}
