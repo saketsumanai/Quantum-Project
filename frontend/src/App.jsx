@@ -1,18 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
-import CircuitCanvas from './components/CircuitCanvas';
-import BlochSphere from './components/BlochSphere';
-import MeasurementView from './components/MeasurementView';
-import AITutorChat from './components/AITutorChat';
-import CurriculumView from './components/CurriculumView';
-import ExportModal from './components/ExportModal';
+import React, { useState, useEffect } from "react";
+import { AuthProvider } from "./context/AuthContext";
+import Header from "./components/Header";
+import CircuitCanvas from "./components/CircuitCanvas";
+import BlochSphere from "./components/BlochSphere";
+import MeasurementView from "./components/MeasurementView";
+import AITutorChat from "./components/AITutorChat";
+import CurriculumView from "./components/CurriculumView";
+import ExportModal from "./components/ExportModal";
+import AuthModal from "./components/AuthModal";
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('studio');
+const API = "http://localhost:8000/api/v1";
+
+function QuantumLeapApp() {
+  const [activeTab, setActiveTab] = useState("studio");
   const [numQubits, setNumQubits] = useState(2);
   const [instructions, setInstructions] = useState([
-    { gate: 'h', qubits: [0], params: [] },
-    { gate: 'cx', qubits: [0, 1], params: [] }
+    { gate: "h", qubits: [0], params: [] },
+    { gate: "cx", qubits: [0, 1], params: [] },
   ]);
   const [selectedQubit, setSelectedQubit] = useState(0);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -20,52 +24,34 @@ export default function App() {
   const [statevectorData, setStatevectorData] = useState(null);
   const [backendStatus, setBackendStatus] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Check backend health
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/health')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 'healthy') setBackendStatus(true);
-      })
-      .catch((err) => {
-        console.warn("Backend offline or booting...", err);
-      });
+    fetch(`${API}/health`)
+      .then((r) => r.json())
+      .then((d) => setBackendStatus(d.status === "healthy"))
+      .catch(() => setBackendStatus(false));
   }, []);
 
-  // Run simulation & compute statevector
-  const executeSimulation = async (customInstructions = null, customQubits = null) => {
+  const executeSimulation = async (insts, qubits) => {
     setIsSimulating(true);
-    const activeInstructions = customInstructions || instructions;
-    const activeQubits = customQubits || numQubits;
-
-    const circuitPayload = {
-      num_qubits: activeQubits,
-      instructions: activeInstructions
-    };
-
+    const circ = { num_qubits: qubits ?? numQubits, instructions: insts ?? instructions };
     try {
-      // 1. Run shots simulation
-      const simResp = await fetch('http://localhost:8000/api/v1/simulation/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shots: 1024, circuit: circuitPayload })
-      });
-      const simData = await simResp.json();
-      if (simData.success) {
-        setSimulationResult(simData);
-      }
-
-      // 2. Compute pure statevector & Bloch coordinates
-      const svResp = await fetch('http://localhost:8000/api/v1/simulation/statevector', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ circuit: circuitPayload })
-      });
-      const svData = await svResp.json();
-      if (svData.success) {
-        setStatevectorData(svData);
-      }
+      const [simRes, svRes] = await Promise.all([
+        fetch(`${API}/simulation/run`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ shots: 1024, circuit: circ }),
+        }).then((r) => r.json()),
+        fetch(`${API}/simulation/statevector`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ circuit: circ }),
+        }).then((r) => r.json()),
+      ]);
+      if (simRes.success) setSimulationResult(simRes);
+      if (svRes.success) setStatevectorData(svRes);
     } catch (err) {
       console.error("Simulation error:", err);
     } finally {
@@ -73,21 +59,17 @@ export default function App() {
     }
   };
 
-  // Run on mount
-  useEffect(() => {
-    executeSimulation();
-  }, []);
+  useEffect(() => { executeSimulation(); }, []); // eslint-disable-line
 
-  // Load preset algorithms
-  const handleLoadPreset = (presetKey) => {
-    fetch(`http://localhost:8000/api/v1/curriculum/presets/${presetKey}`)
-      .then((res) => res.json())
-      .then((presetCircuit) => {
-        setNumQubits(presetCircuit.num_qubits);
-        setInstructions(presetCircuit.instructions);
-        executeSimulation(presetCircuit.instructions, presetCircuit.num_qubits);
-      })
-      .catch((err) => console.error("Error loading preset:", err));
+  const handleLoadPreset = async (presetKey) => {
+    try {
+      const preset = await fetch(`${API}/curriculum/presets/${presetKey}`).then((r) => r.json());
+      setNumQubits(preset.num_qubits);
+      setInstructions(preset.instructions);
+      executeSimulation(preset.instructions, preset.num_qubits);
+    } catch (err) {
+      console.error("Preset load error:", err);
+    }
   };
 
   const handleLoadCircuitFromCurriculum = (presetCircuit) => {
@@ -97,32 +79,30 @@ export default function App() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', gap: '20px' }}>
-      {/* Header */}
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", gap: "20px" }}>
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenExport={() => setIsExportOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
         backendStatus={backendStatus}
       />
 
-      {/* Main View Switching */}
-      {activeTab === 'studio' ? (
+      {activeTab === "studio" ? (
         <main style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(600px, 1fr) 380px',
-          gap: '20px',
-          padding: '0 24px 24px 24px',
-          flex: 1
+          display: "grid",
+          gridTemplateColumns: "minmax(580px, 1fr) 380px",
+          gap: "20px",
+          padding: "0 24px 24px 24px",
+          flex: 1,
         }}>
-          {/* Left Column: Circuit Canvas & Measurements */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Left Column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <CircuitCanvas
               numQubits={numQubits}
               onUpdateNumQubits={(n) => {
                 setNumQubits(n);
-                // Remove instructions targeting deleted qubits
-                setInstructions(prev => prev.filter(inst => inst.qubits.every(q => q < n)));
+                setInstructions((prev) => prev.filter((i) => i.qubits.every((q) => q < n)));
               }}
               instructions={instructions}
               onUpdateInstructions={(updated) => {
@@ -133,28 +113,20 @@ export default function App() {
               isSimulating={isSimulating}
               onLoadPreset={handleLoadPreset}
             />
-
-            <MeasurementView
-              simulationResult={simulationResult}
-              statevectorData={statevectorData}
-            />
+            <MeasurementView simulationResult={simulationResult} statevectorData={statevectorData} />
           </div>
 
-          {/* Right Column: 3D Bloch Sphere & AI Tutor */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ height: '380px' }}>
+          {/* Right Column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div style={{ height: "380px" }}>
               <BlochSphere
                 blochCoordinates={statevectorData?.bloch_coordinates || []}
                 selectedQubit={selectedQubit}
                 onSelectQubit={setSelectedQubit}
               />
             </div>
-
             <AITutorChat
-              circuitContext={{
-                num_qubits: numQubits,
-                gates_applied: instructions.map(i => i.gate)
-              }}
+              circuitContext={{ num_qubits: numQubits, gates_applied: instructions.map((i) => i.gate) }}
               activeTopic="entanglement"
             />
           </div>
@@ -162,17 +134,26 @@ export default function App() {
       ) : (
         <CurriculumView
           onLoadCircuitPreset={handleLoadCircuitFromCurriculum}
-          onSwitchToStudio={() => setActiveTab('studio')}
+          onSwitchToStudio={() => setActiveTab("studio")}
         />
       )}
 
-      {/* Code Export Modal */}
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
         circuit={{ num_qubits: numQubits, instructions }}
-        qasmExport={simulationResult?.qasm_export || ''}
+        qasmExport={simulationResult?.qasm_export || ""}
       />
+
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <QuantumLeapApp />
+    </AuthProvider>
   );
 }

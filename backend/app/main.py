@@ -1,21 +1,55 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.routers import simulation, ai_tutor, curriculum, assessment
+
+from backend.app.routers import simulation, ai_tutor, curriculum, assessment, auth
+
+# ─── Firebase Admin Init ──────────────────────────────────────────────────────
+def _init_firebase():
+    service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "")
+    try:
+        import firebase_admin
+        from firebase_admin import credentials
+        if not firebase_admin._apps:
+            if service_account_path and os.path.exists(service_account_path):
+                cred = credentials.Certificate(service_account_path)
+                firebase_admin.initialize_app(cred)
+                print("[Firebase] ✅ Initialized with service account.")
+            else:
+                # Attempt default credentials (Cloud Run / App Engine)
+                firebase_admin.initialize_app()
+                print("[Firebase] ✅ Initialized with application default credentials.")
+    except Exception as e:
+        print(f"[Firebase] ⚠️  Init skipped (auth will be unavailable): {e}")
+
+
+# ─── SQLAlchemy DB Init ───────────────────────────────────────────────────────
+def _init_db():
+    from backend.app.db.database import engine, Base
+    from backend.app.db import models  # noqa: F401 — imports trigger table registration
+    Base.metadata.create_all(bind=engine)
+    print("[Database] ✅ SQLite tables created / verified.")
+
+
+# ─── App Factory ─────────────────────────────────────────────────────────────
+_init_firebase()
+_init_db()
 
 app = FastAPI(
-    title="AI-Powered Interactive Quantum Algorithm Learning Platform",
-    description="Smart India Hackathon 2026 Backend Core - Team Gitwolves",
-    version="1.0.0",
+    title="Quantum Leap — AI Quantum Algorithm Learning Platform",
+    description="Smart India Hackathon 2026 · Team Gitwolves · Production Backend",
+    version="2.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
-# Enable CORS for local React/Vite development
-cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000")
-origins = [orig.strip() for orig in cors_origins_env.split(",") if orig.strip()]
-if "*" not in origins:
-    origins.append("*")
+# ─── CORS ─────────────────────────────────────────────────────────────────────
+cors_origins_env = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000",
+)
+origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+origins.append("*")
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,35 +59,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount API v1 routers
+# ─── Routers ──────────────────────────────────────────────────────────────────
+app.include_router(auth.router,       prefix="/api/v1")
 app.include_router(simulation.router, prefix="/api/v1")
-app.include_router(ai_tutor.router, prefix="/api/v1")
+app.include_router(ai_tutor.router,   prefix="/api/v1")
 app.include_router(curriculum.router, prefix="/api/v1")
 app.include_router(assessment.router, prefix="/api/v1")
 
+
 @app.get("/")
-def root_endpoint():
+def root():
     return {
-        "project": "AI-Powered Interactive Quantum Algorithm Learning Platform",
+        "project": "Quantum Leap",
         "team": "Gitwolves",
+        "version": "2.0.0",
         "status": "online",
-        "api_v1_docs": "/docs",
-        "health": "/health"
+        "docs": "/docs",
+        "health": "/api/v1/health",
     }
 
-@app.get("/health")
+
 @app.get("/api/v1/health")
-def health_check():
+def health():
+    vector_store_path = os.getenv("VECTOR_DB_PATH", "./data/vector_store")
+    rag_ready = os.path.exists(
+        os.path.join(vector_store_path, "quantum_books", "chroma.sqlite3")
+    )
     return {
         "status": "healthy",
+        "project": "Quantum Leap",
+        "version": "2.0.0",
         "quantum_engine": "active",
-        "offline_rag_engine": "ready",
+        "rag_vector_store": "indexed" if rag_ready else "not_indexed_run_build_rag_index.py",
         "max_qubits": 16,
-        "environment": os.getenv("ENVIRONMENT", "development")
+        "firebase_auth": "enabled" if os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH") else "pending_config",
+        "environment": os.getenv("ENVIRONMENT", "development"),
     }
+
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    host = os.getenv("HOST", "0.0.0.0")
-    uvicorn.run("backend.app.main:app", host=host, port=port, reload=True)
+    uvicorn.run(
+        "backend.app.main:app",
+        host=os.getenv("HOST", "0.0.0.0"),
+        port=int(os.getenv("PORT", 8000)),
+        reload=True,
+    )

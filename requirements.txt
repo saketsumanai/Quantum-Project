@@ -1,0 +1,38 @@
+# ==============================================================================
+# Quantum Leap — Python Backend Requirements
+# SIH 2026 · Team Gitwolves
+# Install: source .venv/bin/activate && pip install -r requirements.txt
+# ==============================================================================
+
+# --- Core API Server ---
+fastapi==0.128.8
+uvicorn[standard]==0.39.0
+python-multipart==0.0.20
+pydantic==2.13.5
+python-dotenv==1.2.1
+httpx==0.28.1
+
+# --- Math & Quantum Simulation ---
+numpy==2.0.2
+scipy==1.13.1
+sympy==1.14.0
+
+# --- Database (SQLite / PostgreSQL) ---
+sqlalchemy==2.0.52
+alembic==1.16.5
+
+# --- Firebase Authentication ---
+firebase-admin==7.5.0
+
+# --- Security (JWT, Password Hashing) ---
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+
+# --- AI / RAG Pipeline ---
+chromadb==1.5.9
+sentence-transformers==5.1.2
+pypdf==6.18.1
+
+# --- Testing ---
+pytest==8.4.2
+httpx==0.28.1
