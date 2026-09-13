@@ -90,7 +90,10 @@ function QuantumLeapApp() {
       />
 
       {activeTab === "learning" ? (
-        <LearningHub onSwitchToStudio={() => setActiveTab("studio")} />
+        <LearningHub onSwitchToStudio={(presetKey) => {
+          if (presetKey) handleLoadPreset(presetKey);
+          setActiveTab("studio");
+        }} />
       ) : activeTab === "studio" ? (
         <main style={{
           display: "grid",
