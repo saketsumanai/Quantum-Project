@@ -1,0 +1,178 @@
+{
+  "curriculum_version": "1.0.0",
+  "author": "Manas Thakur (@heremanasthakur) - Quantum Mathematics & Theory Lead",
+  "description": "Structured quantum computing curriculum covering 6 core domains for SIH 2026 platform.",
+  "modules": [
+    {
+      "id": "MOD-01",
+      "slug": "qubits",
+      "title": "Qubits & Quantum States",
+      "order": 1,
+      "difficulty": "beginner",
+      "estimated_minutes": 20,
+      "description": "Introduction to quantum bits, state vectors, Dirac bra-ket notation, and the fundamental difference between classical and quantum information.",
+      "learning_objectives": [
+        "Define a qubit as a unit vector in a 2-dimensional complex Hilbert space",
+        "Represent quantum states using Dirac bra-ket notation",
+        "Understand superposition as a linear combination of basis states",
+        "Compute inner products and norms of quantum states"
+      ],
+      "mathematical_content": {
+        "state_vector": "\\|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle",
+        "normalization": "|\\alpha|^2 + |\\beta|^2 = 1",
+        "basis_states": {
+          "zero": "|0\\rangle = \\begin{pmatrix} 1 \\\\ 0 \\end{pmatrix}",
+          "one": "|1\\rangle = \\begin{pmatrix} 0 \\\\ 1 \\end{pmatrix}"
+        },
+        "inner_product": "\\langle\\phi|\\psi\\rangle = \\sum_i \\phi_i^* \\psi_i",
+        "bloch_sphere": "\\|\\psi\\rangle = \\cos(\\theta/2)|0\\rangle + e^{i\\phi}\\sin(\\theta/2)|1\\rangle",
+        "bloch_coordinates": "x = \\sin\\theta\\cos\\phi,\\quad y = \\sin\\theta\\sin\\phi,\\quad z = \\cos\\theta"
+      },
+      "circuit_presets": ["single_qubit_superposition"],
+      "key_concepts": ["superposition", "state_vector", "hilbert_space", "dirac_notation", "normalization"]
+    },
+    {
+      "id": "MOD-02",
+      "slug": "superposition",
+      "title": "Superposition & Quantum Gates",
+      "order": 2,
+      "difficulty": "beginner",
+      "estimated_minutes": 25,
+      "description": "Quantum gates as unitary transformations on qubit states. Single-qubit gates (H, X, Y, Z, S, T) and their matrix representations.",
+      "learning_objectives": [
+        "Understand quantum gates as unitary matrices in SU(2)",
+        "Apply Hadamard gate to create equal superposition",
+        "Compute gate compositions via matrix multiplication",
+        "Verify unitarity condition U†U = I"
+      ],
+      "mathematical_content": {
+        "unitarity": "U^\\dagger U = UU^\\dagger = I",
+        "gates": {
+          "hadamard": "H = \\frac{1}{\\sqrt{2}}\\begin{pmatrix} 1 & 1 \\\\ 1 & -1 \\end{pmatrix}",
+          "pauli_x": "X = \\begin{pmatrix} 0 & 1 \\\\ 1 & 0 \\end{pmatrix}",
+          "pauli_y": "Y = \\begin{pmatrix} 0 & -i \\\\ i & 0 \\end{pmatrix}",
+          "pauli_z": "Z = \\begin{pmatrix} 1 & 0 \\\\ 0 & -1 \\end{pmatrix}",
+          "s_gate": "S = \\begin{pmatrix} 1 & 0 \\\\ 0 & i \\end{pmatrix}",
+          "t_gate": "T = \\begin{pmatrix} 1 & 0 \\\\ 0 & e^{i\\pi/4} \\end{pmatrix}"
+        },
+        "hadamard_on_zero": "H|0\\rangle = \\frac{|0\\rangle + |1\\rangle}{\\sqrt{2}} = |+\\rangle",
+        "hadamard_on_one": "H|1\\rangle = \\frac{|0\\rangle - |1\\rangle}{\\sqrt{2}} = |-\\rangle",
+        "gate_composition": "(U_2 U_1)|\\psi\\rangle = U_2(U_1|\\psi\\rangle)"
+      },
+      "circuit_presets": ["hadamard_gate", "pauli_x_flip"],
+      "key_concepts": ["unitary_transformation", "hadamard", "pauli_matrices", "gate_composition", "quantum_parallelism"]
+    },
+    {
+      "id": "MOD-03",
+      "slug": "entanglement",
+      "title": "Quantum Entanglement & Multi-Qubit Systems",
+      "order": 3,
+      "difficulty": "intermediate",
+      "estimated_minutes": 30,
+      "description": "Tensor products, multi-qubit state spaces, entangled Bell states, and the CNOT gate. Non-local correlations and no-cloning theorem.",
+      "learning_objectives": [
+        "Construct multi-qubit Hilbert spaces via tensor products",
+        "Generate all four Bell states using H and CNOT gates",
+        "Distinguish separable from entangled states",
+        "Understand quantum correlations beyond classical probability"
+      ],
+      "mathematical_content": {
+        "tensor_product_space": "\\mathcal{H}_{AB} = \\mathcal{H}_A \\otimes \\mathcal{H}_B",
+        "two_qubit_basis": "|00\\rangle, |01\\rangle, |10\\rangle, |11\\rangle",
+        "tensor_product": "|\\psi_A\\rangle \\otimes |\\psi_B\\rangle = \\begin{pmatrix}\\alpha_A\\\\\\beta_A\\end{pmatrix} \\otimes \\begin{pmatrix}\\alpha_B\\\\\\beta_B\\end{pmatrix}",
+        "cnot_matrix": "CNOT = \\begin{pmatrix} 1&0&0&0 \\\\ 0&1&0&0 \\\\ 0&0&0&1 \\\\ 0&0&1&0 \\end{pmatrix}",
+        "bell_states": {
+          "phi_plus": "|\\Phi^+\\rangle = \\frac{|00\\rangle + |11\\rangle}{\\sqrt{2}}",
+          "phi_minus": "|\\Phi^-\\rangle = \\frac{|00\\rangle - |11\\rangle}{\\sqrt{2}}",
+          "psi_plus": "|\\Psi^+\\rangle = \\frac{|01\\rangle + |10\\rangle}{\\sqrt{2}}",
+          "psi_minus": "|\\Psi^-\\rangle = \\frac{|01\\rangle - |10\\rangle}{\\sqrt{2}}"
+        },
+        "bell_circuit": "(CNOT)(H \\otimes I)|00\\rangle = |\\Phi^+\\rangle",
+        "schmidt_rank": "\\text{State is entangled} \\iff \\text{Schmidt rank} > 1"
+      },
+      "circuit_presets": ["bell_state_phi_plus", "ghz_state"],
+      "key_concepts": ["tensor_product", "entanglement", "bell_states", "cnot", "non_locality"]
+    },
+    {
+      "id": "MOD-04",
+      "slug": "deutsch-jozsa",
+      "title": "Deutsch-Jozsa Algorithm",
+      "order": 4,
+      "difficulty": "intermediate",
+      "estimated_minutes": 35,
+      "description": "First quantum algorithm proving exponential speedup over classical. Determines if a black-box function is constant or balanced in a single query.",
+      "learning_objectives": [
+        "Formalize the Deutsch-Jozsa oracle problem",
+        "Implement the quantum oracle as a unitary transformation",
+        "Trace the algorithm step-by-step using Dirac notation",
+        "Verify that measurement outcome deterministically reveals oracle type"
+      ],
+      "mathematical_content": {
+        "problem": "f: \\{0,1\\}^n \\to \\{0,1\\} \\text{ is either constant or balanced}",
+        "oracle_action": "U_f|x\\rangle|y\\rangle = |x\\rangle|y \\oplus f(x)\\rangle",
+        "initial_state": "|\\psi_0\\rangle = |0\\rangle^{\\otimes n}|1\\rangle",
+        "after_hadamard": "|\\psi_1\\rangle = \\frac{1}{\\sqrt{2^n}}\\sum_{x=0}^{2^n-1}|x\\rangle \\cdot \\frac{|0\\rangle - |1\\rangle}{\\sqrt{2}}",
+        "after_oracle": "|\\psi_2\\rangle = \\frac{1}{\\sqrt{2^n}}\\sum_{x=0}^{2^n-1}(-1)^{f(x)}|x\\rangle \\cdot \\frac{|0\\rangle - |1\\rangle}{\\sqrt{2}}",
+        "final_state_constant": "|\\psi_3\\rangle = \\pm|0\\rangle^{\\otimes n} \\quad (\\text{constant})$",
+        "measurement_rule": "\\text{Measure } |0\\rangle^{\\otimes n} \\Rightarrow f \\text{ is constant; else balanced}",
+        "quantum_speedup": "O(1) \\text{ queries vs } O(2^{n-1}+1) \\text{ classical}"
+      },
+      "circuit_presets": ["deutsch_jozsa_constant", "deutsch_jozsa_balanced"],
+      "key_concepts": ["oracle", "phase_kickback", "quantum_parallelism", "hadamard_transform", "interference"]
+    },
+    {
+      "id": "MOD-05",
+      "slug": "grover",
+      "title": "Grover's Search Algorithm",
+      "order": 5,
+      "difficulty": "advanced",
+      "estimated_minutes": 40,
+      "description": "Quadratic quantum speedup for unstructured database search using amplitude amplification and the Grover diffusion operator.",
+      "learning_objectives": [
+        "Formulate the amplitude amplification framework",
+        "Derive the Grover diffusion operator geometrically",
+        "Calculate the optimal number of iterations",
+        "Implement Grover oracle for a target item"
+      ],
+      "mathematical_content": {
+        "uniform_superposition": "|s\\rangle = \\frac{1}{\\sqrt{N}}\\sum_{x=0}^{N-1}|x\\rangle",
+        "oracle_phase_flip": "U_\\omega|x\\rangle = \\begin{cases} -|x\\rangle & x = \\omega \\\\ |x\\rangle & x \\neq \\omega \\end{cases}",
+        "diffusion_operator": "U_s = 2|s\\rangle\\langle s| - I",
+        "grover_iteration": "G = U_s \\cdot U_\\omega",
+        "amplitude_after_k": "\\sin\\left((2k+1)\\arcsin\\frac{1}{\\sqrt{N}}\\right)",
+        "optimal_iterations": "k^* = \\left\\lfloor \\frac{\\pi}{4}\\sqrt{N} \\right\\rfloor",
+        "success_probability": "P(\\omega) \\approx 1 - \\frac{1}{N}",
+        "quantum_speedup": "O(\\sqrt{N}) \\text{ vs } O(N) \\text{ classical}"
+      },
+      "circuit_presets": ["grover_2qubit", "grover_3qubit"],
+      "key_concepts": ["amplitude_amplification", "diffusion_operator", "oracle", "geometric_interpretation", "quadratic_speedup"]
+    },
+    {
+      "id": "MOD-06",
+      "slug": "vqe",
+      "title": "Variational Quantum Eigensolver (VQE)",
+      "order": 6,
+      "difficulty": "advanced",
+      "estimated_minutes": 45,
+      "description": "Hybrid classical-quantum variational algorithm for finding ground state energies of quantum Hamiltonians. Foundation of quantum chemistry and optimization.",
+      "learning_objectives": [
+        "Understand the variational principle in quantum mechanics",
+        "Construct a parameterized ansatz circuit",
+        "Formulate VQE as a classical optimization problem",
+        "Evaluate expectation values of Pauli Hamiltonians"
+      ],
+      "mathematical_content": {
+        "variational_principle": "E_0 \\leq \\langle\\psi(\\theta)|H|\\psi(\\theta)\\rangle \\quad \\forall\\,|\\psi(\\theta)\\rangle",
+        "hamiltonian_pauli": "H = \\sum_i c_i P_i \\quad P_i \\in \\{I, X, Y, Z\\}^{\\otimes n}",
+        "expectation_value": "E(\\theta) = \\langle\\psi(\\theta)|H|\\psi(\\theta)\\rangle",
+        "optimization": "\\theta^* = \\arg\\min_\\theta E(\\theta)",
+        "ansatz_ry": "R_Y(\\theta) = \\begin{pmatrix} \\cos(\\theta/2) & -\\sin(\\theta/2) \\\\ \\sin(\\theta/2) & \\cos(\\theta/2) \\end{pmatrix}",
+        "h2_hamiltonian": "H_{H_2} = g_0 I + g_1 Z_0 + g_2 Z_1 + g_3 Z_0 Z_1 + g_4 X_0 X_1",
+        "gradient_parameter_shift": "\\frac{\\partial E}{\\partial \\theta_k} = \\frac{E(\\theta_k + \\pi/2) - E(\\theta_k - \\pi/2)}{2}",
+        "convergence": "E(\\theta^*) \\approx E_0 \\text{ (ground state energy)}"
+      },
+      "circuit_presets": ["vqe_h2", "vqe_ansatz_ry"],
+      "key_concepts": ["variational_principle", "ansatz", "parameter_shift_rule", "pauli_hamiltonian", "hybrid_quantum_classical"]
+    }
+  ]
+}
