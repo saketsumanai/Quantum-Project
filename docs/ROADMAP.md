@@ -58,8 +58,8 @@ gantt
   * **Member 5 (Saket Suman)**: Initialize FastAPI skeleton, configure CORS, implement mock endpoints returning sample circuit simulation results and sample AI tutor responses.
   * **Member 1 (Prateek Raj)**: Scaffold Vite + React + Tailwind frontend, set up Axios client pointing to mock endpoints.
   * **Member 2 (Jayesh Kapoor)**: Finalize Unified Circuit Intermediate Representation (CIR) schema for quantum circuits.
-  * **Member 3 (Manas Thakur)**: Define structured JSON output schemas for RAG query and quiz generation.
-  * **Member 4 (Apurva Sinha)**: Define telemetry and assessment data models.
+  * **Member 4 (Apurva Sinha - AI Lead)**: Define structured JSON Master Orchestrator output schemas for AI RAG queries and dynamic quiz generation.
+  * **Member 3 (Manas Thakur - Math Lead)**: Define verified mathematical formulations and LaTeX schemas for quantum states and operators.
 * **Expected Output**: Runnable mock server at `http://localhost:8000/docs` with interactive Swagger UI.
 * **Acceptance Criteria**:
   - Frontend makes test request to `/api/v1/simulation/run` and receives deterministic JSON payload.
@@ -69,15 +69,15 @@ gantt
 ---
 
 ### Phase 2: Foundational Scaffold & Core Pipeline (Days 3–4)
-* **Objective**: Establish the database schema, user authentication, and basic visual layout.
+* **Objective**: Establish the database schema, user authentication, mathematical foundations, and basic visual layout.
 * **Duration**: 2 Days
 * **Member Assignments**:
   * **Member 5**: Implement SQLAlchemy models (Users, Circuits, Progress), JWT authentication endpoints (`/auth/register`, `/auth/login`), and SQLite session factory.
-  * **Member 1**: Implement application shell, navigation bar, responsive layout, and authenticated route guards.
+  * **Member 1**: Implement application shell, navigation bar, responsive layout, Three.js canvas container, and base Bloch Sphere mesh.
   * **Member 2**: Implement base quantum simulator abstraction and Qiskit 1.0+ Aer simulator wrapper.
-  * **Member 3**: Ingest educational textbooks and set up local ChromaDB vector store.
-  * **Member 4**: Implement Three.js canvas container and base Bloch Sphere mesh.
-* **Expected Output**: Working login/signup, database persistence, and navigable app layout.
+  * **Member 3 (Manas)**: Research mathematical models for single and multi-qubit states, Dirac bra-ket notations, and unitary matrices for all 6 curriculum modules.
+  * **Member 4 (Apurva)**: Implement hybrid RAG pipeline, ingest educational vectors into ChromaDB, and configure LLM gateway.
+* **Expected Output**: Working login/signup, database persistence, mathematical formula library, and navigable app layout.
 * **Acceptance Criteria**:
   - User can register, log in, and receive a signed JWT token.
   - Basic Bloch Sphere renders and rotates in the browser.
@@ -86,41 +86,38 @@ gantt
 ---
 
 ### Phase 3: Parallel Feature Development (Days 5–8)
-* **Objective**: Core feature build-out across all 4 independent functional tracks.
+* **Objective**: Core feature build-out across all independent functional tracks.
 * **Duration**: 4 Days
 * **Member Assignments**:
 
-#### Track 1: Member 1 (Frontend Lead) — Circuit Designer & UI
+#### Track 1: Member 1 (Prateek - Frontend Lead) — Circuit Designer & Visualization
 * Build drag-and-drop circuit canvas with multi-qubit support (up to 4 qubits).
 * Add gate palette: $H$, $X$, $Y$, $Z$, $S$, $T$, $CX$ (CNOT), $CZ$, $SWAP$, Measurement.
 * Real-time QASM / Python code exporter view.
-* Connect circuit state to global Zustand store.
+* Animate Three.js Bloch Sphere vector based on simulation angles $(\theta, \phi)$ and render measurement histograms.
 
-#### Track 2: Member 2 (Quantum Lead) — Multi-Engine Simulation
+#### Track 2: Member 2 (Jayesh - Quantum Lead) — Multi-Engine Simulation
 * Implement Qiskit Aer simulator for shot execution and statevector extraction.
 * Implement PennyLane wrapper for variational algorithms (VQE, QAOA parameter updates).
 * Implement Cirq adapter demonstrating multi-framework compilation.
 * Build AST-based Python code validator (blocking forbidden imports).
 
-#### Track 3: Member 3 (AI / RAG Lead) — Educational Intelligence
-* Implement CPU-friendly embedding pipeline (`all-MiniLM-L6-v2`).
-* Build hybrid retrieval pipeline (semantic search + keyword matching).
-* Implement prompt template strictly enforcing 2-sentence voice summary, LaTeX equations, and runnable code.
-* Pre-compute deterministic fallback responses for all core hackathon algorithms.
+#### Track 3: Member 4 (Apurva - Main AI Lead) — Educational Intelligence & RAG
+* Lead the Master Prompt Orchestrator enforcing 2-sentence vocal script, LaTeX math, runnable code, and quiz generation.
+* Build the Deterministic Failsafe Fallback Engine for offline hackathon demonstration resilience.
+* Connect multi-provider LLM gateways (Groq / Gemini / Local fallback).
 
-#### Track 4: Member 4 (Visualization & Assessment Lead) — State Vis & Quizzes
-* Animate Bloch Sphere vector based on simulation angles $(\theta, \phi)$.
-* Build interactive measurement histogram displaying shot distribution.
-* Implement gamified quiz engine with instant validation and telemetry logging.
-* Connect score recording to backend progress API.
+#### Track 4: Member 3 (Manas - Math & AI Co-Lead) — Mathematics Research & Ingestion
+* Research and develop verified mathematical algorithms for Deutsch-Jozsa, Grover diffusion, and VQE Hamiltonians.
+* Build mathematical validation rules ensuring AI-generated equations are mathematically coherent.
+* Co-develop RAG vector knowledge base with Apurva: chunk, embed, and index textbook vectors.
 
 * **Expected Output**: Four feature-complete modules ready for end-to-end wiring.
 * **Acceptance Criteria**:
   - Dragging gates generates valid CIR JSON.
   - Backend executes CIR on Qiskit Aer and returns counts + statevector.
-  - AI tutor responds with accurate quantum physics explanations and LaTeX math.
-  - Quizzes score and submit correctly.
-* **Git Branches**: `feature/member-1-frontend`, `feature/member-2-quantum`, `feature/member-3-ai-rag`, `feature/member-4-visualization-assessment`.
+  - AI tutor responds with accurate quantum physics explanations, verified LaTeX formulas, and dynamic quizzes.
+* **Git Branches**: `feature/member-1-frontend`, `feature/member-2-quantum`, `feature/member-3-math-ai-manas`, `feature/member-4-ai-lead`.
 
 ---
 
@@ -129,8 +126,8 @@ gantt
 * **Duration**: 2 Days
 * **Member Assignments**:
   * **Member 5 & 1**: Wire Circuit Designer to `/api/v1/simulation/run`.
-  * **Member 4 & 2**: Pipe simulation statevector directly into Three.js Bloch Sphere and histogram charts.
-  * **Member 3 & 1**: Embed AI Quantum Tutor drawer alongside the circuit canvas.
+  * **Member 1 & 2**: Pipe simulation statevector directly into Three.js Bloch Sphere and histogram charts.
+  * **Member 4, 3 & 1**: Embed AI Quantum Tutor drawer alongside the circuit canvas with live mathematical equations.
   * **Member 5 & 4**: Connect quiz completion to user dashboard telemetry.
 * **Expected Output**: Unified, fully interactive application executing live quantum circuits and rendering visual feedback in real time.
 * **Acceptance Criteria**:
