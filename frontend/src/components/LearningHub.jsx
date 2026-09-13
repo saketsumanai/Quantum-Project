@@ -557,6 +557,62 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
           {activeUnit.summary}
         </div>
 
+        {/* ── IBM Quantum Official Video Lecture Embed ── */}
+        {activeUnit.embedUrl && (
+          <div style={{ background: "#000", border: "1px solid var(--ql-border)", borderRadius: "2px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+              <iframe
+                src={activeUnit.embedUrl}
+                title={activeUnit.videoTitle || activeUnit.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+              />
+            </div>
+            <div style={{ padding: "14px 20px", background: "var(--ql-layer-02)", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--ql-border)", flexWrap: "wrap", gap: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "0.7rem", background: "#da1e28", color: "#fff", fontWeight: 700, padding: "2px 8px", borderRadius: "2px", letterSpacing: "0.05em" }}>
+                  ▶ IBM LECTURE
+                </span>
+                <span style={{ fontSize: "0.86rem", color: "var(--ql-text-primary)", fontWeight: 500 }}>
+                  {activeUnit.videoTitle || activeUnit.title}
+                </span>
+              </div>
+              {activeUnit.watchUrl && (
+                <a
+                  href={activeUnit.watchUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "#78A9FF", fontSize: "0.82rem", textDecoration: "none", display: "flex", alignItems: "center", gap: "4px", fontWeight: 500 }}
+                >
+                  Watch on YouTube ↗
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Learning Objectives Checklist ── */}
+        {activeUnit.learningObjectives && activeUnit.learningObjectives.length > 0 && (
+          <div style={{ padding: "20px 24px", background: "var(--ql-layer-02)", border: "1px solid var(--ql-border)" }}>
+            <div style={{ fontSize: "0.75rem", color: "#78A9FF", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: "8px" }}>
+              Learning Objectives
+            </div>
+            <div style={{ fontSize: "0.84rem", color: "var(--ql-text-helper)", marginBottom: "14px" }}>
+              By the end of this lesson, you will be able to:
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
+              {activeUnit.learningObjectives.map((obj, oIdx) => (
+                <div key={oIdx} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "0.88rem", color: "var(--ql-text-primary)", lineHeight: 1.5 }}>
+                  <span style={{ color: "#34d399", fontWeight: 700, fontSize: "0.95rem" }}>✓</span>
+                  <span>{obj}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* In-depth Content Sections */}
         {activeUnit.sections?.map((sec, sIdx) => (
           <div key={sIdx} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

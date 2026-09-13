@@ -27,6 +27,17 @@ export const COURSES_DETAILED_CONTENT = {
         title: "Unit 1: Single Systems — Classical vs. Quantum Bits",
         duration: "45 min",
         circuitPreset: "superposition",
+        youtubeId: "3-c4xJa7Flk",
+        videoTitle: "Single Systems | Understanding Quantum Information & Computation | Lesson 01 with John Watrous",
+        watchUrl: "https://www.youtube.com/watch?v=3-c4xJa7Flk",
+        embedUrl: "https://www.youtube-nocookie.com/embed/3-c4xJa7Flk",
+        learningObjectives: [
+          "Represent classical states as deterministic and probabilistic state vectors",
+          "Formulate single-qubit states using complex amplitudes and Dirac bra-ket notation",
+          "Apply Born's rule to compute exact measurement probabilities (|α|² and |β|²)",
+          "Distinguish unobservable global phase from physically detectable relative phase",
+          "Construct and simulate a single-qubit statevector in Qiskit 1.0+"
+        ],
         summary: "Understand what a qubit really is, how superposition works using the spinning coin analogy, Born's rule, and Dirac bra-ket notation.",
         sections: [
           {
@@ -76,6 +87,16 @@ print("Is state normalized?", np.isclose(abs(alpha)**2 + abs(beta)**2, 1.0))`
         title: "Unit 2: The Bloch Sphere & Quantum Logic Gates",
         duration: "50 min",
         circuitPreset: "superposition",
+        youtubeId: "30U2DTfIrOU",
+        videoTitle: "Quantum Circuits & Unitary Operations | Lesson 03 with John Watrous",
+        watchUrl: "https://www.youtube.com/watch?v=30U2DTfIrOU",
+        embedUrl: "https://www.youtube-nocookie.com/embed/30U2DTfIrOU",
+        learningObjectives: [
+          "Map arbitrary pure single-qubit states to spherical coordinates (θ, φ) on the Bloch sphere",
+          "Formulate Pauli X, Y, Z gates as 180° rotations about their spatial axes",
+          "Demonstrate that the Hadamard gate acts as the universal superposition generator",
+          "Prove gate reversibility and unitarity (U† U = I) using matrix algebra"
+        ],
         summary: "Visualize any single qubit as a point on a 3D sphere, and understand X, Y, Z, and Hadamard gates as simple 3D rotations.",
         sections: [
           {
@@ -111,6 +132,16 @@ print("Final state (100% |1>):", sv)`
         title: "Unit 3: Multiple Systems — Tensor Products & Entanglement",
         duration: "55 min",
         circuitPreset: "bell_state",
+        youtubeId: "DfZZS8Spe7U",
+        videoTitle: "Multiple Systems & Entanglement | Lesson 02 with John Watrous",
+        watchUrl: "https://www.youtube.com/watch?v=DfZZS8Spe7U",
+        embedUrl: "https://www.youtube-nocookie.com/embed/DfZZS8Spe7U",
+        learningObjectives: [
+          "Construct composite state spaces using the Kronecker tensor product (H_A ⊗ H_B)",
+          "Distinguish separable product states |a⟩ ⊗ |b⟩ from non-separable entangled states",
+          "Apply the Controlled-NOT (CNOT) gate to generate maximal quantum entanglement",
+          "Synthesize and analyze the four orthonormal Bell states (|Φ±⟩, |Ψ±⟩)"
+        ],
         summary: "Combine qubits using the tensor product, understand why multi-qubit Hilbert space grows exponentially, and create the four Bell states.",
         sections: [
           {
@@ -152,11 +183,21 @@ print("Probabilities:", sv.probabilities_dict())`
         title: "Unit 4: Entanglement in Action — Quantum Teleportation",
         duration: "50 min",
         circuitPreset: "quantum_teleportation",
+        youtubeId: "GSsElSQgMbU",
+        videoTitle: "Entanglement in Action: Teleportation & Superdense Coding | Lesson 04 with John Watrous",
+        watchUrl: "https://www.youtube.com/watch?v=GSsElSQgMbU",
+        embedUrl: "https://www.youtube-nocookie.com/embed/GSsElSQgMbU",
+        learningObjectives: [
+          "Execute the 5-step Quantum Teleportation protocol from Alice to Bob",
+          "Explain why Bell measurement and classical feed-forward protect the No-Cloning Theorem",
+          "Transmit 2 classical bits using 1 transmitted qubit via Superdense Coding",
+          "Prove quantum non-locality and Bell inequality violation"
+        ],
         summary: "Transmit an unknown quantum state across space using a shared Bell pair and 2 classical bits, without violating the No-Cloning theorem.",
         sections: [
           {
             heading: "1. The Teleportation Protocol Explained Simply",
-            content: "Suppose Alice has a fragile, unknown quantum qubit $|\psi\\rangle = \alpha|0\rangle + \beta|1\rangle$ and wants to send it to Bob.\n• She cannot simply copy it (forbidden by the No-Cloning Theorem).\n• She cannot measure it (measurement would collapse the state and destroy $\alpha$ and $\beta$).\n\nHow do they solve this? Using **Quantum Teleportation** (Bennett et al., 1993)!\n1. Alice and Bob share an entangled Bell pair $|\Phi^+\rangle_{AB}$.\n2. Alice performs a Bell measurement on her unknown qubit and her half of the Bell pair.\n3. Alice's measurement produces 2 classical bits ($00, 01, 10,$ or $11$).\n4. Alice calls Bob on a normal phone and tells him the 2 classical bits.\n5. Depending on the bits, Bob applies simple Pauli gates ($X, Z$) to his qubit.\n\nPresto! Bob's qubit is now **identical** to Alice's original state $|\psi\rangle$! Alice's original qubit was destroyed by her measurement, so no cloning occurred.",
+            content: "Suppose Alice has a fragile, unknown quantum qubit $|\psi\\rangle = \alpha|0\\rangle + \beta|1\\rangle$ and wants to send it to Bob.\n• She cannot simply copy it (forbidden by the No-Cloning Theorem).\n• She cannot measure it (measurement would collapse the state and destroy $\alpha$ and $\beta$).\n\nHow do they solve this? Using **Quantum Teleportation** (Bennett et al., 1993)!\n1. Alice and Bob share an entangled Bell pair $|\Phi^+\rangle_{AB}$.\n2. Alice performs a Bell measurement on her unknown qubit and her half of the Bell pair.\n3. Alice's measurement produces 2 classical bits ($00, 01, 10,$ or $11$).\n4. Alice calls Bob on a normal phone and tells him the 2 classical bits.\n5. Depending on the bits, Bob applies simple Pauli gates ($X, Z$) to his qubit.\n\nPresto! Bob's qubit is now **identical** to Alice's original state $|\psi\rangle$! Alice's original qubit was destroyed by her measurement, so no cloning occurred.",
             math: "|\\psi\\rangle |\\Phi^+\\rangle \\xrightarrow{\\text{Bell Measurement}} (m_0, m_1) \\xrightarrow{X^{m_1} Z^{m_0}} |\\psi\\rangle_{\\text{Bob}}"
           }
         ],
@@ -192,6 +233,16 @@ print("Probabilities:", sv.probabilities_dict())`
         title: "Unit 1: Quantum Query Algorithms & Deutsch-Jozsa",
         duration: "50 min",
         circuitPreset: "deutsch_jozsa",
+        youtubeId: "3-c4xJa7Flk",
+        videoTitle: "Quantum Query Algorithms & Phase Kickback | Fundamentals of Quantum Algorithms",
+        watchUrl: "https://www.youtube.com/watch?v=3-c4xJa7Flk",
+        embedUrl: "https://www.youtube-nocookie.com/embed/3-c4xJa7Flk",
+        learningObjectives: [
+          "Understand the black-box query model and query complexity vs gate complexity",
+          "Apply phase kickback with target qubit |-> to encode evaluations into relative phase",
+          "Distinguish constant and balanced Boolean functions using exactly 1 quantum query",
+          "Analyze constructive vs destructive interference in the n-qubit Hadamard transform"
+        ],
         summary: "Understand the black-box query model, phase kickback, and the first algorithm to prove quantum advantage over classical determinism.",
         sections: [
           {
@@ -226,6 +277,16 @@ print(qc.draw())`
         title: "Unit 2: Grover's Search Algorithm & Amplitude Amplification",
         duration: "55 min",
         circuitPreset: "grover_2qubit",
+        youtubeId: "hnpjC8WQVrQ",
+        videoTitle: "Grover's Algorithm & Amplitude Amplification | Lesson 08 with John Watrous",
+        watchUrl: "https://www.youtube.com/watch?v=hnpjC8WQVrQ",
+        embedUrl: "https://www.youtube-nocookie.com/embed/hnpjC8WQVrQ",
+        learningObjectives: [
+          "Formulate unstructured database search over N = 2^n elements",
+          "Synthesize the oracle reflection operator R_ω and diffusion operator R_s",
+          "Track 2D subspace rotation toward the target state by angle θ ≈ 2/√N per iteration",
+          "Implement Grover's 2-qubit circuit and observe amplitude amplification in Qiskit 1.0+"
+        ],
         summary: "Search unsorted databases of N items in O(sqrt(N)) time using the noise-canceling headphones geometric reflection analogy.",
         sections: [
           {
@@ -265,6 +326,16 @@ print("Target |11> probability:", sv.probabilities_dict())`
         title: "Unit 3: Quantum Fourier Transform & Shor's Factoring Algorithm",
         duration: "60 min",
         circuitPreset: "grover_2qubit",
+        youtubeId: "4nT0BTUxhJY",
+        videoTitle: "Phase Estimation and Factoring | Lesson 07 with John Watrous",
+        watchUrl: "https://www.youtube.com/watch?v=4nT0BTUxhJY",
+        embedUrl: "https://www.youtube-nocookie.com/embed/4nT0BTUxhJY",
+        learningObjectives: [
+          "Construct the Quantum Fourier Transform (QFT) circuit using O(n²) gates",
+          "Apply Quantum Phase Estimation (QPE) to extract eigenphases of unitaries",
+          "Explain Shor's classical reduction from integer factoring to order finding",
+          "Understand the cryptographic threat to RSA and the shift to Post-Quantum Cryptography"
+        ],
         summary: "Understand how Shor's algorithm reduces factoring large integers N = p*q to period finding, breaking RSA cryptography in polynomial time.",
         sections: [
           {
@@ -304,6 +375,15 @@ print("Target |11> probability:", sv.probabilities_dict())`
         title: "Unit 1: How Real Quantum Hardware Operates",
         duration: "30 min",
         circuitPreset: "superposition",
+        youtubeId: "4gpPHWCoWPs",
+        videoTitle: "Tour an IBM Quantum Lab with Dr. Olivia Lanes | Dilution Refrigerators & Transmon QPU",
+        watchUrl: "https://www.youtube.com/watch?v=4gpPHWCoWPs",
+        embedUrl: "https://www.youtube-nocookie.com/embed/4gpPHWCoWPs",
+        learningObjectives: [
+          "Understand 15 mK dilution refrigeration physics and why cooling below outer space is essential",
+          "Identify coaxial microwave control lines and cryogenic shielding",
+          "Learn how Josephson junctions introduce anharmonicity to create superconducting transmon qubits"
+        ],
         summary: "Inside a dilution refrigerator: 15 millikelvin temperatures, microwave coaxial cables, and superconducting transmon chips.",
         sections: [
           {
@@ -324,6 +404,15 @@ print("Target |11> probability:", sv.probabilities_dict())`
         title: "Unit 2: The 5-Step Quantum Computing Workflow",
         duration: "35 min",
         circuitPreset: "bell_state",
+        youtubeId: "Tk9LOL9--Y4",
+        videoTitle: "Introduction to Qiskit 1.x | Coding with Qiskit | Programming on Real Quantum Computers",
+        watchUrl: "https://www.youtube.com/watch?v=Tk9LOL9--Y4",
+        embedUrl: "https://www.youtube-nocookie.com/embed/Tk9LOL9--Y4",
+        learningObjectives: [
+          "Master the 5-step Qiskit 1.0 workflow: Map, Optimize, Execute, Mitigate, Post-process",
+          "Deploy quantum circuits with Sampler and Estimator Runtime primitives",
+          "Transpile circuits to hardware basis gates and coupling constraints"
+        ],
         summary: "Master the 5 essential steps of running quantum algorithms: Map, Optimize (Transpile), Execute, Mitigate, and Analyze.",
         sections: [
           {
@@ -377,6 +466,16 @@ print("Counts:", result[0].data.meas.get_counts())`
         title: "Unit 1: Quantum Feature Maps & High-Dimensional Hilbert Spaces",
         duration: "40 min",
         circuitPreset: "superposition",
+        youtubeId: "Tk9LOL9--Y4",
+        videoTitle: "Quantum Machine Learning & Feature Spaces | Qiskit Lecture Series",
+        watchUrl: "https://www.youtube.com/watch?v=Tk9LOL9--Y4",
+        embedUrl: "https://www.youtube-nocookie.com/embed/Tk9LOL9--Y4",
+        learningObjectives: [
+          "Understand how quantum feature maps embed non-linear classical data into Hilbert space",
+          "Formulate angle encoding and amplitude encoding circuits",
+          "Compute the quantum kernel K(x, x') = |⟨Φ(x)|Φ(x')⟩|²",
+          "Apply quantum support vector classifiers (QSVC) on synthetic datasets"
+        ],
         summary: "Understand how quantum feature maps embed non-linear classical data into exponentially vast Hilbert spaces where classification becomes linear.",
         sections: [
           {
@@ -397,6 +496,16 @@ print("Counts:", result[0].data.meas.get_counts())`
         title: "Unit 2: Parameterized Circuits & The Parameter Shift Rule",
         duration: "45 min",
         circuitPreset: "bell_state",
+        youtubeId: "30U2DTfIrOU",
+        videoTitle: "Parameterized Circuits & Analytical Gradients | Qiskit Masterclass",
+        watchUrl: "https://www.youtube.com/watch?v=30U2DTfIrOU",
+        embedUrl: "https://www.youtube-nocookie.com/embed/30U2DTfIrOU",
+        learningObjectives: [
+          "Build hardware-efficient parameterized quantum circuits (ansätze)",
+          "Derive the analytical Parameter Shift Rule for exact quantum gradients",
+          "Train hybrid quantum-classical neural networks using gradient descent",
+          "Analyze the Barren Plateau phenomenon in deep unstructured variational circuits"
+        ],
         summary: "Train quantum neural networks using analytical gradients computed directly on quantum processors without numerical approximation error.",
         sections: [
           {
@@ -444,6 +553,15 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
         title: "Unit 1: The Variational Principle & VQE",
         duration: "40 min",
         circuitPreset: "bell_state",
+        youtubeId: "4gpPHWCoWPs",
+        videoTitle: "Variational Quantum Eigensolver (VQE) for Chemistry Simulation",
+        watchUrl: "https://www.youtube.com/watch?v=4gpPHWCoWPs",
+        embedUrl: "https://www.youtube-nocookie.com/embed/4gpPHWCoWPs",
+        learningObjectives: [
+          "Apply the Rayleigh-Ritz variational principle to calculate ground state energies",
+          "Map molecular electronic Hamiltonians to Pauli strings using Jordan-Wigner transformation",
+          "Execute the hybrid classical-quantum VQE feedback loop"
+        ],
         summary: "Understand how the Rayleigh-Ritz variational theorem guarantees that trial quantum states provide rigorous upper bounds on molecular ground states.",
         sections: [
           {
@@ -464,6 +582,15 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
         title: "Unit 2: QAOA for Combinatorial Optimization",
         duration: "40 min",
         circuitPreset: "bell_state",
+        youtubeId: "hnpjC8WQVrQ",
+        videoTitle: "Quantum Approximate Optimization Algorithm (QAOA) on Real Hardware",
+        watchUrl: "https://www.youtube.com/watch?v=hnpjC8WQVrQ",
+        embedUrl: "https://www.youtube-nocookie.com/embed/hnpjC8WQVrQ",
+        learningObjectives: [
+          "Formulate NP-hard combinatorial problems (Max-Cut) as Ising spin Hamiltonians",
+          "Construct alternating layers of problem cost unitary and transverse mixer unitary",
+          "Optimize QAOA parameters (γ, β) to maximize approximation ratio"
+        ],
         summary: "Solve NP-hard graph problems like Max-Cut by alternating problem cost and mixer Hamiltonians.",
         sections: [
           {
@@ -503,6 +630,16 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
         title: "Unit 1: Quantum Redundancy & Syndrome Extraction",
         duration: "45 min",
         circuitPreset: "ghz_state",
+        youtubeId: "GSsElSQgMbU",
+        videoTitle: "Foundations of Quantum Error Correction & Stabilizers with Daniel Gottesman",
+        watchUrl: "https://www.youtube.com/watch?v=GSsElSQgMbU",
+        embedUrl: "https://www.youtube-nocookie.com/embed/GSsElSQgMbU",
+        learningObjectives: [
+          "Explain why the No-Cloning Theorem prevents classical duplication codes",
+          "Prove the Discretization of Errors Theorem: continuous errors project into discrete Pauli flips",
+          "Construct the 3-qubit bit-flip and phase-flip stabilizer codes",
+          "Measure multi-qubit syndrome operators using ancilla qubits"
+        ],
         summary: "Overcome continuous noise and the No-Cloning theorem by encoding logical qubits into entangled multi-qubit stabilizer subspaces.",
         sections: [
           {
