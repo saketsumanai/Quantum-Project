@@ -122,7 +122,7 @@
 
 ### 3.1 Conversational Context Query (`POST /ai-tutor/query`)
 * **Description**: Queries the educational knowledge base using hybrid RAG to generate plain explanations, LaTeX formulas, and runnable code.
-* **Owner**: Member 3 (Manas Thakur)
+* **Owner**: Member 4 (Apurva Sinha - Main AI Lead) & Member 3 (Manas Thakur - Quantum Math & AI Co-Lead)
 * **Primary Consumer**: Member 1 (AI Chat Drawer)
 * **Auth Requirement**: Optional
 

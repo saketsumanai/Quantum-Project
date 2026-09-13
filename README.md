@@ -12,8 +12,8 @@ An interactive, multi-framework educational web platform designed to bridge abst
 | **Saket Suman** (Lead) | [@saketsumanai](https://github.com/saketsumanai) | Senior Architect & DevOps Lead | FastAPI Core, DB Models, JWT Auth, Docker, CI/CD |
 | **Prateek Raj** | [@prs-24](https://github.com/prs-24) | Frontend & Product UI Lead | React/Vite UI, Drag-Drop Circuit Designer, Code Export |
 | **Jayesh Kapoor** | [@jayeshxgit](https://github.com/jayeshxgit) | Quantum Engine & Simulation Lead | Qiskit 1.0+ Aer, PennyLane, Cirq, AST Anti-RCE Sandbox |
-| **Manas Thakur** | [@heremanasthakur](https://github.com/heremanasthakur) | AI, RAG & Educational Lead | Textbook RAG, ChromaDB, Voice Synthesis, Offline Fallback |
-| **Apurva Sinha** | [@apurvafx](https://github.com/apurvafx) | Visualization & Assessment Lead | Three.js 3D Bloch Sphere, Histograms, Gamified Quizzes |
+| **Manas Thakur** | [@heremanasthakur](https://github.com/heremanasthakur) | Quantum Mathematics, Theory & AI Co-Lead | Mathematics Research, Dirac Formulations, Algorithm Proofs, AI RAG |
+| **Apurva Sinha** | [@apurvafx](https://github.com/apurvafx) | **Main AI & Intelligent Systems Lead** | Hybrid RAG Architecture, LLM Orchestrator, AI Tutor, Offline Cache |
 
 ---
 
