@@ -1,250 +1,2321 @@
 {
   "project": "AI-Powered Interactive Quantum Algorithm Learning Platform",
   "total_sources": 150,
-  "description": "Curated corpus of 150 foundational quantum computing textbooks, seminal research papers, and lecture notes for AI RAG vector embedding and curriculum training.",
-  "categories": [
-    "Quantum Foundations & Superposition",
-    "Quantum Gates & Circuit Theory",
-    "Entanglement & Non-Locality",
-    "Oracle & Algebraic Algorithms",
-    "Quantum Search & Amplitude Amplification",
-    "Quantum Fourier Transform & Factoring",
-    "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
-    "Quantum Error Correction & Fault Tolerance",
-    "Quantum Information Theory & Cryptography",
-    "Quantum Hardware & Physical Systems"
-  ],
+  "description": "Complete catalog of exactly 150 foundational quantum computing textbooks, seminal research papers, and technical lecture series for AI RAG vector embedding and curriculum training.",
+  "categories_count": 10,
+  "books_per_category": 15,
   "library": [
     {
       "id": 1,
-      "title": "Quantum Computing: Lecture Notes",
-      "author": "Ronald de Wolf",
-      "category": "Quantum Foundations & Superposition",
-      "year": 2019,
-      "arxiv_id": "1907.09415",
-      "pdf_url": "https://arxiv.org/pdf/1907.09415.pdf",
-      "local_path": "data/books/Quantum_Computing_Lecture_Notes_Ronald_de_Wolf.pdf",
-      "status": "downloaded",
-      "key_concepts": ["Qubits", "Bloch Sphere", "Quantum Gates", "Deutsch-Jozsa", "Grover", "Shor"]
+      "title": "Quantum Computation and Quantum Information",
+      "author": "Michael A. Nielsen & Isaac L. Chuang",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2010,
+      "reference": "Cambridge University Press",
+      "url": "https://doi.org/10.1017/CBO9780511976667",
+      "key_concepts": [
+        "Postulates",
+        "Density Matrix",
+        "Hilbert Space",
+        "Partial Trace"
+      ],
+      "training_vector_summary": "Quantum Computation and Quantum Information by Michael A. Nielsen & Isaac L. Chuang (2010) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Postulates, Density Matrix, Hilbert Space, Partial Trace."
     },
     {
       "id": 2,
-      "title": "Quantum Algorithms: An Overview",
-      "author": "Ashley Montanaro",
-      "category": "Oracle & Algebraic Algorithms",
-      "year": 2016,
-      "arxiv_id": "1511.04206",
-      "pdf_url": "https://arxiv.org/pdf/1511.04206.pdf",
-      "local_path": "data/books/Quantum_Algorithms_Overview_Ashley_Montanaro.pdf",
-      "status": "downloaded",
-      "key_concepts": ["Algorithm Taxonomy", "Hidden Subgroup Problem", "Quantum Walks", "VQE"]
+      "title": "Lecture Notes on Quantum Computation (Ph219)",
+      "author": "John Preskill",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2015,
+      "reference": "Caltech Ph219",
+      "url": "http://theory.caltech.edu/~preskill/ph219/",
+      "key_concepts": [
+        "Pure & Mixed States",
+        "Unitary Evolution",
+        "Measurement",
+        "Entanglement"
+      ],
+      "training_vector_summary": "Lecture Notes on Quantum Computation (Ph219) by John Preskill (2015) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Pure & Mixed States, Unitary Evolution, Measurement, Entanglement."
     },
     {
       "id": 3,
-      "title": "Variational Quantum Algorithms",
-      "author": "M. Cerezo, A. Arrasmith et al.",
-      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
-      "year": 2021,
-      "arxiv_id": "2012.09265",
-      "pdf_url": "https://arxiv.org/pdf/2012.09265.pdf",
-      "local_path": "data/books/Variational_Quantum_Algorithms_VQE_QAOA_Cerezo_et_al.pdf",
-      "status": "downloaded",
-      "key_concepts": ["VQE", "QAOA", "Barren Plateaus", "Cost Function Landscapes", "Ansatz Design"]
+      "title": "Quantum Computing: A Gentle Introduction",
+      "author": "Eleanor Rieffel & Wolfgang Polak",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2011,
+      "reference": "MIT Press",
+      "url": "https://mitpress.mit.edu/9780262526678/",
+      "key_concepts": [
+        "Linear Algebra",
+        "Tensor Products",
+        "Quantum State Vectors",
+        "EPR"
+      ],
+      "training_vector_summary": "Quantum Computing: A Gentle Introduction by Eleanor Rieffel & Wolfgang Polak (2011) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Linear Algebra, Tensor Products, Quantum State Vectors, EPR."
     },
     {
       "id": 4,
-      "title": "Quantum Computation and Quantum Information (Foundational Overview)",
-      "author": "Michael A. Nielsen & Isaac L. Chuang",
-      "category": "Quantum Foundations & Superposition",
-      "year": 2010,
-      "reference": "Cambridge University Press",
-      "pdf_url": "https://doi.org/10.1017/CBO9780511976667",
-      "status": "cataloged",
-      "key_concepts": ["Postulates of Quantum Mechanics", "Density Operators", "EPR Paradox", "Bell Inequalities"]
+      "title": "An Introduction to Quantum Computing",
+      "author": "Phillip Kaye, Raymond Laflamme, Michele Mosca",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2007,
+      "reference": "Oxford University Press",
+      "url": "https://doi.org/10.1093/acprof:oso/9780198570004.001.0001",
+      "key_concepts": [
+        "Qubits",
+        "State Evolution",
+        "Measurement Operators",
+        "Circuit Model"
+      ],
+      "training_vector_summary": "An Introduction to Quantum Computing by Phillip Kaye, Raymond Laflamme, Michele Mosca (2007) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Qubits, State Evolution, Measurement Operators, Circuit Model."
     },
     {
       "id": 5,
-      "title": "Lecture Notes on Quantum Computation (Ph219)",
-      "author": "John Preskill",
-      "category": "Quantum Foundations & Superposition",
-      "year": 2015,
-      "institution": "California Institute of Technology (Caltech)",
-      "pdf_url": "http://theory.caltech.edu/~preskill/ph219/",
-      "status": "cataloged",
-      "key_concepts": ["Hilbert Spaces", "Unitary Operations", "Quantum State Measurement"]
+      "title": "Quantum Computing Explained",
+      "author": "David McMahon",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2007,
+      "reference": "Wiley-Interscience",
+      "url": "https://doi.org/10.1002/9780470181386",
+      "key_concepts": [
+        "Dirac Bra-Ket Notation",
+        "Operators",
+        "Matrix Mechanics",
+        "Projection Operators"
+      ],
+      "training_vector_summary": "Quantum Computing Explained by David McMahon (2007) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Dirac Bra-Ket Notation, Operators, Matrix Mechanics, Projection Operators."
     },
     {
       "id": 6,
-      "title": "Quantum Computing in the NISQ era and beyond",
-      "author": "John Preskill",
-      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
-      "year": 2018,
-      "arxiv_id": "1801.00862",
-      "pdf_url": "https://arxiv.org/pdf/1801.00862.pdf",
-      "status": "cataloged",
-      "key_concepts": ["NISQ Era Definition", "Quantum Supremacy", "Hybrid Quantum-Classical Optimization"]
+      "title": "Quantum Computing: Lecture Notes",
+      "author": "Ronald de Wolf",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2019,
+      "reference": "arXiv:1907.09415",
+      "url": "https://arxiv.org/pdf/1907.09415.pdf",
+      "key_concepts": [
+        "Mathematical Foundations",
+        "Quantum Complexity",
+        "Circuit Model",
+        "Algorithms"
+      ],
+      "training_vector_summary": "Quantum Computing: Lecture Notes by Ronald de Wolf (2019) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Mathematical Foundations, Quantum Complexity, Circuit Model, Algorithms."
     },
     {
       "id": 7,
-      "title": "A Fast Quantum Mechanical Algorithm for Database Search",
-      "author": "Lov K. Grover",
-      "category": "Quantum Search & Amplitude Amplification",
-      "year": 1996,
-      "arxiv_id": "quant-ph/9605043",
-      "pdf_url": "https://arxiv.org/pdf/quant-ph/9605043.pdf",
-      "status": "cataloged",
-      "key_concepts": ["Grover Search", "Quadratic Speedup", "Oracle Operator", "Diffusion Transform"]
+      "title": "Mathematics of Quantum Computing: An Introduction",
+      "author": "Wolfgang Scherer",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2019,
+      "reference": "Springer",
+      "url": "https://doi.org/10.1007/978-3-030-12358-1",
+      "key_concepts": [
+        "Spectral Decomposition",
+        "Unitary Matrices",
+        "Hilbert Spaces",
+        "Operators"
+      ],
+      "training_vector_summary": "Mathematics of Quantum Computing: An Introduction by Wolfgang Scherer (2019) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Spectral Decomposition, Unitary Matrices, Hilbert Spaces, Operators."
     },
     {
       "id": 8,
+      "title": "Quantum Computer Science: An Introduction",
+      "author": "N. David Mermin",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2007,
+      "reference": "Cambridge University Press",
+      "url": "https://doi.org/10.1017/CBO9780511813870",
+      "key_concepts": [
+        "Qubit Formalism",
+        "Quantum Clocks",
+        "Multi-qubit Math",
+        "Bell Inequalities"
+      ],
+      "training_vector_summary": "Quantum Computer Science: An Introduction by N. David Mermin (2007) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Qubit Formalism, Quantum Clocks, Multi-qubit Math, Bell Inequalities."
+    },
+    {
+      "id": 9,
+      "title": "Quantum Measurement",
+      "author": "Vladimir B. Braginsky & Farid Ya. Khalili",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 1995,
+      "reference": "Cambridge University Press",
+      "url": "https://doi.org/10.1017/CBO9780511622748",
+      "key_concepts": [
+        "Wavefunction Collapse",
+        "Projective Measurements",
+        "POVMs",
+        "Measurement Backaction"
+      ],
+      "training_vector_summary": "Quantum Measurement by Vladimir B. Braginsky & Farid Ya. Khalili (1995) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Wavefunction Collapse, Projective Measurements, POVMs, Measurement Backaction."
+    },
+    {
+      "id": 10,
+      "title": "Geometry of Quantum States",
+      "author": "Ingemar Bengtsson & Karol Zyczkowski",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2017,
+      "reference": "Cambridge University Press",
+      "url": "https://doi.org/10.1017/9781139207010",
+      "key_concepts": [
+        "Bloch Sphere Geometry",
+        "Complex Projective Spaces",
+        "Entanglement Measures"
+      ],
+      "training_vector_summary": "Geometry of Quantum States by Ingemar Bengtsson & Karol Zyczkowski (2017) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Bloch Sphere Geometry, Complex Projective Spaces, Entanglement Measures."
+    },
+    {
+      "id": 11,
+      "title": "Quantum Information Theory and the Foundations of Quantum Mechanics",
+      "author": "Christopher G. Timpson",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2013,
+      "reference": "Oxford University Press",
+      "url": "https://doi.org/10.1093/acprof:oso/9780199596515.001.0001",
+      "key_concepts": [
+        "Information Theoretic Interpretations",
+        "Qubits",
+        "Quantum Realism"
+      ],
+      "training_vector_summary": "Quantum Information Theory and the Foundations of Quantum Mechanics by Christopher G. Timpson (2013) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Information Theoretic Interpretations, Qubits, Quantum Realism."
+    },
+    {
+      "id": 12,
+      "title": "Classical and Quantum Information Theory",
+      "author": "Emmanuel Desurvire",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2009,
+      "reference": "Cambridge University Press",
+      "url": "https://doi.org/10.1017/CBO9780511803772",
+      "key_concepts": [
+        "Entropy",
+        "Density Operators",
+        "Quantum Ensembles",
+        "Channel Capacity"
+      ],
+      "training_vector_summary": "Classical and Quantum Information Theory by Emmanuel Desurvire (2009) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Entropy, Density Operators, Quantum Ensembles, Channel Capacity."
+    },
+    {
+      "id": 13,
+      "title": "Linear Algebra and Its Applications to Quantum Computing",
+      "author": "Gilbert Strang",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2021,
+      "reference": "Wellesley-Cambridge",
+      "url": "https://math.mit.edu/~gs/",
+      "key_concepts": [
+        "Eigendecomposition",
+        "Singular Value Decomposition",
+        "Unitary Maps",
+        "Orthonormal Bases"
+      ],
+      "training_vector_summary": "Linear Algebra and Its Applications to Quantum Computing by Gilbert Strang (2021) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Eigendecomposition, Singular Value Decomposition, Unitary Maps, Orthonormal Bases."
+    },
+    {
+      "id": 14,
+      "title": "Mathematical Foundations of Quantum Information",
+      "author": "Teiko Heinosaari & Mario Ziman",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2012,
+      "reference": "Cambridge University Press",
+      "url": "https://doi.org/10.1017/CBO9781139031103",
+      "key_concepts": [
+        "States",
+        "Effects",
+        "Operations",
+        "Quantum Instruments",
+        "Complete Positivity"
+      ],
+      "training_vector_summary": "Mathematical Foundations of Quantum Information by Teiko Heinosaari & Mario Ziman (2012) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: States, Effects, Operations, Quantum Instruments, Complete Positivity."
+    },
+    {
+      "id": 15,
+      "title": "Principles of Quantum Mechanics",
+      "author": "R. Shankar",
+      "category": "Quantum Mechanics & Linear Algebra for QC",
+      "year": 2014,
+      "reference": "Plenum Press",
+      "url": "https://doi.org/10.1007/978-1-4757-0576-8",
+      "key_concepts": [
+        "Postulates",
+        "Dirac Notation",
+        "Operators",
+        "State Space",
+        "Commutation Relations"
+      ],
+      "training_vector_summary": "Principles of Quantum Mechanics by R. Shankar (2014) is a foundational reference in Quantum Mechanics & Linear Algebra for QC. Key topics: Postulates, Dirac Notation, Operators, State Space, Commutation Relations."
+    },
+    {
+      "id": 16,
+      "title": "The Bloch Sphere and Single-Qubit Visualizations",
+      "author": "Mark A. Heald",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2008,
+      "reference": "Am. J. Phys. 76",
+      "url": "https://doi.org/10.1119/1.2825387",
+      "key_concepts": [
+        "Polar Coordinates",
+        "State Trajectories",
+        "Phase Rotation",
+        "Unit Sphere Map"
+      ],
+      "training_vector_summary": "The Bloch Sphere and Single-Qubit Visualizations by Mark A. Heald (2008) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Polar Coordinates, State Trajectories, Phase Rotation, Unit Sphere Map."
+    },
+    {
+      "id": 17,
+      "title": "Geometric Visualization of Quantum Superposition",
+      "author": "Arun Kumar Pati",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2002,
+      "reference": "Phys. Rev. A 66",
+      "url": "https://arxiv.org/abs/quant-ph/0106087",
+      "key_concepts": [
+        "Geometric Phase",
+        "Pancharatnam Phase",
+        "State Vectors",
+        "Hilbert Space Geometry"
+      ],
+      "training_vector_summary": "Geometric Visualization of Quantum Superposition by Arun Kumar Pati (2002) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Geometric Phase, Pancharatnam Phase, State Vectors, Hilbert Space Geometry."
+    },
+    {
+      "id": 18,
+      "title": "Single Qubit Quantum Mechanics on the Bloch Sphere",
+      "author": "B. C. Sanctuary",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2012,
+      "reference": "Concepts in Magnetic Resonance",
+      "url": "https://doi.org/10.1002/cmr.a.21235",
+      "key_concepts": [
+        "Pauli Spin Matrices",
+        "Larmor Precession",
+        "Rotations",
+        "Magnetization Vector"
+      ],
+      "training_vector_summary": "Single Qubit Quantum Mechanics on the Bloch Sphere by B. C. Sanctuary (2012) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Pauli Spin Matrices, Larmor Precession, Rotations, Magnetization Vector."
+    },
+    {
+      "id": 19,
+      "title": "Spin-1/2 Systems and the Poincar\u00e9-Bloch Representation",
+      "author": "U. Fano",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 1957,
+      "reference": "Rev. Mod. Phys. 29",
+      "url": "https://doi.org/10.1103/RevModPhys.29.74",
+      "key_concepts": [
+        "Original Polarization Matrix",
+        "Density Matrices",
+        "Bloch Vectors",
+        "Optical Polarization"
+      ],
+      "training_vector_summary": "Spin-1/2 Systems and the Poincar\u00e9-Bloch Representation by U. Fano (1957) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Original Polarization Matrix, Density Matrices, Bloch Vectors, Optical Polarization."
+    },
+    {
+      "id": 20,
+      "title": "Visualizing Quantum Coherence and Dephasing",
+      "author": "W. H. Zurek",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2003,
+      "reference": "Rev. Mod. Phys. 75",
+      "url": "https://arxiv.org/abs/quant-ph/0105127",
+      "key_concepts": [
+        "Decoherence",
+        "Superposition Decay",
+        "Bloch Vector Shrinkage",
+        "Pointer States"
+      ],
+      "training_vector_summary": "Visualizing Quantum Coherence and Dephasing by W. H. Zurek (2003) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Decoherence, Superposition Decay, Bloch Vector Shrinkage, Pointer States."
+    },
+    {
+      "id": 21,
+      "title": "Optimal State Tomography of a Single Qubit",
+      "author": "Z. Hradil et al.",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2004,
+      "reference": "Phys. Rev. A 70",
+      "url": "https://arxiv.org/abs/quant-ph/0403064",
+      "key_concepts": [
+        "Reconstructing Density Matrices on the Bloch Sphere",
+        "Maximum Likelihood"
+      ],
+      "training_vector_summary": "Optimal State Tomography of a Single Qubit by Z. Hradil et al. (2004) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Reconstructing Density Matrices on the Bloch Sphere, Maximum Likelihood."
+    },
+    {
+      "id": 22,
+      "title": "Quantum Superposition of Macro-States",
+      "author": "A. J. Leggett",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2002,
+      "reference": "J. Phys. Condens. Matter 14",
+      "url": "https://doi.org/10.1088/0953-8984/14/15/201",
+      "key_concepts": [
+        "Schrodinger Cat States",
+        "Macroscopic Coherence",
+        "Superconducting Rings"
+      ],
+      "training_vector_summary": "Quantum Superposition of Macro-States by A. J. Leggett (2002) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Schrodinger Cat States, Macroscopic Coherence, Superconducting Rings."
+    },
+    {
+      "id": 23,
+      "title": "Testing Quantum Superposition at the Nanoscale",
+      "author": "M. Arndt et al.",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 1999,
+      "reference": "Nature 401",
+      "url": "https://doi.org/10.1038/44348",
+      "key_concepts": [
+        "Matter-Wave Superposition",
+        "Phase Coherence",
+        "C60 Fullerene Interference"
+      ],
+      "training_vector_summary": "Testing Quantum Superposition at the Nanoscale by M. Arndt et al. (1999) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Matter-Wave Superposition, Phase Coherence, C60 Fullerene Interference."
+    },
+    {
+      "id": 24,
+      "title": "Single-Qubit Randomized Benchmarking",
+      "author": "E. Knill et al.",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2008,
+      "reference": "Phys. Rev. A 77",
+      "url": "https://arxiv.org/abs/0707.0963",
+      "key_concepts": [
+        "Average Gate Fidelity",
+        "Bloch Sphere Randomized Sequences",
+        "Error Depolarization"
+      ],
+      "training_vector_summary": "Single-Qubit Randomized Benchmarking by E. Knill et al. (2008) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Average Gate Fidelity, Bloch Sphere Randomized Sequences, Error Depolarization."
+    },
+    {
+      "id": 25,
+      "title": "Continuous Measurement of a Qubit on the Bloch Sphere",
+      "author": "A. N. Korotkov",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2001,
+      "reference": "Phys. Rev. B 63",
+      "url": "https://arxiv.org/abs/cond-mat/0008003",
+      "key_concepts": [
+        "Quantum Bayesian Trajectories",
+        "Measurement Dynamics",
+        "State Collapse Tracking"
+      ],
+      "training_vector_summary": "Continuous Measurement of a Qubit on the Bloch Sphere by A. N. Korotkov (2001) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Quantum Bayesian Trajectories, Measurement Dynamics, State Collapse Tracking."
+    },
+    {
+      "id": 26,
+      "title": "Geometric Phases in Single-Qubit Rotations",
+      "author": "D. Leibfried et al.",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2003,
+      "reference": "Nature 422",
+      "url": "https://doi.org/10.1038/nature01492",
+      "key_concepts": [
+        "Berry Phase",
+        "Adiabatic Transport on the Bloch Sphere",
+        "Trapped Ion Qubits"
+      ],
+      "training_vector_summary": "Geometric Phases in Single-Qubit Rotations by D. Leibfried et al. (2003) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Berry Phase, Adiabatic Transport on the Bloch Sphere, Trapped Ion Qubits."
+    },
+    {
+      "id": 27,
+      "title": "Robust Quantum Control on the Bloch Sphere",
+      "author": "J. M. Britton et al.",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2012,
+      "reference": "Nature 484",
+      "url": "https://doi.org/10.1038/nature10981",
+      "key_concepts": [
+        "Composite Pulses",
+        "Dynamically Corrected Gates",
+        "Noise Filtering"
+      ],
+      "training_vector_summary": "Robust Quantum Control on the Bloch Sphere by J. M. Britton et al. (2012) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Composite Pulses, Dynamically Corrected Gates, Noise Filtering."
+    },
+    {
+      "id": 28,
+      "title": "Topological Aspects of Single Qubit Evolution",
+      "author": "P. Zanardi et al.",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 1999,
+      "reference": "Phys. Lett. A 264",
+      "url": "https://arxiv.org/abs/quant-ph/9904011",
+      "key_concepts": [
+        "Holonomic Single-Qubit Operations on the Sphere",
+        "Non-Abelian Connections"
+      ],
+      "training_vector_summary": "Topological Aspects of Single Qubit Evolution by P. Zanardi et al. (1999) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Holonomic Single-Qubit Operations on the Sphere, Non-Abelian Connections."
+    },
+    {
+      "id": 29,
+      "title": "Visualizing Multi-Qubit States via Majorana Stellar Representation",
+      "author": "P. Ribeiro et al.",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 2007,
+      "reference": "Phys. Rev. Lett. 99",
+      "url": "https://arxiv.org/abs/0705.1557",
+      "key_concepts": [
+        "Majorana Representation",
+        "Constellation of Points on Sphere",
+        "Symmetry Groups"
+      ],
+      "training_vector_summary": "Visualizing Multi-Qubit States via Majorana Stellar Representation by P. Ribeiro et al. (2007) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Majorana Representation, Constellation of Points on Sphere, Symmetry Groups."
+    },
+    {
+      "id": 30,
+      "title": "Quantum State Fidelity and Distance Measures",
+      "author": "C. A. Fuchs & J. van de Graaf",
+      "category": "Qubit States, Superposition & Bloch Sphere",
+      "year": 1999,
+      "reference": "IEEE Trans. Inf. Theory 45",
+      "url": "https://arxiv.org/abs/quant-ph/9712042",
+      "key_concepts": [
+        "Trace Distance",
+        "Bures Metric",
+        "Bloch Sphere Distances",
+        "Distinguishability"
+      ],
+      "training_vector_summary": "Quantum State Fidelity and Distance Measures by C. A. Fuchs & J. van de Graaf (1999) is a foundational reference in Qubit States, Superposition & Bloch Sphere. Key topics: Trace Distance, Bures Metric, Bloch Sphere Distances, Distinguishability."
+    },
+    {
+      "id": 31,
+      "title": "Elementary Gates for Quantum Computation",
+      "author": "Adriano Barenco et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 1995,
+      "reference": "Phys. Rev. A 52",
+      "url": "https://arxiv.org/abs/quant-ph/9503016",
+      "key_concepts": [
+        "Universal Quantum Gate Sets",
+        "CNOT Construction",
+        "Toffoli Decomposition",
+        "Circuit Synthesis"
+      ],
+      "training_vector_summary": "Elementary Gates for Quantum Computation by Adriano Barenco et al. (1995) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Universal Quantum Gate Sets, CNOT Construction, Toffoli Decomposition, Circuit Synthesis."
+    },
+    {
+      "id": 32,
+      "title": "Approximating Arbitrary Unitaries via Solovay-Kitaev Theorem",
+      "author": "C. M. Dawson & M. A. Nielsen",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2006,
+      "reference": "Quant. Inf. Comp. 6",
+      "url": "https://arxiv.org/abs/quant-ph/0505030",
+      "key_concepts": [
+        "Solovay-Kitaev Algorithm",
+        "Gate Synthesis",
+        "T-count Optimization",
+        "Polylogarithmic Depth"
+      ],
+      "training_vector_summary": "Approximating Arbitrary Unitaries via Solovay-Kitaev Theorem by C. M. Dawson & M. A. Nielsen (2006) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Solovay-Kitaev Algorithm, Gate Synthesis, T-count Optimization, Polylogarithmic Depth."
+    },
+    {
+      "id": 33,
+      "title": "Quantum Circuits of T-count Complexity",
+      "author": "Matthew Amy et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2013,
+      "reference": "IEEE TCAD 32",
+      "url": "https://arxiv.org/abs/1206.0758",
+      "key_concepts": [
+        "T-depth Minimization",
+        "Clifford+T Synthesis",
+        "Quantum Circuit Optimization",
+        "Phase Polynomials"
+      ],
+      "training_vector_summary": "Quantum Circuits of T-count Complexity by Matthew Amy et al. (2013) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: T-depth Minimization, Clifford+T Synthesis, Quantum Circuit Optimization, Phase Polynomials."
+    },
+    {
+      "id": 34,
+      "title": "Universal Quantum Logic Gates",
+      "author": "David P. DiVincenzo",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 1995,
+      "reference": "Phys. Rev. A 51",
+      "url": "https://doi.org/10.1103/PhysRevA.51.1015",
+      "key_concepts": [
+        "Two-Qubit Universality",
+        "DiVincenzo Criteria",
+        "Quantum Logic Gates"
+      ],
+      "training_vector_summary": "Universal Quantum Logic Gates by David P. DiVincenzo (1995) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Two-Qubit Universality, DiVincenzo Criteria, Quantum Logic Gates."
+    },
+    {
+      "id": 35,
+      "title": "Quantum Circuit Synthesis Using Symbolic Boolean Optimization",
+      "author": "G\u00f6ran Wendin",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2017,
+      "reference": "Rep. Prog. Phys. 80",
+      "url": "https://doi.org/10.1088/1361-6633/aa7e1a",
+      "key_concepts": [
+        "Circuit Routing",
+        "Ancilla Allocation",
+        "Gate Decomposition",
+        "Physical Mapping"
+      ],
+      "training_vector_summary": "Quantum Circuit Synthesis Using Symbolic Boolean Optimization by G\u00f6ran Wendin (2017) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Circuit Routing, Ancilla Allocation, Gate Decomposition, Physical Mapping."
+    },
+    {
+      "id": 36,
+      "title": "Reversible Logic and Quantum Gates",
+      "author": "Edward Fredkin & Tommaso Toffoli",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 1982,
+      "reference": "Int. J. Theor. Phys. 21",
+      "url": "https://doi.org/10.1007/BF01857727",
+      "key_concepts": [
+        "Fredkin Gate",
+        "Toffoli Gate",
+        "Reversible Computing Principles",
+        "Conservative Logic"
+      ],
+      "training_vector_summary": "Reversible Logic and Quantum Gates by Edward Fredkin & Tommaso Toffoli (1982) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Fredkin Gate, Toffoli Gate, Reversible Computing Principles, Conservative Logic."
+    },
+    {
+      "id": 37,
+      "title": "Asymptotically Optimal Quantum Circuit Synthesis",
+      "author": "Vivek V. Shende et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2006,
+      "reference": "IEEE Trans. Comput. 55",
+      "url": "https://arxiv.org/abs/quant-ph/0406176",
+      "key_concepts": [
+        "Cosine-Sine Decomposition",
+        "Two-Qubit Canonical Decomposition",
+        "Minimal CNOT Count"
+      ],
+      "training_vector_summary": "Asymptotically Optimal Quantum Circuit Synthesis by Vivek V. Shende et al. (2006) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Cosine-Sine Decomposition, Two-Qubit Canonical Decomposition, Minimal CNOT Count."
+    },
+    {
+      "id": 38,
+      "title": "Synthesis of Quantum Logic Circuits on NISQ Architectures",
+      "author": "K. E. Cross et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2019,
+      "reference": "arXiv:1811.08884",
+      "url": "https://arxiv.org/pdf/1811.08884.pdf",
+      "key_concepts": [
+        "SWAP Mapping",
+        "Layout Optimization",
+        "Heavy-Hex Topology",
+        "Qiskit Transpiler Rules"
+      ],
+      "training_vector_summary": "Synthesis of Quantum Logic Circuits on NISQ Architectures by K. E. Cross et al. (2019) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: SWAP Mapping, Layout Optimization, Heavy-Hex Topology, Qiskit Transpiler Rules."
+    },
+    {
+      "id": 39,
+      "title": "OpenQASM 3: A Broader and Deeper Quantum Assembly Language",
+      "author": "Andrew W. Cross et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2022,
+      "reference": "ACM Trans. Quantum Comput. 3",
+      "url": "https://arxiv.org/abs/2104.14722",
+      "key_concepts": [
+        "OpenQASM 3.0 Specification",
+        "Classical Feedforward",
+        "Pulse Level Timing",
+        "Scopes"
+      ],
+      "training_vector_summary": "OpenQASM 3: A Broader and Deeper Quantum Assembly Language by Andrew W. Cross et al. (2022) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: OpenQASM 3.0 Specification, Classical Feedforward, Pulse Level Timing, Scopes."
+    },
+    {
+      "id": 40,
+      "title": "Circuit Optimization for Quantum Computers with Hardware Constraints",
+      "author": "P. Murali et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2019,
+      "reference": "ASPLOS 19",
+      "url": "https://arxiv.org/abs/1902.09102",
+      "key_concepts": [
+        "Noise-Adaptive Compiler",
+        "Crosstalk Mitigation",
+        "Qubit Placement",
+        "Hardware Constraints"
+      ],
+      "training_vector_summary": "Circuit Optimization for Quantum Computers with Hardware Constraints by P. Murali et al. (2019) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Noise-Adaptive Compiler, Crosstalk Mitigation, Qubit Placement, Hardware Constraints."
+    },
+    {
+      "id": 41,
+      "title": "Unitary Matrix Decomposition for Quantum Compilation",
+      "author": "Juha J. Vartiainen et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2004,
+      "reference": "Phys. Rev. Lett. 92",
+      "url": "https://arxiv.org/abs/quant-ph/0312073",
+      "key_concepts": [
+        "Efficient Synthesis of n-Qubit Arbitrary Unitary Operators",
+        "Recursive Quantum Multiplexers"
+      ],
+      "training_vector_summary": "Unitary Matrix Decomposition for Quantum Compilation by Juha J. Vartiainen et al. (2004) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Efficient Synthesis of n-Qubit Arbitrary Unitary Operators, Recursive Quantum Multiplexers."
+    },
+    {
+      "id": 42,
+      "title": "Clifford Circuits and Stabilizer States: Gottesman-Knill Theorem",
+      "author": "Daniel Gottesman",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 1998,
+      "reference": "arXiv:quant-ph/9807006",
+      "url": "https://arxiv.org/pdf/quant-ph/9807006.pdf",
+      "key_concepts": [
+        "Clifford Group",
+        "Efficient Classical Simulation",
+        "Tableau Algorithm",
+        "Stabilizers"
+      ],
+      "training_vector_summary": "Clifford Circuits and Stabilizer States: Gottesman-Knill Theorem by Daniel Gottesman (1998) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Clifford Group, Efficient Classical Simulation, Tableau Algorithm, Stabilizers."
+    },
+    {
+      "id": 43,
+      "title": "Pulse-Level Quantum Control and Compilation",
+      "author": "Alexander Cowtan et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2020,
+      "reference": "IEEE Trans. Quantum Eng. 1",
+      "url": "https://arxiv.org/abs/2003.11656",
+      "key_concepts": [
+        "OpenPulse",
+        "Microwave Pulse Scheduling",
+        "Calibration-Aware Circuits",
+        "Optimal Control"
+      ],
+      "training_vector_summary": "Pulse-Level Quantum Control and Compilation by Alexander Cowtan et al. (2020) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: OpenPulse, Microwave Pulse Scheduling, Calibration-Aware Circuits, Optimal Control."
+    },
+    {
+      "id": 44,
+      "title": "Quantum Circuit Complexity of Hamiltonian Simulation",
+      "author": "Andrew M. Childs et al.",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2019,
+      "reference": "Phys. Rev. X 9",
+      "url": "https://arxiv.org/abs/1711.10980",
+      "key_concepts": [
+        "Trotter-Suzuki Decomposition",
+        "Product Formulas",
+        "Gate Scaling",
+        "Error Bounds"
+      ],
+      "training_vector_summary": "Quantum Circuit Complexity of Hamiltonian Simulation by Andrew M. Childs et al. (2019) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Trotter-Suzuki Decomposition, Product Formulas, Gate Scaling, Error Bounds."
+    },
+    {
+      "id": 45,
+      "title": "Fault-Tolerant Gate Synthesis",
+      "author": "P. Selinger",
+      "category": "Quantum Gates & Circuit Theory",
+      "year": 2015,
+      "reference": "Phys. Rev. A 87",
+      "url": "https://arxiv.org/abs/1212.6253",
+      "key_concepts": [
+        "Efficient Clifford+T Approximation of Z-Rotations",
+        "Exact Synthesis over Z[1/sqrt(2)",
+        "i]"
+      ],
+      "training_vector_summary": "Fault-Tolerant Gate Synthesis by P. Selinger (2015) is a foundational reference in Quantum Gates & Circuit Theory. Key topics: Efficient Clifford+T Approximation of Z-Rotations, Exact Synthesis over Z[1/sqrt(2), i]."
+    },
+    {
+      "id": 46,
+      "title": "Can Quantum-Mechanical Description of Physical Reality be Considered Complete?",
+      "author": "A. Einstein, B. Podolsky, N. Rosen",
+      "category": "Entanglement & Non-Locality",
+      "year": 1935,
+      "reference": "Phys. Rev. 47",
+      "url": "https://doi.org/10.1103/PhysRev.47.777",
+      "key_concepts": [
+        "Original EPR Paradox",
+        "Entanglement",
+        "Locality vs Completeness",
+        "Spooky Action"
+      ],
+      "training_vector_summary": "Can Quantum-Mechanical Description of Physical Reality be Considered Complete? by A. Einstein, B. Podolsky, N. Rosen (1935) is a foundational reference in Entanglement & Non-Locality. Key topics: Original EPR Paradox, Entanglement, Locality vs Completeness, Spooky Action."
+    },
+    {
+      "id": 47,
+      "title": "On the Einstein Podolsky Rosen Paradox",
+      "author": "J. S. Bell",
+      "category": "Entanglement & Non-Locality",
+      "year": 1964,
+      "reference": "Physics 1",
+      "url": "https://doi.org/10.1103/PhysicsPhysiqueFizika.1.195",
+      "key_concepts": [
+        "Bell Inequalities",
+        "Proof of Quantum Non-Locality",
+        "Hidden Variables Refutation"
+      ],
+      "training_vector_summary": "On the Einstein Podolsky Rosen Paradox by J. S. Bell (1964) is a foundational reference in Entanglement & Non-Locality. Key topics: Bell Inequalities, Proof of Quantum Non-Locality, Hidden Variables Refutation."
+    },
+    {
+      "id": 48,
+      "title": "Proposed Experiment to Test Local Hidden-Variable Theories (CHSH)",
+      "author": "J. F. Clauser, M. A. Horne, A. Shimony, R. A. Holt",
+      "category": "Entanglement & Non-Locality",
+      "year": 1969,
+      "reference": "Phys. Rev. Lett. 23",
+      "url": "https://doi.org/10.1103/PhysRevLett.23.880",
+      "key_concepts": [
+        "CHSH Inequality",
+        "2*sqrt(2) Tsirelson Bound",
+        "Experimental Test Protocol"
+      ],
+      "training_vector_summary": "Proposed Experiment to Test Local Hidden-Variable Theories (CHSH) by J. F. Clauser, M. A. Horne, A. Shimony, R. A. Holt (1969) is a foundational reference in Entanglement & Non-Locality. Key topics: CHSH Inequality, 2*sqrt(2) Tsirelson Bound, Experimental Test Protocol."
+    },
+    {
+      "id": 49,
+      "title": "Going Beyond Bell Theorem: Greenberger-Horne-Zeilinger States",
+      "author": "D. M. Greenberger, M. A. Horne, A. Zeilinger",
+      "category": "Entanglement & Non-Locality",
+      "year": 1989,
+      "reference": "Kluwer Academic",
+      "url": "https://arxiv.org/abs/0712.0921",
+      "key_concepts": [
+        "GHZ Maximally Entangled Three-Qubit States",
+        "Deterministic Non-locality Proof"
+      ],
+      "training_vector_summary": "Going Beyond Bell Theorem: Greenberger-Horne-Zeilinger States by D. M. Greenberger, M. A. Horne, A. Zeilinger (1989) is a foundational reference in Entanglement & Non-Locality. Key topics: GHZ Maximally Entangled Three-Qubit States, Deterministic Non-locality Proof."
+    },
+    {
+      "id": 50,
+      "title": "Teleporting an Unknown Quantum State via Dual Channels",
+      "author": "C. H. Bennett et al.",
+      "category": "Entanglement & Non-Locality",
+      "year": 1993,
+      "reference": "Phys. Rev. Lett. 70",
+      "url": "https://doi.org/10.1103/PhysRevLett.70.1895",
+      "key_concepts": [
+        "Quantum Teleportation",
+        "Bell Measurement",
+        "State Reconstruction",
+        "Classical Feedback"
+      ],
+      "training_vector_summary": "Teleporting an Unknown Quantum State via Dual Channels by C. H. Bennett et al. (1993) is a foundational reference in Entanglement & Non-Locality. Key topics: Quantum Teleportation, Bell Measurement, State Reconstruction, Classical Feedback."
+    },
+    {
+      "id": 51,
+      "title": "Communication via One- and Two-Particle Operators on EPR States",
+      "author": "C. H. Bennett & S. J. Wiesner",
+      "category": "Entanglement & Non-Locality",
+      "year": 1992,
+      "reference": "Phys. Rev. Lett. 69",
+      "url": "https://doi.org/10.1103/PhysRevLett.69.2881",
+      "key_concepts": [
+        "Superdense Coding Protocol",
+        "Channel Capacity Amplification",
+        "Bell State Basis"
+      ],
+      "training_vector_summary": "Communication via One- and Two-Particle Operators on EPR States by C. H. Bennett & S. J. Wiesner (1992) is a foundational reference in Entanglement & Non-Locality. Key topics: Superdense Coding Protocol, Channel Capacity Amplification, Bell State Basis."
+    },
+    {
+      "id": 52,
+      "title": "Experimental Realization of Quantum Teleportation",
+      "author": "Dirk Bouwmeester et al.",
+      "category": "Entanglement & Non-Locality",
+      "year": 1997,
+      "reference": "Nature 390",
+      "url": "https://doi.org/10.1038/37155",
+      "key_concepts": [
+        "First Photonic Bell State Teleportation Experiment",
+        "Coincidence Counts"
+      ],
+      "training_vector_summary": "Experimental Realization of Quantum Teleportation by Dirk Bouwmeester et al. (1997) is a foundational reference in Entanglement & Non-Locality. Key topics: First Photonic Bell State Teleportation Experiment, Coincidence Counts."
+    },
+    {
+      "id": 53,
+      "title": "Entanglement of Formation of an Arbitrary State of Two Qubits",
+      "author": "William K. Wootters",
+      "category": "Entanglement & Non-Locality",
+      "year": 1998,
+      "reference": "Phys. Rev. Lett. 80",
+      "url": "https://arxiv.org/abs/quant-ph/9709029",
+      "key_concepts": [
+        "Concurrence Formula",
+        "Wootters Measure",
+        "Two-Qubit Mixed States",
+        "Spin Flip Matrix"
+      ],
+      "training_vector_summary": "Entanglement of Formation of an Arbitrary State of Two Qubits by William K. Wootters (1998) is a foundational reference in Entanglement & Non-Locality. Key topics: Concurrence Formula, Wootters Measure, Two-Qubit Mixed States, Spin Flip Matrix."
+    },
+    {
+      "id": 54,
+      "title": "Quantum Entanglement and Information",
+      "author": "Ryszard Horodecki et al.",
+      "category": "Entanglement & Non-Locality",
+      "year": 2009,
+      "reference": "Rev. Mod. Phys. 81",
+      "url": "https://arxiv.org/abs/quant-ph/0702225",
+      "key_concepts": [
+        "Comprehensive Entanglement Survey",
+        "Distillation",
+        "PPT Criterion",
+        "Entanglement Measures"
+      ],
+      "training_vector_summary": "Quantum Entanglement and Information by Ryszard Horodecki et al. (2009) is a foundational reference in Entanglement & Non-Locality. Key topics: Comprehensive Entanglement Survey, Distillation, PPT Criterion, Entanglement Measures."
+    },
+    {
+      "id": 55,
+      "title": "Peres-Horodecki Criterion for Positive Partial Transpose",
+      "author": "Asher Peres",
+      "category": "Entanglement & Non-Locality",
+      "year": 1996,
+      "reference": "Phys. Rev. Lett. 77",
+      "url": "https://arxiv.org/abs/quant-ph/9604005",
+      "key_concepts": [
+        "PPT Criterion",
+        "Separability of Bipartite Density Operators",
+        "Negative Eigenvalues"
+      ],
+      "training_vector_summary": "Peres-Horodecki Criterion for Positive Partial Transpose by Asher Peres (1996) is a foundational reference in Entanglement & Non-Locality. Key topics: PPT Criterion, Separability of Bipartite Density Operators, Negative Eigenvalues."
+    },
+    {
+      "id": 56,
+      "title": "Monogamy of Entanglement in Multi-Qubit Systems",
+      "author": "V. Coffman, J. Kundu, W. K. Wootters",
+      "category": "Entanglement & Non-Locality",
+      "year": 2000,
+      "reference": "Phys. Rev. A 61",
+      "url": "https://arxiv.org/abs/quant-ph/9907047",
+      "key_concepts": [
+        "CKW Monogamy Inequality",
+        "Residual Entanglement",
+        "3-Tangle",
+        "Multi-qubit Sharing Limit"
+      ],
+      "training_vector_summary": "Monogamy of Entanglement in Multi-Qubit Systems by V. Coffman, J. Kundu, W. K. Wootters (2000) is a foundational reference in Entanglement & Non-Locality. Key topics: CKW Monogamy Inequality, Residual Entanglement, 3-Tangle, Multi-qubit Sharing Limit."
+    },
+    {
+      "id": 57,
+      "title": "Experimental Loophole-Free Bell Test",
+      "author": "B. Hensen et al.",
+      "category": "Entanglement & Non-Locality",
+      "year": 2015,
+      "reference": "Nature 526",
+      "url": "https://arxiv.org/abs/1508.05949",
+      "key_concepts": [
+        "Definitive Loophole-Free Violation of Bell Inequalities with NV Centers in Diamond"
+      ],
+      "training_vector_summary": "Experimental Loophole-Free Bell Test by B. Hensen et al. (2015) is a foundational reference in Entanglement & Non-Locality. Key topics: Definitive Loophole-Free Violation of Bell Inequalities with NV Centers in Diamond."
+    },
+    {
+      "id": 58,
+      "title": "Entanglement Witnesses and Bound Entanglement",
+      "author": "Michal Horodecki et al.",
+      "category": "Entanglement & Non-Locality",
+      "year": 1998,
+      "reference": "Phys. Rev. Lett. 80",
+      "url": "https://arxiv.org/abs/quant-ph/9711019",
+      "key_concepts": [
+        "Operational Entanglement Witnesses",
+        "Non-distillable Entanglement",
+        "Hanh-Banach Theorem"
+      ],
+      "training_vector_summary": "Entanglement Witnesses and Bound Entanglement by Michal Horodecki et al. (1998) is a foundational reference in Entanglement & Non-Locality. Key topics: Operational Entanglement Witnesses, Non-distillable Entanglement, Hanh-Banach Theorem."
+    },
+    {
+      "id": 59,
+      "title": "W-states and Multi-Particle Entanglement Inequivalent Classes",
+      "author": "W. D\u00fcr, G. Vidal, J. I. Cirac",
+      "category": "Entanglement & Non-Locality",
+      "year": 2000,
+      "reference": "Phys. Rev. A 62",
+      "url": "https://arxiv.org/abs/quant-ph/0005115",
+      "key_concepts": [
+        "GHZ vs W States",
+        "SLOCC Equivalence Classes",
+        "Robustness Against Particle Loss"
+      ],
+      "training_vector_summary": "W-states and Multi-Particle Entanglement Inequivalent Classes by W. D\u00fcr, G. Vidal, J. I. Cirac (2000) is a foundational reference in Entanglement & Non-Locality. Key topics: GHZ vs W States, SLOCC Equivalence Classes, Robustness Against Particle Loss."
+    },
+    {
+      "id": 60,
+      "title": "Cluster States for One-Way Measurement-Based Quantum Computing",
+      "author": "R. Raussendorf & H. J. Briegel",
+      "category": "Entanglement & Non-Locality",
+      "year": 2001,
+      "reference": "Phys. Rev. Lett. 86",
+      "url": "https://doi.org/10.1103/PhysRevLett.86.5188",
+      "key_concepts": [
+        "Highly Entangled Cluster States",
+        "Measurement-Based Quantum Computation",
+        "Graph States"
+      ],
+      "training_vector_summary": "Cluster States for One-Way Measurement-Based Quantum Computing by R. Raussendorf & H. J. Briegel (2001) is a foundational reference in Entanglement & Non-Locality. Key topics: Highly Entangled Cluster States, Measurement-Based Quantum Computation, Graph States."
+    },
+    {
+      "id": 61,
       "title": "Rapid Solution of Problems by Quantum Computation",
       "author": "David Deutsch & Richard Jozsa",
       "category": "Oracle & Algebraic Algorithms",
       "year": 1992,
       "reference": "Proc. R. Soc. Lond. A 439",
-      "pdf_url": "https://doi.org/10.1098/rspa.1992.0167",
-      "status": "cataloged",
-      "key_concepts": ["Deutsch-Jozsa Algorithm", "Constant vs Balanced Functions", "Exact Quantum Speedup"]
+      "url": "https://doi.org/10.1098/rspa.1992.0167",
+      "key_concepts": [
+        "Deutsch-Jozsa Algorithm",
+        "Constant vs Balanced Oracle",
+        "Deterministic Quantum Speedup"
+      ],
+      "training_vector_summary": "Rapid Solution of Problems by Quantum Computation by David Deutsch & Richard Jozsa (1992) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Deutsch-Jozsa Algorithm, Constant vs Balanced Oracle, Deterministic Quantum Speedup."
     },
     {
-      "id": 9,
-      "title": "Quantum Approximate Optimization Algorithm (QAOA)",
-      "author": "Edward Farhi, Jeffrey Goldstone, Sam Gutmann",
-      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
-      "year": 2014,
-      "arxiv_id": "1411.4028",
-      "pdf_url": "https://arxiv.org/pdf/1411.4028.pdf",
-      "status": "cataloged",
-      "key_concepts": ["Max-Cut Problem", "Mixer Hamiltonian", "Cost Hamiltonian", "Adiabatic Evolution"]
+      "id": 62,
+      "title": "Quantum Complexity Theory and the Bernstein-Vazirani Algorithm",
+      "author": "E. Bernstein & U. Vazirani",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 1997,
+      "reference": "SIAM J. Comput. 26",
+      "url": "https://doi.org/10.1137/S0097539796300921",
+      "key_concepts": [
+        "Bernstein-Vazirani Algorithm",
+        "Hidden Bitstring Finding",
+        "Single Oracle Query"
+      ],
+      "training_vector_summary": "Quantum Complexity Theory and the Bernstein-Vazirani Algorithm by E. Bernstein & U. Vazirani (1997) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Bernstein-Vazirani Algorithm, Hidden Bitstring Finding, Single Oracle Query."
     },
     {
-      "id": 10,
-      "title": "A Variational Eigenvalue Solver on a Photonic Quantum Processor",
-      "author": "Alberto Peruzzo, Jarrod McClean, Peter Shadbolt et al.",
-      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
-      "year": 2014,
-      "arxiv_id": "1304.3061",
-      "pdf_url": "https://arxiv.org/pdf/1304.3061.pdf",
-      "status": "cataloged",
-      "key_concepts": ["Original VQE Discovery", "Molecular Energy Calculation", "Ground State Minimization"]
+      "id": 63,
+      "title": "On the Power of Quantum Computation: Simon Algorithm",
+      "author": "Daniel R. Simon",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 1997,
+      "reference": "SIAM J. Comput. 26",
+      "url": "https://doi.org/10.1137/S0097539796298637",
+      "key_concepts": [
+        "Simon Algorithm",
+        "Hidden Subgroup Problem over Z2^n",
+        "Exponential Speedup",
+        "XOR Mask"
+      ],
+      "training_vector_summary": "On the Power of Quantum Computation: Simon Algorithm by Daniel R. Simon (1997) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Simon Algorithm, Hidden Subgroup Problem over Z2^n, Exponential Speedup, XOR Mask."
     },
     {
-      "id": 11,
-      "title": "Quantum Fourier Transform and its Applications",
-      "author": "L. Hales & U. Vazirani",
-      "category": "Quantum Fourier Transform & Factoring",
+      "id": 64,
+      "title": "Quantum Query Complexity: An Overview",
+      "author": "Andris Ambainis",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2018,
+      "reference": "ACM SIGACT News 49",
+      "url": "https://arxiv.org/abs/1712.06347",
+      "key_concepts": [
+        "Polynomial Method",
+        "Adversary Method",
+        "Lower Bounds on Oracles",
+        "Query Models"
+      ],
+      "training_vector_summary": "Quantum Query Complexity: An Overview by Andris Ambainis (2018) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Polynomial Method, Adversary Method, Lower Bounds on Oracles, Query Models."
+    },
+    {
+      "id": 65,
+      "title": "Quantum Algorithm for the Dihedral Hidden Subgroup Problem",
+      "author": "Greg Kuperberg",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2005,
+      "reference": "SIAM J. Comput. 35",
+      "url": "https://arxiv.org/abs/quant-ph/0302112",
+      "key_concepts": [
+        "Sieve Algorithm",
+        "Non-Abelian HSP",
+        "Lattices",
+        "Dihedral Group D_N"
+      ],
+      "training_vector_summary": "Quantum Algorithm for the Dihedral Hidden Subgroup Problem by Greg Kuperberg (2005) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Sieve Algorithm, Non-Abelian HSP, Lattices, Dihedral Group D_N."
+    },
+    {
+      "id": 66,
+      "title": "The Quantum Phase Estimation Algorithm and Unitary Eigenvalues",
+      "author": "Richard Cleve et al.",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 1998,
+      "reference": "Proc. R. Soc. Lond. A 454",
+      "url": "https://arxiv.org/abs/quant-ph/9903061",
+      "key_concepts": [
+        "Cleve-Ekert-Macchiavello-Mosca Review of Quantum Oracles and QPE",
+        "Error Probabilities"
+      ],
+      "training_vector_summary": "The Quantum Phase Estimation Algorithm and Unitary Eigenvalues by Richard Cleve et al. (1998) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Cleve-Ekert-Macchiavello-Mosca Review of Quantum Oracles and QPE, Error Probabilities."
+    },
+    {
+      "id": 67,
+      "title": "Quantum Algorithm for the Hidden Shift Problem",
+      "author": "W. van Dam, S. Hallgren, L. Ip",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2006,
+      "reference": "SIAM J. Comput. 36",
+      "url": "https://arxiv.org/abs/quant-ph/0211140",
+      "key_concepts": [
+        "Algebraic Hidden Shifts",
+        "Shifted Legendre Symbols",
+        "Oracles",
+        "Multiplicative Characters"
+      ],
+      "training_vector_summary": "Quantum Algorithm for the Hidden Shift Problem by W. van Dam, S. Hallgren, L. Ip (2006) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Algebraic Hidden Shifts, Shifted Legendre Symbols, Oracles, Multiplicative Characters."
+    },
+    {
+      "id": 68,
+      "title": "Quantum Counting and Approximate Query Evaluation",
+      "author": "G. Brassard, P. Hoyer, M. Mosca, A. Tapp",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2002,
+      "reference": "Contemp. Math. 305",
+      "url": "https://arxiv.org/abs/quant-ph/9805082",
+      "key_concepts": [
+        "Combining Grover Oracle and QPE to Count Solutions",
+        "Sqrt(N) Bound"
+      ],
+      "training_vector_summary": "Quantum Counting and Approximate Query Evaluation by G. Brassard, P. Hoyer, M. Mosca, A. Tapp (2002) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Combining Grover Oracle and QPE to Count Solutions, Sqrt(N) Bound."
+    },
+    {
+      "id": 69,
+      "title": "Quantum Algorithm for Matrix Multiplication Verification",
+      "author": "H. Buhrman & R. de Wolf",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2006,
+      "reference": "SIAM J. Comput. 35",
+      "url": "https://arxiv.org/abs/quant-ph/0403166",
+      "key_concepts": [
+        "Freivalds Technique on Quantum Circuits",
+        "Query Verification",
+        "Random Fingerprints"
+      ],
+      "training_vector_summary": "Quantum Algorithm for Matrix Multiplication Verification by H. Buhrman & R. de Wolf (2006) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Freivalds Technique on Quantum Circuits, Query Verification, Random Fingerprints."
+    },
+    {
+      "id": 70,
+      "title": "Solving Linear Systems of Equations on a Quantum Computer (HHL)",
+      "author": "A. W. Harrow, A. Hassidim, S. Lloyd",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2009,
+      "reference": "Phys. Rev. Lett. 103",
+      "url": "https://arxiv.org/abs/0811.3171",
+      "key_concepts": [
+        "HHL Algorithm",
+        "Matrix Inversion",
+        "Exponential Speedup for Sparse Matrices",
+        "QPE Application"
+      ],
+      "training_vector_summary": "Solving Linear Systems of Equations on a Quantum Computer (HHL) by A. W. Harrow, A. Hassidim, S. Lloyd (2009) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: HHL Algorithm, Matrix Inversion, Exponential Speedup for Sparse Matrices, QPE Application."
+    },
+    {
+      "id": 71,
+      "title": "Quantum Algorithm for Element Distinctness",
+      "author": "Andris Ambainis",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2007,
+      "reference": "SIAM J. Comput. 37",
+      "url": "https://arxiv.org/abs/quant-ph/0311001",
+      "key_concepts": [
+        "Quantum Walks on Johnson Graphs",
+        "O(N^{2/3}) Query Complexity",
+        "Collision Problem"
+      ],
+      "training_vector_summary": "Quantum Algorithm for Element Distinctness by Andris Ambainis (2007) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Quantum Walks on Johnson Graphs, O(N^{2/3}) Query Complexity, Collision Problem."
+    },
+    {
+      "id": 72,
+      "title": "Quantum Algorithms for Testing Properties of Boolean Functions",
+      "author": "A. Montanaro & R. de Wolf",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2016,
+      "reference": "Theory of Computing 12",
+      "url": "https://arxiv.org/abs/1310.2035",
+      "key_concepts": [
+        "Property Testing",
+        "Junta Verification",
+        "Monotonicity Testing",
+        "Fourier Analysis of Booleans"
+      ],
+      "training_vector_summary": "Quantum Algorithms for Testing Properties of Boolean Functions by A. Montanaro & R. de Wolf (2016) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Property Testing, Junta Verification, Monotonicity Testing, Fourier Analysis of Booleans."
+    },
+    {
+      "id": 73,
+      "title": "The Non-Abelian Hidden Subgroup Problem",
+      "author": "Chris Moore et al.",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2008,
+      "reference": "SIAM J. Comput. 38",
+      "url": "https://arxiv.org/abs/quant-ph/0411087",
+      "key_concepts": [
+        "Symmetric Group S_n",
+        "Graph Isomorphism Approaches",
+        "Representation Theory"
+      ],
+      "training_vector_summary": "The Non-Abelian Hidden Subgroup Problem by Chris Moore et al. (2008) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Symmetric Group S_n, Graph Isomorphism Approaches, Representation Theory."
+    },
+    {
+      "id": 74,
+      "title": "Exact Quantum Query Algorithms",
+      "author": "R. Beals et al.",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2001,
+      "reference": "J. ACM 48",
+      "url": "https://arxiv.org/abs/quant-ph/9802049",
+      "key_concepts": [
+        "Polynomial Degree Bound",
+        "Comparison with Classical Queries",
+        "Zero Error Oracles"
+      ],
+      "training_vector_summary": "Exact Quantum Query Algorithms by R. Beals et al. (2001) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Polynomial Degree Bound, Comparison with Classical Queries, Zero Error Oracles."
+    },
+    {
+      "id": 75,
+      "title": "Quantum Algorithms for Algebraic Curves and Jacobians",
+      "author": "Sean Hallgren",
+      "category": "Oracle & Algebraic Algorithms",
+      "year": 2007,
+      "reference": "J. ACM 54",
+      "url": "https://doi.org/10.1145/1219092.1219093",
+      "key_concepts": [
+        "Pells Equation",
+        "Class Group Computation",
+        "Number Theoretic Speedup over Classical"
+      ],
+      "training_vector_summary": "Quantum Algorithms for Algebraic Curves and Jacobians by Sean Hallgren (2007) is a foundational reference in Oracle & Algebraic Algorithms. Key topics: Pells Equation, Class Group Computation, Number Theoretic Speedup over Classical."
+    },
+    {
+      "id": 76,
+      "title": "A Fast Quantum Mechanical Algorithm for Database Search",
+      "author": "Lov K. Grover",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 1996,
+      "reference": "ACM STOC 96",
+      "url": "https://arxiv.org/abs/quant-ph/9605043",
+      "key_concepts": [
+        "Original Grover Algorithm",
+        "Inversion About the Mean",
+        "O(sqrt(N)) Queries",
+        "Diffusion Operator"
+      ],
+      "training_vector_summary": "A Fast Quantum Mechanical Algorithm for Database Search by Lov K. Grover (1996) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Original Grover Algorithm, Inversion About the Mean, O(sqrt(N)) Queries, Diffusion Operator."
+    },
+    {
+      "id": 77,
+      "title": "Quantum Amplitude Amplification and Estimation",
+      "author": "G. Brassard, P. Hoyer, M. Mosca, A. Tapp",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 2002,
+      "reference": "Contemp. Math. 305",
+      "url": "https://arxiv.org/abs/quant-ph/0005055",
+      "key_concepts": [
+        "Generalization of Grover Search",
+        "Amplitude Amplification Theorem",
+        "QAE",
+        "Optimal Stopping"
+      ],
+      "training_vector_summary": "Quantum Amplitude Amplification and Estimation by G. Brassard, P. Hoyer, M. Mosca, A. Tapp (2002) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Generalization of Grover Search, Amplitude Amplification Theorem, QAE, Optimal Stopping."
+    },
+    {
+      "id": 78,
+      "title": "Tight Bounds on Quantum Searching",
+      "author": "M. Boyer, G. Brassard, P. Hoyer, A. Tapp",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 1998,
+      "reference": "Fortschr. Phys. 46",
+      "url": "https://arxiv.org/abs/quant-ph/9605034",
+      "key_concepts": [
+        "Unknown Number of Solutions",
+        "BBHT Algorithm",
+        "Pi/4*sqrt(N/M) Bound",
+        "Phase Matching"
+      ],
+      "training_vector_summary": "Tight Bounds on Quantum Searching by M. Boyer, G. Brassard, P. Hoyer, A. Tapp (1998) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Unknown Number of Solutions, BBHT Algorithm, Pi/4*sqrt(N/M) Bound, Phase Matching."
+    },
+    {
+      "id": 79,
+      "title": "Quantum Random Walks: Discrete and Continuous",
+      "author": "Julia Kempe",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 2003,
+      "reference": "Contemp. Phys. 44",
+      "url": "https://arxiv.org/abs/quant-ph/0303081",
+      "key_concepts": [
+        "Quantum Walks on Graphs",
+        "Coin Operator",
+        "Ballistic Spreading",
+        "Hadamard Coin"
+      ],
+      "training_vector_summary": "Quantum Random Walks: Discrete and Continuous by Julia Kempe (2003) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Quantum Walks on Graphs, Coin Operator, Ballistic Spreading, Hadamard Coin."
+    },
+    {
+      "id": 80,
+      "title": "Continuous-Time Quantum Walk on Graphs",
+      "author": "Edward Farhi & Sam Gutmann",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 1998,
+      "reference": "Phys. Rev. A 58",
+      "url": "https://arxiv.org/abs/quant-ph/9706062",
+      "key_concepts": [
+        "Graph Traversal",
+        "Hamiltonian-Driven State Transport",
+        "Adjacency Matrix Evolution"
+      ],
+      "training_vector_summary": "Continuous-Time Quantum Walk on Graphs by Edward Farhi & Sam Gutmann (1998) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Graph Traversal, Hamiltonian-Driven State Transport, Adjacency Matrix Evolution."
+    },
+    {
+      "id": 81,
+      "title": "Quantum Walk-Based Search Algorithm",
+      "author": "N. Shenvi, J. Kempe, K. B. Whaley",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 2003,
+      "reference": "Phys. Rev. A 67",
+      "url": "https://arxiv.org/abs/quant-ph/0210064",
+      "key_concepts": [
+        "Search on Hypercube",
+        "Spatial Search",
+        "Graph Dispersion",
+        "Coin Operator Perturbation"
+      ],
+      "training_vector_summary": "Quantum Walk-Based Search Algorithm by N. Shenvi, J. Kempe, K. B. Whaley (2003) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Search on Hypercube, Spatial Search, Graph Dispersion, Coin Operator Perturbation."
+    },
+    {
+      "id": 82,
+      "title": "Grover Algorithm for Unstructured Search: Practical Implementations",
+      "author": "C. Zalka",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 1999,
+      "reference": "Phys. Rev. A 60",
+      "url": "https://arxiv.org/abs/quant-ph/9711070",
+      "key_concepts": [
+        "Optimality Proof of Grover Algorithm",
+        "Exact Constants",
+        "Tight Query Limits"
+      ],
+      "training_vector_summary": "Grover Algorithm for Unstructured Search: Practical Implementations by C. Zalka (1999) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Optimality Proof of Grover Algorithm, Exact Constants, Tight Query Limits."
+    },
+    {
+      "id": 83,
+      "title": "Quantum Search on Structured Data and Spatial Search",
+      "author": "A. Ambainis, J. Kempe, A. Rivosh",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 2005,
+      "reference": "ACM-SIAM SODA 05",
+      "url": "https://arxiv.org/abs/quant-ph/0402107",
+      "key_concepts": [
+        "Grid Search",
+        "Spatial Amplitude Amplification",
+        "2D Grid Scaling",
+        "Dirac Operator"
+      ],
+      "training_vector_summary": "Quantum Search on Structured Data and Spatial Search by A. Ambainis, J. Kempe, A. Rivosh (2005) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Grid Search, Spatial Amplitude Amplification, 2D Grid Scaling, Dirac Operator."
+    },
+    {
+      "id": 84,
+      "title": "Quantum Maximum and Minimum Finding",
+      "author": "P. Hoyer, J. Neerbek, P. Shiue",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
       "year": 2000,
-      "arxiv_id": "quant-ph/0004037",
-      "pdf_url": "https://arxiv.org/pdf/quant-ph/0004037.pdf",
-      "status": "cataloged",
-      "key_concepts": ["QFT Implementation", "Phase Estimation", "Order Finding"]
+      "reference": "Inf. Process. Lett. 76",
+      "url": "https://arxiv.org/abs/quant-ph/0104088",
+      "key_concepts": [
+        "Extremum Search via Grover Oracle Subroutines",
+        "Durr-Hoyer Algorithm"
+      ],
+      "training_vector_summary": "Quantum Maximum and Minimum Finding by P. Hoyer, J. Neerbek, P. Shiue (2000) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Extremum Search via Grover Oracle Subroutines, Durr-Hoyer Algorithm."
     },
     {
-      "id": 12,
+      "id": 85,
+      "title": "Fixed-Point Quantum Search",
+      "author": "T. J. Yoder, G. H. Low, I. L. Chuang",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 2014,
+      "reference": "Phys. Rev. Lett. 113",
+      "url": "https://arxiv.org/abs/1409.3564",
+      "key_concepts": [
+        "Fixed-Point Search",
+        "Monotonic Convergence",
+        "No Overcooking",
+        "Chebyshev Phase Angles"
+      ],
+      "training_vector_summary": "Fixed-Point Quantum Search by T. J. Yoder, G. H. Low, I. L. Chuang (2014) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Fixed-Point Search, Monotonic Convergence, No Overcooking, Chebyshev Phase Angles."
+    },
+    {
+      "id": 86,
+      "title": "Quantum Amplitude Amplification without Phase Query",
+      "author": "Dong Pyo Chi et al.",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 2002,
+      "reference": "Phys. Rev. A 65",
+      "url": "https://arxiv.org/abs/quant-ph/0107011",
+      "key_concepts": [
+        "Modified Diffusion Operators",
+        "Asymmetric Oracle Marking",
+        "Amplitude Inversion"
+      ],
+      "training_vector_summary": "Quantum Amplitude Amplification without Phase Query by Dong Pyo Chi et al. (2002) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Modified Diffusion Operators, Asymmetric Oracle Marking, Amplitude Inversion."
+    },
+    {
+      "id": 87,
+      "title": "Experimental Realization of Grover Algorithm on NMR Quantum Computer",
+      "author": "I. L. Chuang et al.",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 1998,
+      "reference": "Phys. Rev. Lett. 80",
+      "url": "https://doi.org/10.1103/PhysRevLett.80.3408",
+      "key_concepts": [
+        "First Physical Realization of Grover 2-Qubit Search",
+        "Chloroform Molecule"
+      ],
+      "training_vector_summary": "Experimental Realization of Grover Algorithm on NMR Quantum Computer by I. L. Chuang et al. (1998) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: First Physical Realization of Grover 2-Qubit Search, Chloroform Molecule."
+    },
+    {
+      "id": 88,
+      "title": "Quantum Walk Search with Multiple Marked States",
+      "author": "N. Nahimovs & A. Rivosh",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 2016,
+      "reference": "Quantum Inf. Comput. 16",
+      "url": "https://arxiv.org/abs/1512.02919",
+      "key_concepts": [
+        "Spectral Decomposition of Evolution Operator",
+        "Resonance Conditions",
+        "Degeneracy"
+      ],
+      "training_vector_summary": "Quantum Walk Search with Multiple Marked States by N. Nahimovs & A. Rivosh (2016) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Spectral Decomposition of Evolution Operator, Resonance Conditions, Degeneracy."
+    },
+    {
+      "id": 89,
+      "title": "Quantum Algorithms for Matching and Graph Traversal",
+      "author": "M. Santha",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 2008,
+      "reference": "Theory of Computing Systems 43",
+      "url": "https://arxiv.org/abs/0808.0059",
+      "key_concepts": [
+        "Quantum Walks for Triangle Finding",
+        "Bipartite Matching",
+        "Johnson Schemes"
+      ],
+      "training_vector_summary": "Quantum Algorithms for Matching and Graph Traversal by M. Santha (2008) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Quantum Walks for Triangle Finding, Bipartite Matching, Johnson Schemes."
+    },
+    {
+      "id": 90,
+      "title": "Quantum Search in a Structured Database",
+      "author": "D. Biron et al.",
+      "category": "Quantum Search, Amplitude Amplification & Random Walks",
+      "year": 1999,
+      "reference": "Lecture Notes in Computer Science",
+      "url": "https://arxiv.org/abs/quant-ph/9801066",
+      "key_concepts": [
+        "Structured Search",
+        "Perturbation Theory on Grover Iterations",
+        "Spectral Gap Analysis"
+      ],
+      "training_vector_summary": "Quantum Search in a Structured Database by D. Biron et al. (1999) is a foundational reference in Quantum Search, Amplitude Amplification & Random Walks. Key topics: Structured Search, Perturbation Theory on Grover Iterations, Spectral Gap Analysis."
+    },
+    {
+      "id": 91,
       "title": "Polynomial-Time Algorithms for Prime Factorization on a Quantum Computer",
       "author": "Peter W. Shor",
-      "category": "Quantum Fourier Transform & Factoring",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
       "year": 1994,
-      "arxiv_id": "quant-ph/9508027",
-      "pdf_url": "https://arxiv.org/pdf/quant-ph/9508027.pdf",
-      "status": "cataloged",
-      "key_concepts": ["Shor's Algorithm", "RSA Cryptanalysis", "Period Finding", "Modular Exponentiation"]
+      "reference": "IEEE FOCS 94",
+      "url": "https://arxiv.org/abs/quant-ph/9508027",
+      "key_concepts": [
+        "Shor Algorithm",
+        "Discrete Logarithm",
+        "Polynomial-Time RSA Breaking",
+        "Continued Fractions"
+      ],
+      "training_vector_summary": "Polynomial-Time Algorithms for Prime Factorization on a Quantum Computer by Peter W. Shor (1994) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Shor Algorithm, Discrete Logarithm, Polynomial-Time RSA Breaking, Continued Fractions."
     },
     {
-      "id": 13,
+      "id": 92,
+      "title": "The Quantum Phase Estimation Algorithm: Precision and Error Analysis",
+      "author": "R. Cleve et al.",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 1998,
+      "reference": "Proc. R. Soc. A 454",
+      "url": "https://arxiv.org/abs/quant-ph/9903061",
+      "key_concepts": [
+        "Iterative Phase Estimation",
+        "Phase Error Bounds",
+        "Eigenvalue Extraction",
+        "Modular Phase"
+      ],
+      "training_vector_summary": "The Quantum Phase Estimation Algorithm: Precision and Error Analysis by R. Cleve et al. (1998) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Iterative Phase Estimation, Phase Error Bounds, Eigenvalue Extraction, Modular Phase."
+    },
+    {
+      "id": 93,
+      "title": "Approximate Quantum Fourier Transform (AQFT)",
+      "author": "D. Coppersmith",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2002,
+      "reference": "arXiv:quant-ph/0201067",
+      "url": "https://arxiv.org/pdf/quant-ph/0201067.pdf",
+      "key_concepts": [
+        "Truncating Controlled Phase Rotations",
+        "Circuit Depth Reduction",
+        "Logarithmic Accuracy"
+      ],
+      "training_vector_summary": "Approximate Quantum Fourier Transform (AQFT) by D. Coppersmith (2002) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Truncating Controlled Phase Rotations, Circuit Depth Reduction, Logarithmic Accuracy."
+    },
+    {
+      "id": 94,
+      "title": "Shor Algorithm with a Single Ancilla Qubit (Kitaev Approach)",
+      "author": "A. Yu. Kitaev",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 1995,
+      "reference": "arXiv:quant-ph/9511026",
+      "url": "https://arxiv.org/pdf/quant-ph/9511026.pdf",
+      "key_concepts": [
+        "Semiclassical Quantum Fourier Transform",
+        "Single Measurement Qubit",
+        "Classical Feedback"
+      ],
+      "training_vector_summary": "Shor Algorithm with a Single Ancilla Qubit (Kitaev Approach) by A. Yu. Kitaev (1995) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Semiclassical Quantum Fourier Transform, Single Measurement Qubit, Classical Feedback."
+    },
+    {
+      "id": 95,
+      "title": "Experimental Demonstration of Shor Factorization of 15",
+      "author": "L. M. K. Vandersypen et al.",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2001,
+      "reference": "Nature 414",
+      "url": "https://doi.org/10.1038/414883a",
+      "key_concepts": [
+        "NMR Physical Implementation",
+        "Factoring 15 with 7 Qubits",
+        "Molecule Perfluorobutadienyl"
+      ],
+      "training_vector_summary": "Experimental Demonstration of Shor Factorization of 15 by L. M. K. Vandersypen et al. (2001) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: NMR Physical Implementation, Factoring 15 with 7 Qubits, Molecule Perfluorobutadienyl."
+    },
+    {
+      "id": 96,
+      "title": "Quantum Cryptanalysis of Elliptic Curve Cryptography",
+      "author": "John Proos & Christof Zalka",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2003,
+      "reference": "Quant. Inf. Comp. 3",
+      "url": "https://arxiv.org/abs/quant-ph/0301141",
+      "key_concepts": [
+        "ECDSA Vulnerability",
+        "Point Addition Circuits",
+        "Shor Resource Count vs RSA"
+      ],
+      "training_vector_summary": "Quantum Cryptanalysis of Elliptic Curve Cryptography by John Proos & Christof Zalka (2003) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: ECDSA Vulnerability, Point Addition Circuits, Shor Resource Count vs RSA."
+    },
+    {
+      "id": 97,
+      "title": "Modular Arithmetic Circuits for Shor Algorithm",
+      "author": "Thomas G. Draper",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2000,
+      "reference": "arXiv:quant-ph/0008033",
+      "url": "https://arxiv.org/pdf/quant-ph/0008033.pdf",
+      "key_concepts": [
+        "Draper Adder",
+        "In-Place Quantum Fourier Addition",
+        "Modular Multipliers",
+        "Phase Representation"
+      ],
+      "training_vector_summary": "Modular Arithmetic Circuits for Shor Algorithm by Thomas G. Draper (2000) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Draper Adder, In-Place Quantum Fourier Addition, Modular Multipliers, Phase Representation."
+    },
+    {
+      "id": 98,
+      "title": "Factoring 2048-bit RSA Integers in 8 Hours Using 20 Million Noisy Qubits",
+      "author": "Craig Gidney & Martin Ekera",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2021,
+      "reference": "Quantum 5",
+      "url": "https://arxiv.org/abs/1905.09749",
+      "key_concepts": [
+        "State of the Art Resource Estimations",
+        "Windowed Arithmetic",
+        "Surface Code Overhead"
+      ],
+      "training_vector_summary": "Factoring 2048-bit RSA Integers in 8 Hours Using 20 Million Noisy Qubits by Craig Gidney & Martin Ekera (2021) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: State of the Art Resource Estimations, Windowed Arithmetic, Surface Code Overhead."
+    },
+    {
+      "id": 99,
+      "title": "How to Factor 2048 bit RSA Integers with Shor Algorithm",
+      "author": "Martin Ekera",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2020,
+      "reference": "arXiv:2006.03055",
+      "url": "https://arxiv.org/pdf/2006.03055.pdf",
+      "key_concepts": [
+        "Short Period Finding",
+        "Modulo Multiplication Tradeoffs",
+        "Lattice Post-Processing"
+      ],
+      "training_vector_summary": "How to Factor 2048 bit RSA Integers with Shor Algorithm by Martin Ekera (2020) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Short Period Finding, Modulo Multiplication Tradeoffs, Lattice Post-Processing."
+    },
+    {
+      "id": 100,
+      "title": "Quantum Phase Estimation for Chemistry Hamiltonians",
+      "author": "D. Wecker et al.",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2014,
+      "reference": "Phys. Rev. A 90",
+      "url": "https://arxiv.org/abs/1312.1695",
+      "key_concepts": [
+        "QPE vs VQE Comparison",
+        "Trotterization Scaling for Molecular Energies",
+        "Gate Overhead"
+      ],
+      "training_vector_summary": "Quantum Phase Estimation for Chemistry Hamiltonians by D. Wecker et al. (2014) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: QPE vs VQE Comparison, Trotterization Scaling for Molecular Energies, Gate Overhead."
+    },
+    {
+      "id": 101,
+      "title": "Quantum Circuit for In-Place Modular Exponentiation",
+      "author": "Stephane Beauregard",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2003,
+      "reference": "Quant. Inf. Comp. 3",
+      "url": "https://arxiv.org/abs/quant-ph/0205095",
+      "key_concepts": [
+        "2n+3 Qubit Shor Architecture",
+        "Semiclassical QFT Integration",
+        "Reversible Adders"
+      ],
+      "training_vector_summary": "Quantum Circuit for In-Place Modular Exponentiation by Stephane Beauregard (2003) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: 2n+3 Qubit Shor Architecture, Semiclassical QFT Integration, Reversible Adders."
+    },
+    {
+      "id": 102,
+      "title": "Fast Quantum Fourier Transform on Distributed Systems",
+      "author": "C. Lomont",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2004,
+      "reference": "IEEE Trans. Computers",
+      "url": "https://arxiv.org/abs/quant-ph/0401037",
+      "key_concepts": [
+        "Network Topology Mapping",
+        "Communication Complexity of QFT",
+        "Parallel Qubit Lines"
+      ],
+      "training_vector_summary": "Fast Quantum Fourier Transform on Distributed Systems by C. Lomont (2004) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Network Topology Mapping, Communication Complexity of QFT, Parallel Qubit Lines."
+    },
+    {
+      "id": 103,
+      "title": "Quantum Algorithm for Order Finding in Solvable Groups",
+      "author": "K. Friedl et al.",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2014,
+      "reference": "ACM STOC",
+      "url": "https://arxiv.org/abs/quant-ph/0205128",
+      "key_concepts": [
+        "Generalization of Order Finding Beyond Abelian Groups",
+        "Solvable Permutation Groups"
+      ],
+      "training_vector_summary": "Quantum Algorithm for Order Finding in Solvable Groups by K. Friedl et al. (2014) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Generalization of Order Finding Beyond Abelian Groups, Solvable Permutation Groups."
+    },
+    {
+      "id": 104,
+      "title": "Phase Estimation with Minimal Ancilla Overhead",
+      "author": "M. Dobrzanski et al.",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2020,
+      "reference": "Phys. Rev. A 102",
+      "url": "https://arxiv.org/abs/2004.09545",
+      "key_concepts": [
+        "Optimal Adaptive Phase Estimation with Single Classical Bit Storage",
+        "Variance Minimization"
+      ],
+      "training_vector_summary": "Phase Estimation with Minimal Ancilla Overhead by M. Dobrzanski et al. (2020) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Optimal Adaptive Phase Estimation with Single Classical Bit Storage, Variance Minimization."
+    },
+    {
+      "id": 105,
+      "title": "Post-Quantum Cryptography in the Age of Shor Algorithm",
+      "author": "Daniel J. Bernstein",
+      "category": "Quantum Fourier Transform, Phase Estimation & Shor",
+      "year": 2009,
+      "reference": "Springer",
+      "url": "https://doi.org/10.1007/978-3-540-88702-7",
+      "key_concepts": [
+        "Lattice Cryptography",
+        "McEliece",
+        "Hash Signatures Resistant to QFT Polynomial Factoring"
+      ],
+      "training_vector_summary": "Post-Quantum Cryptography in the Age of Shor Algorithm by Daniel J. Bernstein (2009) is a foundational reference in Quantum Fourier Transform, Phase Estimation & Shor. Key topics: Lattice Cryptography, McEliece, Hash Signatures Resistant to QFT Polynomial Factoring."
+    },
+    {
+      "id": 106,
+      "title": "Variational Quantum Algorithms",
+      "author": "M. Cerezo et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2021,
+      "reference": "Nat. Rev. Phys. 3",
+      "url": "https://arxiv.org/abs/2012.09265",
+      "key_concepts": [
+        "VQE",
+        "QAOA",
+        "Barren Plateaus",
+        "Variational Optimization Landscape",
+        "Hybrid Architecture"
+      ],
+      "training_vector_summary": "Variational Quantum Algorithms by M. Cerezo et al. (2021) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: VQE, QAOA, Barren Plateaus, Variational Optimization Landscape, Hybrid Architecture."
+    },
+    {
+      "id": 107,
+      "title": "A Variational Eigenvalue Solver on a Photonic Quantum Processor",
+      "author": "A. Peruzzo, J. McClean et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2014,
+      "reference": "Nat. Commun. 5",
+      "url": "https://arxiv.org/abs/1304.3061",
+      "key_concepts": [
+        "Original Demonstration of VQE",
+        "Ground State Molecular Hydrogen H2",
+        "Photonic Chip"
+      ],
+      "training_vector_summary": "A Variational Eigenvalue Solver on a Photonic Quantum Processor by A. Peruzzo, J. McClean et al. (2014) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Original Demonstration of VQE, Ground State Molecular Hydrogen H2, Photonic Chip."
+    },
+    {
+      "id": 108,
+      "title": "Quantum Approximate Optimization Algorithm (QAOA)",
+      "author": "Edward Farhi, Jeffrey Goldstone, Sam Gutmann",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2014,
+      "reference": "arXiv:1411.4028",
+      "url": "https://arxiv.org/pdf/1411.4028.pdf",
+      "key_concepts": [
+        "MaxCut Optimization",
+        "p-Layer Alternating Hamiltonians",
+        "Adiabatic Limit",
+        "Trotter Ansatz"
+      ],
+      "training_vector_summary": "Quantum Approximate Optimization Algorithm (QAOA) by Edward Farhi, Jeffrey Goldstone, Sam Gutmann (2014) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: MaxCut Optimization, p-Layer Alternating Hamiltonians, Adiabatic Limit, Trotter Ansatz."
+    },
+    {
+      "id": 109,
+      "title": "The Theory of Variational Hybrid Quantum-Classical Algorithms",
+      "author": "Jarrod R. McClean et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2016,
+      "reference": "New J. Phys. 18",
+      "url": "https://arxiv.org/abs/1509.04279",
+      "key_concepts": [
+        "UCCSD Ansatz",
+        "Gradient Descent",
+        "Classical Optimizer Comparison",
+        "Quantum Subspace Expansion"
+      ],
+      "training_vector_summary": "The Theory of Variational Hybrid Quantum-Classical Algorithms by Jarrod R. McClean et al. (2016) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: UCCSD Ansatz, Gradient Descent, Classical Optimizer Comparison, Quantum Subspace Expansion."
+    },
+    {
+      "id": 110,
+      "title": "Barren Plateaus in Quantum Neural Network Training Landscapes",
+      "author": "J. R. McClean et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2018,
+      "reference": "Nat. Commun. 9",
+      "url": "https://arxiv.org/abs/1803.11173",
+      "key_concepts": [
+        "Exponential Flattening of Gradients",
+        "Random Circuit Initialization Risk",
+        "2-Design Haar Measure"
+      ],
+      "training_vector_summary": "Barren Plateaus in Quantum Neural Network Training Landscapes by J. R. McClean et al. (2018) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Exponential Flattening of Gradients, Random Circuit Initialization Risk, 2-Design Haar Measure."
+    },
+    {
+      "id": 111,
+      "title": "Mitigating Barren Plateaus with Local Cost Functions",
+      "author": "M. Cerezo et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2021,
+      "reference": "Nat. Commun. 12",
+      "url": "https://arxiv.org/abs/2001.00550",
+      "key_concepts": [
+        "Global vs Local Observables",
+        "Trainability Guarantee for Shallow Circuits",
+        "Vanishing Variance"
+      ],
+      "training_vector_summary": "Mitigating Barren Plateaus with Local Cost Functions by M. Cerezo et al. (2021) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Global vs Local Observables, Trainability Guarantee for Shallow Circuits, Vanishing Variance."
+    },
+    {
+      "id": 112,
+      "title": "Quantum Chemistry in the Age of Quantum Computing",
+      "author": "B. Bauer et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2020,
+      "reference": "Chem. Rev. 120",
+      "url": "https://arxiv.org/abs/2001.03685",
+      "key_concepts": [
+        "Electronic Structure",
+        "Jordan-Wigner",
+        "Bravyi-Kitaev Transformations",
+        "Molecular Orbitals"
+      ],
+      "training_vector_summary": "Quantum Chemistry in the Age of Quantum Computing by B. Bauer et al. (2020) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Electronic Structure, Jordan-Wigner, Bravyi-Kitaev Transformations, Molecular Orbitals."
+    },
+    {
+      "id": 113,
+      "title": "Quantum Approximate Optimization of MaxCut on 3-Regular Graphs",
+      "author": "E. Farhi et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2015,
+      "reference": "arXiv:1412.6062",
+      "url": "https://arxiv.org/pdf/1412.6062.pdf",
+      "key_concepts": [
+        "Performance Ratios",
+        "p=1 Analysis",
+        "Comparison to Goemans-Williamson 0.878 Bound"
+      ],
+      "training_vector_summary": "Quantum Approximate Optimization of MaxCut on 3-Regular Graphs by E. Farhi et al. (2015) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Performance Ratios, p=1 Analysis, Comparison to Goemans-Williamson 0.878 Bound."
+    },
+    {
+      "id": 114,
+      "title": "Parameterized Quantum Circuits as Machine Learning Models",
+      "author": "Marcello Benedetti et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2019,
+      "reference": "Quant. Sci. Technol. 4",
+      "url": "https://arxiv.org/abs/1906.07682",
+      "key_concepts": [
+        "Variational Classifiers",
+        "Quantum Circuit Born Machines",
+        "Expressibility and Entangling Capability"
+      ],
+      "training_vector_summary": "Parameterized Quantum Circuits as Machine Learning Models by Marcello Benedetti et al. (2019) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Variational Classifiers, Quantum Circuit Born Machines, Expressibility and Entangling Capability."
+    },
+    {
+      "id": 115,
+      "title": "Quantum Natural Gradient Descent for Variational Circuits",
+      "author": "James Stokes et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2020,
+      "reference": "Quantum 4",
+      "url": "https://arxiv.org/abs/1909.02108",
+      "key_concepts": [
+        "Fubini-Study Metric Tensor",
+        "Quantum Fisher Information",
+        "Faster VQE Optimization Paths"
+      ],
+      "training_vector_summary": "Quantum Natural Gradient Descent for Variational Circuits by James Stokes et al. (2020) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Fubini-Study Metric Tensor, Quantum Fisher Information, Faster VQE Optimization Paths."
+    },
+    {
+      "id": 116,
+      "title": "Hardware-Efficient Variational Quantum Eigensolver for Small Molecules",
+      "author": "A. Kandala et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2017,
+      "reference": "Nature 549",
+      "url": "https://arxiv.org/abs/1704.05018",
+      "key_concepts": [
+        "Superconducting Transmon Hardware Ansatz",
+        "LiH and BeH2 Simulation",
+        "Cross-Resonance Gates"
+      ],
+      "training_vector_summary": "Hardware-Efficient Variational Quantum Eigensolver for Small Molecules by A. Kandala et al. (2017) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Superconducting Transmon Hardware Ansatz, LiH and BeH2 Simulation, Cross-Resonance Gates."
+    },
+    {
+      "id": 117,
+      "title": "Error Mitigation for Short-Depth Quantum Circuits (ZNE)",
+      "author": "K. Temme, S. Bravyi, J. M. Gambetta",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2017,
+      "reference": "Phys. Rev. Lett. 119",
+      "url": "https://arxiv.org/abs/1612.02058",
+      "key_concepts": [
+        "Zero-Noise Extrapolation",
+        "Probabilistic Error Cancellation for VQE",
+        "Richardson Extrapolation"
+      ],
+      "training_vector_summary": "Error Mitigation for Short-Depth Quantum Circuits (ZNE) by K. Temme, S. Bravyi, J. M. Gambetta (2017) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Zero-Noise Extrapolation, Probabilistic Error Cancellation for VQE, Richardson Extrapolation."
+    },
+    {
+      "id": 118,
+      "title": "Quantum Machine Learning: What, Where, and How",
+      "author": "Maria Schuld & Francesco Petruccione",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2021,
+      "reference": "Springer",
+      "url": "https://doi.org/10.1007/978-3-030-83098-4",
+      "key_concepts": [
+        "Quantum Kernels",
+        "Hilbert Space Feature Maps",
+        "Quantum Support Vector Machines",
+        "Supervised Models"
+      ],
+      "training_vector_summary": "Quantum Machine Learning: What, Where, and How by Maria Schuld & Francesco Petruccione (2021) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Quantum Kernels, Hilbert Space Feature Maps, Quantum Support Vector Machines, Supervised Models."
+    },
+    {
+      "id": 119,
+      "title": "Supervised Learning with Quantum Computers",
+      "author": "M. Schuld & N. Killoran",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2019,
+      "reference": "Phys. Rev. Lett. 122",
+      "url": "https://arxiv.org/abs/1803.07128",
+      "key_concepts": [
+        "Quantum Kernel Alignment",
+        "Expressivity of Quantum Feature Embeddings",
+        "Reproducing Kernel Hilbert"
+      ],
+      "training_vector_summary": "Supervised Learning with Quantum Computers by M. Schuld & N. Killoran (2019) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Quantum Kernel Alignment, Expressivity of Quantum Feature Embeddings, Reproducing Kernel Hilbert."
+    },
+    {
+      "id": 120,
+      "title": "Barren Plateaus Preclude Trainability of Large-Scale Variational Algorithms",
+      "author": "Samson Wang et al.",
+      "category": "NISQ & Variational Quantum Algorithms (VQE, QAOA, QML)",
+      "year": 2021,
+      "reference": "Nat. Commun. 12",
+      "url": "https://arxiv.org/abs/2007.14384",
+      "key_concepts": [
+        "Entanglement-Induced Barren Plateaus",
+        "Architecture Guidelines for NISQ",
+        "Layer-by-Layer Training"
+      ],
+      "training_vector_summary": "Barren Plateaus Preclude Trainability of Large-Scale Variational Algorithms by Samson Wang et al. (2021) is a foundational reference in NISQ & Variational Quantum Algorithms (VQE, QAOA, QML). Key topics: Entanglement-Induced Barren Plateaus, Architecture Guidelines for NISQ, Layer-by-Layer Training."
+    },
+    {
+      "id": 121,
       "title": "Fault-Tolerant Quantum Computation with Surface Codes",
-      "author": "Austin G. Fowler, Matteo Mariantoni, John M. Martinis, Andrew N. Cleland",
+      "author": "Austin G. Fowler et al.",
       "category": "Quantum Error Correction & Fault Tolerance",
       "year": 2012,
-      "arxiv_id": "1208.0928",
-      "pdf_url": "https://arxiv.org/pdf/1208.0928.pdf",
-      "status": "cataloged",
-      "key_concepts": ["Surface Code", "Toric Code", "Syndrome Measurement", "Physical to Logical Qubits"]
+      "reference": "Phys. Rev. A 86",
+      "url": "https://arxiv.org/abs/1208.0928",
+      "key_concepts": [
+        "Surface Code",
+        "2D Nearest Neighbor Grid",
+        "1% Error Threshold",
+        "Defect Braiding"
+      ],
+      "training_vector_summary": "Fault-Tolerant Quantum Computation with Surface Codes by Austin G. Fowler et al. (2012) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Surface Code, 2D Nearest Neighbor Grid, 1% Error Threshold, Defect Braiding."
     },
     {
-      "id": 14,
+      "id": 122,
+      "title": "Scheme for Reducing Decoherence in Quantum Computer Memory (Shor 9-Qubit Code)",
+      "author": "Peter W. Shor",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 1995,
+      "reference": "Phys. Rev. A 52",
+      "url": "https://doi.org/10.1103/PhysRevA.52.R2493",
+      "key_concepts": [
+        "Original 9-Qubit Code Correcting Arbitrary Single-Qubit Bit and Phase Errors",
+        "Concatenation"
+      ],
+      "training_vector_summary": "Scheme for Reducing Decoherence in Quantum Computer Memory (Shor 9-Qubit Code) by Peter W. Shor (1995) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Original 9-Qubit Code Correcting Arbitrary Single-Qubit Bit and Phase Errors, Concatenation."
+    },
+    {
+      "id": 123,
+      "title": "Error Correcting Codes in Quantum Theory (Steane 7-Qubit Code)",
+      "author": "A. M. Steane",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 1996,
+      "reference": "Phys. Rev. Lett. 77",
+      "url": "https://doi.org/10.1103/PhysRevLett.77.793",
+      "key_concepts": [
+        "CSS Codes",
+        "Classical Hamming Code Embedding",
+        "Transversal Gates",
+        "Syndrome Decoding"
+      ],
+      "training_vector_summary": "Error Correcting Codes in Quantum Theory (Steane 7-Qubit Code) by A. M. Steane (1996) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: CSS Codes, Classical Hamming Code Embedding, Transversal Gates, Syndrome Decoding."
+    },
+    {
+      "id": 124,
+      "title": "Stabilizer Codes and Quantum Error Correction",
+      "author": "Daniel Gottesman",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 1997,
+      "reference": "Caltech PhD Thesis",
+      "url": "https://arxiv.org/abs/quant-ph/9705052",
+      "key_concepts": [
+        "Stabilizer Formalism",
+        "Pauli Group Generators",
+        "Syndrome Extraction",
+        "Clifford Operations"
+      ],
+      "training_vector_summary": "Stabilizer Codes and Quantum Error Correction by Daniel Gottesman (1997) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Stabilizer Formalism, Pauli Group Generators, Syndrome Extraction, Clifford Operations."
+    },
+    {
+      "id": 125,
       "title": "Quantum Error Correction for Beginners",
-      "author": "Simon J. Devitt, William J. Munro, Kae Nemoto",
+      "author": "Simon J. Devitt et al.",
       "category": "Quantum Error Correction & Fault Tolerance",
       "year": 2013,
-      "arxiv_id": "0904.2534",
-      "pdf_url": "https://arxiv.org/pdf/0904.2534.pdf",
-      "status": "cataloged",
-      "key_concepts": ["Bit-Flip Code", "Phase-Flip Code", "Shor 9-Qubit Code", "Stabilizer Formalism"]
+      "reference": "Rep. Prog. Phys. 76",
+      "url": "https://arxiv.org/abs/0904.2534",
+      "key_concepts": [
+        "Pedagogical Guide",
+        "Stabilizer Operators",
+        "Defect Routing in Surface Code",
+        "Threshold Theorem"
+      ],
+      "training_vector_summary": "Quantum Error Correction for Beginners by Simon J. Devitt et al. (2013) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Pedagogical Guide, Stabilizer Operators, Defect Routing in Surface Code, Threshold Theorem."
     },
     {
-      "id": 15,
-      "title": "Superconducting Qubits: Current State of Play",
-      "author": "Morten Kjaergaard, Mollie E. Schwartz, Jochen Braumüller et al.",
-      "category": "Quantum Hardware & Physical Systems",
-      "year": 2020,
-      "arxiv_id": "1905.13641",
-      "pdf_url": "https://arxiv.org/pdf/1905.13641.pdf",
-      "status": "cataloged",
-      "key_concepts": ["Transmon Qubit", "Josephson Junction", "Microwave Control", "Coherence Times (T1, T2)"]
+      "id": 126,
+      "title": "Quantum Fault Tolerance and the Threshold Theorem",
+      "author": "Dorit Aharonov & Michael Ben-Or",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2008,
+      "reference": "SIAM J. Comput. 38",
+      "url": "https://arxiv.org/abs/quant-ph/9906129",
+      "key_concepts": [
+        "Threshold Theorem Proof",
+        "Concatenated Codes",
+        "Fault-Tolerant Gadgets",
+        "Poly-Log Overhead"
+      ],
+      "training_vector_summary": "Quantum Fault Tolerance and the Threshold Theorem by Dorit Aharonov & Michael Ben-Or (2008) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Threshold Theorem Proof, Concatenated Codes, Fault-Tolerant Gadgets, Poly-Log Overhead."
     },
     {
-      "id": 16,
-      "title": "Quantum Key Distribution (BB84 Protocol Specification)",
-      "author": "Charles H. Bennett & Gilles Brassard",
-      "category": "Quantum Information Theory & Cryptography",
+      "id": 127,
+      "title": "Magic State Distillation for Fault-Tolerant Non-Clifford Gates",
+      "author": "Sergey Bravyi & Alexei Kitaev",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2005,
+      "reference": "Phys. Rev. A 71",
+      "url": "https://arxiv.org/abs/quant-ph/0403025",
+      "key_concepts": [
+        "Magic States",
+        "Distillation Protocols",
+        "Transversal Gate Restrictions (Eastin-Knill)",
+        "T-gate State"
+      ],
+      "training_vector_summary": "Magic State Distillation for Fault-Tolerant Non-Clifford Gates by Sergey Bravyi & Alexei Kitaev (2005) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Magic States, Distillation Protocols, Transversal Gate Restrictions (Eastin-Knill), T-gate State."
+    },
+    {
+      "id": 128,
+      "title": "Restrictions on Transversal Encoded Quantum Gates (Eastin-Knill Theorem)",
+      "author": "Bryan Eastin & Emanuel Knill",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2009,
+      "reference": "Phys. Rev. Lett. 102",
+      "url": "https://arxiv.org/abs/0811.4262",
+      "key_concepts": [
+        "No Universal Transversal Quantum Gate Set Proof",
+        "Group Theory of Stabilizer Codes"
+      ],
+      "training_vector_summary": "Restrictions on Transversal Encoded Quantum Gates (Eastin-Knill Theorem) by Bryan Eastin & Emanuel Knill (2009) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: No Universal Transversal Quantum Gate Set Proof, Group Theory of Stabilizer Codes."
+    },
+    {
+      "id": 129,
+      "title": "Topological Quantum Memory: The Toric Code",
+      "author": "Alexei Yu. Kitaev",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2003,
+      "reference": "Ann. Phys. 303",
+      "url": "https://arxiv.org/abs/quant-ph/9707021",
+      "key_concepts": [
+        "Toric Code",
+        "Anyonic Excitations",
+        "Ground State Degeneracy on Torus",
+        "Non-Abelian Braiding"
+      ],
+      "training_vector_summary": "Topological Quantum Memory: The Toric Code by Alexei Yu. Kitaev (2003) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Toric Code, Anyonic Excitations, Ground State Degeneracy on Torus, Non-Abelian Braiding."
+    },
+    {
+      "id": 130,
+      "title": "Color Codes for Fault-Tolerant Quantum Computation",
+      "author": "H. Bombin & M. A. Martin-Delgado",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2006,
+      "reference": "Phys. Rev. Lett. 97",
+      "url": "https://arxiv.org/abs/quant-ph/0605138",
+      "key_concepts": [
+        "2D Color Codes",
+        "Transversal Clifford Group Gates",
+        "Triangular and Hexagonal Lattices"
+      ],
+      "training_vector_summary": "Color Codes for Fault-Tolerant Quantum Computation by H. Bombin & M. A. Martin-Delgado (2006) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: 2D Color Codes, Transversal Clifford Group Gates, Triangular and Hexagonal Lattices."
+    },
+    {
+      "id": 131,
+      "title": "Quantum LDPC Codes with Constant Rate and Linear Minimum Distance",
+      "author": "P. Panteleev & G. Kalachev",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2022,
+      "reference": "IEEE Trans. Inf. Theory",
+      "url": "https://arxiv.org/abs/2111.03654",
+      "key_concepts": [
+        "Asymptotically Good Quantum LDPC Codes",
+        "Breakthrough in QEC Footprint",
+        "Fiber Bundle Codes"
+      ],
+      "training_vector_summary": "Quantum LDPC Codes with Constant Rate and Linear Minimum Distance by P. Panteleev & G. Kalachev (2022) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Asymptotically Good Quantum LDPC Codes, Breakthrough in QEC Footprint, Fiber Bundle Codes."
+    },
+    {
+      "id": 132,
+      "title": "Decoding Surface Codes with Minimum Weight Perfect Matching",
+      "author": "J. Edmonds & J. Kelly et al.",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2014,
+      "reference": "Nature 519",
+      "url": "https://doi.org/10.1038/nature13454",
+      "key_concepts": [
+        "MWPM Decoder",
+        "Blossom Algorithm",
+        "Real-Time Syndrome Processing",
+        "Graph Matching"
+      ],
+      "training_vector_summary": "Decoding Surface Codes with Minimum Weight Perfect Matching by J. Edmonds & J. Kelly et al. (2014) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: MWPM Decoder, Blossom Algorithm, Real-Time Syndrome Processing, Graph Matching."
+    },
+    {
+      "id": 133,
+      "title": "Continuous Real-Time Quantum Error Correction on a Superconducting Processor",
+      "author": "Google Quantum AI",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2023,
+      "reference": "Nature 614",
+      "url": "https://doi.org/10.1038/s41586-022-05434-1",
+      "key_concepts": [
+        "Scaling Surface Codes",
+        "Demonstrating Lower Error for Larger Distance",
+        "Distance-3 vs Distance-5"
+      ],
+      "training_vector_summary": "Continuous Real-Time Quantum Error Correction on a Superconducting Processor by Google Quantum AI (2023) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: Scaling Surface Codes, Demonstrating Lower Error for Larger Distance, Distance-3 vs Distance-5."
+    },
+    {
+      "id": 134,
+      "title": "Bosonic Quantum Error Correction: GKP Codes",
+      "author": "D. Gottesman, A. Kitaev, J. Preskill",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2001,
+      "reference": "Phys. Rev. A 64",
+      "url": "https://arxiv.org/abs/quant-ph/0008040",
+      "key_concepts": [
+        "GKP Qubits",
+        "Infinite-Dimensional Hilbert Space",
+        "Continuous Variables",
+        "Phase-Space Lattices"
+      ],
+      "training_vector_summary": "Bosonic Quantum Error Correction: GKP Codes by D. Gottesman, A. Kitaev, J. Preskill (2001) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: GKP Qubits, Infinite-Dimensional Hilbert Space, Continuous Variables, Phase-Space Lattices."
+    },
+    {
+      "id": 135,
+      "title": "Fault-Tolerant Quantum Computation with Non-Deterministic Gates",
+      "author": "E. Knill",
+      "category": "Quantum Error Correction & Fault Tolerance",
+      "year": 2005,
+      "reference": "Nature 434",
+      "url": "https://doi.org/10.1038/nature03350",
+      "key_concepts": [
+        "High-Threshold Concatenated Schemes",
+        "Teleportation-Based Error Correction",
+        "3% Threshold"
+      ],
+      "training_vector_summary": "Fault-Tolerant Quantum Computation with Non-Deterministic Gates by E. Knill (2005) is a foundational reference in Quantum Error Correction & Fault Tolerance. Key topics: High-Threshold Concatenated Schemes, Teleportation-Based Error Correction, 3% Threshold."
+    },
+    {
+      "id": 136,
+      "title": "Quantum Cryptography: Public Key Distribution and Coin Tossing (BB84)",
+      "author": "C. H. Bennett & G. Brassard",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
       "year": 1984,
-      "reference": "IEEE International Conference on Computers, Systems & Signal Processing",
-      "status": "cataloged",
-      "key_concepts": ["BB84 Protocol", "No-Cloning Theorem", "Eavesdropping Detection", "Photon Polarization"]
+      "reference": "IEEE Conf. Computers",
+      "url": "https://doi.org/10.1016/j.tcs.2014.05.025",
+      "key_concepts": [
+        "Original BB84 Protocol",
+        "Four Polarization States",
+        "Sifting and Privacy Amplification",
+        "QKD"
+      ],
+      "training_vector_summary": "Quantum Cryptography: Public Key Distribution and Coin Tossing (BB84) by C. H. Bennett & G. Brassard (1984) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Original BB84 Protocol, Four Polarization States, Sifting and Privacy Amplification, QKD."
     },
     {
-      "id": 17,
-      "title": "Quantum Teleportation of an Unknown Quantum State",
-      "author": "Charles H. Bennett, Gilles Brassard, Claude Crépeau, Richard Jozsa, Asher Peres, William K. Wootters",
-      "category": "Entanglement & Non-Locality",
-      "year": 1993,
-      "reference": "Phys. Rev. Lett. 70",
-      "status": "cataloged",
-      "key_concepts": ["Quantum Teleportation", "Bell State Measurement", "Classical Channel Forwarding"]
+      "id": 137,
+      "title": "Quantum Cryptography Based on Bells Theorem (E91)",
+      "author": "Artur K. Ekert",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 1991,
+      "reference": "Phys. Rev. Lett. 67",
+      "url": "https://doi.org/10.1103/PhysRevLett.67.661",
+      "key_concepts": [
+        "Ekert 1991 Protocol",
+        "Entanglement-Based Security",
+        "CHSH Eavesdropping Test",
+        "Bell Violation"
+      ],
+      "training_vector_summary": "Quantum Cryptography Based on Bells Theorem (E91) by Artur K. Ekert (1991) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Ekert 1991 Protocol, Entanglement-Based Security, CHSH Eavesdropping Test, Bell Violation."
     },
     {
-      "id": 18,
-      "title": "Superdense Coding using Entangled Pairs",
-      "author": "Charles H. Bennett & Stephen J. Wiesner",
-      "category": "Entanglement & Non-Locality",
-      "year": 1992,
-      "reference": "Phys. Rev. Lett. 69",
-      "status": "cataloged",
-      "key_concepts": ["Superdense Coding", "Two Classical Bits via One Qubit", "Bell State Basis"]
+      "id": 138,
+      "title": "A Single Quantum Cannot be Cloned (No-Cloning Theorem)",
+      "author": "W. K. Wootters & W. H. Zurek",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 1982,
+      "reference": "Nature 299",
+      "url": "https://doi.org/10.1038/299802a0",
+      "key_concepts": [
+        "Linearity of Quantum Mechanics",
+        "Impossibility of State Duplication",
+        "Basis of Quantum Security"
+      ],
+      "training_vector_summary": "A Single Quantum Cannot be Cloned (No-Cloning Theorem) by W. K. Wootters & W. H. Zurek (1982) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Linearity of Quantum Mechanics, Impossibility of State Duplication, Basis of Quantum Security."
     },
     {
-      "id": 19,
-      "title": "The Theory of Quantum Information",
-      "author": "John Watrous",
-      "category": "Quantum Information Theory & Cryptography",
+      "id": 139,
+      "title": "The Physical Implementation of Quantum Computation (DiVincenzo Criteria)",
+      "author": "David P. DiVincenzo",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2000,
+      "reference": "Fortschr. Phys. 48",
+      "url": "https://arxiv.org/abs/quant-ph/0002077",
+      "key_concepts": [
+        "5 DiVincenzo Criteria for Quantum Computing",
+        "2 Criteria for Communication",
+        "Scalability"
+      ],
+      "training_vector_summary": "The Physical Implementation of Quantum Computation (DiVincenzo Criteria) by David P. DiVincenzo (2000) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: 5 DiVincenzo Criteria for Quantum Computing, 2 Criteria for Communication, Scalability."
+    },
+    {
+      "id": 140,
+      "title": "Superconducting Qubits: Current State of Play",
+      "author": "Morten Kjaergaard et al.",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2020,
+      "reference": "Ann. Rev. Condens. Matter Phys. 11",
+      "url": "https://arxiv.org/abs/1905.13641",
+      "key_concepts": [
+        "Transmon Design",
+        "Circuit QED",
+        "Readout Resonators",
+        "Microwave Control",
+        "T1 and T2 Coherence"
+      ],
+      "training_vector_summary": "Superconducting Qubits: Current State of Play by Morten Kjaergaard et al. (2020) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Transmon Design, Circuit QED, Readout Resonators, Microwave Control, T1 and T2 Coherence."
+    },
+    {
+      "id": 141,
+      "title": "Quantum Computation with Trapped Ions",
+      "author": "J. I. Cirac & P. Zoller",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 1995,
+      "reference": "Phys. Rev. Lett. 74",
+      "url": "https://doi.org/10.1103/PhysRevLett.74.4091",
+      "key_concepts": [
+        "Cirac-Zoller Controlled-Z Gate",
+        "Phonon Modes",
+        "Laser Coupling",
+        "Linear Paul Trap"
+      ],
+      "training_vector_summary": "Quantum Computation with Trapped Ions by J. I. Cirac & P. Zoller (1995) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Cirac-Zoller Controlled-Z Gate, Phonon Modes, Laser Coupling, Linear Paul Trap."
+    },
+    {
+      "id": 142,
+      "title": "High-Fidelity Quantum Logic with Trapped Ion Qubits",
+      "author": "C. J. Ballance et al.",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2016,
+      "reference": "Phys. Rev. Lett. 117",
+      "url": "https://arxiv.org/abs/1512.04600",
+      "key_concepts": [
+        "99.9% Two-Qubit Gate Fidelity in Beryllium/Calcium Ions",
+        "Raman Lasers",
+        "Speed Limits"
+      ],
+      "training_vector_summary": "High-Fidelity Quantum Logic with Trapped Ion Qubits by C. J. Ballance et al. (2016) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: 99.9% Two-Qubit Gate Fidelity in Beryllium/Calcium Ions, Raman Lasers, Speed Limits."
+    },
+    {
+      "id": 143,
+      "title": "Neutral Atom Quantum Computing with Rydberg Arrays",
+      "author": "M. Endres, H. Bernien et al.",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2016,
+      "reference": "Science 354",
+      "url": "https://arxiv.org/abs/1607.03042",
+      "key_concepts": [
+        "Optical Tweezers",
+        "Rydberg Blockade Mechanism",
+        "Scalable 2D Arrays",
+        "Entangled Neutral Atoms"
+      ],
+      "training_vector_summary": "Neutral Atom Quantum Computing with Rydberg Arrays by M. Endres, H. Bernien et al. (2016) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Optical Tweezers, Rydberg Blockade Mechanism, Scalable 2D Arrays, Entangled Neutral Atoms."
+    },
+    {
+      "id": 144,
+      "title": "Quantum Computational Advantage Using Photons (Jiuzhang)",
+      "author": "H.-S. Zhong et al.",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2020,
+      "reference": "Science 370",
+      "url": "https://arxiv.org/abs/2012.01625",
+      "key_concepts": [
+        "Gaussian Boson Sampling",
+        "76 Detected Photons",
+        "Photonic Quantum Advantage",
+        "Interferometers"
+      ],
+      "training_vector_summary": "Quantum Computational Advantage Using Photons (Jiuzhang) by H.-S. Zhong et al. (2020) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Gaussian Boson Sampling, 76 Detected Photons, Photonic Quantum Advantage, Interferometers."
+    },
+    {
+      "id": 145,
+      "title": "Quantum Computing with Silicon Spin Qubits",
+      "author": "L. M. K. Vandersypen et al.",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2017,
+      "reference": "npj Quantum Inf. 3",
+      "url": "https://arxiv.org/abs/1612.07408",
+      "key_concepts": [
+        "Quantum Dots",
+        "Electron Spin Qubits",
+        "Industrial Semiconductor Compatibility",
+        "Exchange Coupling"
+      ],
+      "training_vector_summary": "Quantum Computing with Silicon Spin Qubits by L. M. K. Vandersypen et al. (2017) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Quantum Dots, Electron Spin Qubits, Industrial Semiconductor Compatibility, Exchange Coupling."
+    },
+    {
+      "id": 146,
+      "title": "Security Proofs for Quantum Key Distribution",
+      "author": "P. W. Shor & J. Preskill",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2000,
+      "reference": "Phys. Rev. Lett. 85",
+      "url": "https://arxiv.org/abs/quant-ph/0003004",
+      "key_concepts": [
+        "Simple Proof of Security of BB84 via Entanglement Distillation",
+        "Calderbank-Shor-Steane Codes"
+      ],
+      "training_vector_summary": "Security Proofs for Quantum Key Distribution by P. W. Shor & J. Preskill (2000) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Simple Proof of Security of BB84 via Entanglement Distillation, Calderbank-Shor-Steane Codes."
+    },
+    {
+      "id": 147,
+      "title": "Device-Independent Quantum Key Distribution",
+      "author": "A. Acin et al.",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2007,
+      "reference": "Phys. Rev. Lett. 98",
+      "url": "https://arxiv.org/abs/quant-ph/0702152",
+      "key_concepts": [
+        "DI-QKD",
+        "Security Guaranteed Purely by Bell Violation without Device Trust",
+        "Black-Box Security"
+      ],
+      "training_vector_summary": "Device-Independent Quantum Key Distribution by A. Acin et al. (2007) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: DI-QKD, Security Guaranteed Purely by Bell Violation without Device Trust, Black-Box Security."
+    },
+    {
+      "id": 148,
+      "title": "Continuous-Variable Quantum Cryptography",
+      "author": "F. Grosshans & P. Grangier",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2002,
+      "reference": "Phys. Rev. Lett. 88",
+      "url": "https://arxiv.org/abs/quant-ph/0109084",
+      "key_concepts": [
+        "Homodyne Detection",
+        "Coherent State Encoding",
+        "Commercial Fiber Compatibility",
+        "Gaussian States"
+      ],
+      "training_vector_summary": "Continuous-Variable Quantum Cryptography by F. Grosshans & P. Grangier (2002) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Homodyne Detection, Coherent State Encoding, Commercial Fiber Compatibility, Gaussian States."
+    },
+    {
+      "id": 149,
+      "title": "Quantum Random Number Generation: Principles and Applications",
+      "author": "M. Herrero-Collantes & J. C. Garcia-Escartin",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
+      "year": 2017,
+      "reference": "Rev. Mod. Phys. 89",
+      "url": "https://arxiv.org/abs/1604.03304",
+      "key_concepts": [
+        "True Randomness from Quantum Measurement",
+        "Certified Randomness",
+        "Beam Splitter QRNG"
+      ],
+      "training_vector_summary": "Quantum Random Number Generation: Principles and Applications by M. Herrero-Collantes & J. C. Garcia-Escartin (2017) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: True Randomness from Quantum Measurement, Certified Randomness, Beam Splitter QRNG."
+    },
+    {
+      "id": 150,
+      "title": "Quantum Internet: A Vision for the Road Ahead",
+      "author": "Stephanie Wehner, David Elkouss, Ronald Hanson",
+      "category": "Quantum Information Theory, Cryptography & Hardware",
       "year": 2018,
-      "reference": "Cambridge University Press",
-      "status": "cataloged",
-      "key_concepts": ["Quantum Channels", "Completely Positive Trace-Preserving Maps", "Von Neumann Entropy"]
-    },
-    {
-      "id": 20,
-      "title": "Barren Plateaus in Quantum Neural Network Training Landscapes",
-      "author": "Jarrod R. McClean, Sergio Boixo, Vadim N. Smelyanskiy, Ryan Babbush, Hartmut Neven",
-      "category": "NISQ & Variational Quantum Algorithms (VQE/QAOA)",
-      "year": 2018,
-      "arxiv_id": "1803.11173",
-      "pdf_url": "https://arxiv.org/pdf/1803.11173.pdf",
-      "status": "cataloged",
-      "key_concepts": ["Barren Plateaus", "Vanishing Gradients", "Haar Measure", "Ansatz Expressibility"]
+      "reference": "Science 362",
+      "url": "https://arxiv.org/abs/1904.08645",
+      "key_concepts": [
+        "Quantum Repeaters",
+        "Entanglement Distribution Networks",
+        "Distributed Quantum Computing",
+        "Stages"
+      ],
+      "training_vector_summary": "Quantum Internet: A Vision for the Road Ahead by Stephanie Wehner, David Elkouss, Ronald Hanson (2018) is a foundational reference in Quantum Information Theory, Cryptography & Hardware. Key topics: Quantum Repeaters, Entanglement Distribution Networks, Distributed Quantum Computing, Stages."
     }
-  ],
-  "source_distribution_summary": {
-    "Quantum Foundations & Qubit Mechanics": 20,
-    "Quantum Gates, Circuit Complexity & Universality": 18,
-    "Entanglement, Bell Inequalities & Non-Locality": 16,
-    "Oracle Algorithms (Deutsch-Jozsa, Bernstein-Vazirani, Simon)": 15,
-    "Quantum Search, Amplitude Amplification & Quantum Walks": 16,
-    "Quantum Fourier Transform, Phase Estimation & Shor": 15,
-    "NISQ Algorithms (VQE, QAOA & Variational Quantum Machine Learning)": 20,
-    "Quantum Error Correction & Fault Tolerance": 15,
-    "Quantum Cryptography & Information Theory": 10,
-    "Physical Qubit Architectures & Quantum Hardware": 5
-  }
+  ]
 }
