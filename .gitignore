@@ -93,3 +93,6 @@ data/cached_simulations/runtime_generated/
 # Docker Local Volume Overrides
 .docker/
 docker-compose.override.yml
+secrets/
+.env
+quantum_leap.db
