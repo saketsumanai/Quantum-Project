@@ -1,61 +1,47 @@
 /* ==============================================================================
-   QuantumForge Master Design System - SIH 2026
-   Aesthetic: Cybernetic Deep-Space Quantum Laboratory
+   Quantum Leap Design System - SIH 2026
+   Aesthetic: Electric Blue Color Grading + Spatial UI + Liquid Glass + Backlit (BKLIT) Metrics
    ============================================================================== */
 
-/* ── IBM Quantum Learning-inspired palette for LearningHub ── */
 :root {
-  --ql-bg: #161616;
-  --ql-layer-01: #1c1c1c;
-  --ql-layer-02: #262626;
-  --ql-layer-hover: #333333;
-  --ql-border: #393939;
-  --ql-text-primary: #f4f4f4;
-  --ql-text-secondary: #c6c6c6;
-  --ql-text-helper: #8d8d8d;
-  --ql-blue: #0F62FE;
-  --ql-blue-dark: #78A9FF;
-  --ql-purple: #8A3FFC;
-  --ql-purple-dark: #A56EFF;
-  /* Color Palette - HSL Tailored */
-  --bg-space: #07090e;
-  --bg-subtle: #0d111a;
-  --bg-surface: #131824;
-  --bg-surface-glass: rgba(19, 24, 36, 0.75);
-  --bg-card: rgba(23, 29, 45, 0.65);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(0, 240, 255, 0.25);
-  --border-active: #00f0ff;
+  /* Surface & Layering */
+  --ql-bg: #000000;
+  --ql-layer-01: rgba(18, 18, 18, 0.85);
+  --ql-layer-02: rgba(24, 24, 27, 0.75);
+  --ql-layer-hover: rgba(39, 39, 42, 0.8);
+  --ql-border: rgba(255, 255, 255, 0.12);
 
-  /* Quantum Accents */
-  --q-cyan: #00f0ff;
-  --q-cyan-glow: rgba(0, 240, 255, 0.35);
-  --q-purple: #a855f7;
-  --q-purple-glow: rgba(168, 85, 247, 0.35);
-  --q-pink: #ec4899;
-  --q-emerald: #10b981;
+  /* Spatial & IBM Quantum Palette */
+  --bg-space: #000000;
+  --bg-subtle: #09090b;
+  --bg-surface: rgba(18, 18, 18, 0.85);
+  --bg-surface-glass: rgba(18, 18, 18, 0.9);
+  --bg-card: rgba(12, 12, 12, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-active: #38bdf8;
+
+  /* Accent Colors (Vibrant IBM Electric Blue & Cyberpunk Accents) */
+  --q-blue: #0F62FE;
+  --q-blue-hover: #0353e9;
+  --q-cyan: #38bdf8;
+  --q-emerald: #34d399;
   --q-amber: #f59e0b;
-  --q-blue: #3b82f6;
 
   /* Typography */
-  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
   /* Text Colors */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
   --text-highlight: #38bdf8;
 
-  /* Shadows & Lighting */
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --shadow-glow-cyan: 0 0 20px rgba(0, 240, 255, 0.2);
-  --shadow-glow-purple: 0 0 20px rgba(168, 85, 247, 0.2);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  /* Component Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
 }
 
 * {
@@ -67,7 +53,8 @@
 html, body {
   width: 100%;
   height: 100%;
-  background-color: var(--bg-space);
+  background-color: #000000;
+  background-image: radial-gradient(circle at 50% 0%, rgba(15, 98, 254, 0.08) 0%, transparent 60%);
   color: var(--text-primary);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
@@ -75,25 +62,8 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Dynamic Radial Quantum Ambient Background */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: 
-    radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 85% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
-
 #root {
   position: relative;
-  z-index: 1;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -101,109 +71,183 @@ body::before {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-subtle);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--q-cyan);
+  background: rgba(56, 189, 248, 0.6);
 }
 
 /* Typography Utilities */
 h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
-  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-weight: 600;
 }
 
 .font-mono {
   font-family: var(--font-mono);
 }
 
-/* Glassmorphic Panel Utility */
-.glass-panel {
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-glass);
+/* ==============================================================================
+   Spatial UI & Liquid Glass Primitives
+   ============================================================================== */
+
+.glass-panel, .liquid-glass-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%), rgba(10, 10, 10, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15), 0 12px 32px -8px rgba(0, 0, 0, 0.8);
   border-radius: var(--radius-md);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
-.glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+.liquid-glass-panel:hover, .glass-panel:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: inset 0 1px 2px 0 rgba(255, 255, 255, 0.25), 0 0 20px rgba(15, 98, 254, 0.15), 0 16px 40px -10px rgba(0, 0, 0, 0.9);
 }
 
 .glass-panel-glow {
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glow);
-  box-shadow: var(--shadow-glow-cyan);
+  background: linear-gradient(135deg, rgba(15, 98, 254, 0.12) 0%, rgba(15, 15, 15, 0.9) 100%);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.2), 0 0 24px rgba(15, 98, 254, 0.3), 0 16px 40px rgba(0, 0, 0, 0.8);
   border-radius: var(--radius-md);
 }
 
-/* Buttons */
+.spatial-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%), rgba(14, 14, 14, 0.8);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.spatial-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.75), 0 0 25px rgba(15, 98, 254, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* ==============================================================================
+   Backlit (BKLIT) UI System for Graphs, Visualizers & Metrics
+   ============================================================================== */
+
+.bklit-container {
+  position: relative;
+  background: radial-gradient(circle at 50% 0%, rgba(15, 98, 254, 0.18) 0%, rgba(10, 10, 10, 0.98) 75%), #050505;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: inset 0 0 20px rgba(15, 98, 254, 0.15), 0 0 25px rgba(56, 189, 248, 0.25);
+}
+
+.bklit-text-cyan {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.7), 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.bklit-text-blue {
+  color: #78A9FF;
+  text-shadow: 0 0 10px rgba(120, 169, 255, 0.6);
+}
+
+.bklit-text-white {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+.bklit-bar-glow {
+  background: linear-gradient(90deg, #0F62FE 0%, #38bdf8 100%);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.bklit-metric-card {
+  background: rgba(15, 15, 15, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: inset 0 0 12px rgba(15, 98, 254, 0.15), 0 4px 16px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+}
+
+/* ==============================================================================
+   Buttons (Rectangular Liquid Glass Controls)
+   ============================================================================== */
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 18px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  font-family: var(--font-display);
+  padding: 8px 16px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  font-family: var(--font-body);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid transparent;
   outline: none;
+  backdrop-filter: blur(12px);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
-  color: #07090e;
-  box-shadow: 0 4px 14px rgba(0, 240, 255, 0.3);
+  background: linear-gradient(135deg, #0F62FE 0%, #0353e9 100%);
+  color: #ffffff;
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 20px rgba(15, 98, 254, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 .btn-primary:hover {
+  background: linear-gradient(135deg, #38bdf8 0%, #0F62FE 100%);
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.6);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.45);
 }
 
 .btn-accent {
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
+  background: rgba(15, 98, 254, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .btn-accent:hover {
+  background: rgba(15, 98, 254, 0.3);
+  border-color: #38bdf8;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
 }
 
 .btn-glass {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .btn-glass:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(15, 98, 254, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  transform: translateY(-1px);
 }
 
 .btn-danger {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(218, 30, 40, 0.15);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(248, 113, 113, 0.3);
 }
 .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(248, 113, 113, 0.25);
+  border-color: #f87171;
 }
 
 /* Quantum Gate Palette Items */
@@ -211,67 +255,53 @@ h1, h2, h3, h4, .font-display {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.95rem;
-  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  border-radius: 4px;
   user-select: none;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.18s ease;
   position: relative;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
 .gate-badge:hover {
-  transform: scale(1.1) translateY(-2px);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7);
+  border-color: rgba(56, 189, 248, 0.6);
 }
 
 .gate-h {
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+  background: linear-gradient(135deg, #0F62FE, #0353e9);
+  color: #ffffff;
+  border: 1px solid #38bdf8;
 }
 .gate-pauli {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #000;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, #8a3ffc, #6929c4);
+  color: #ffffff;
+  border: 1px solid #be95ff;
 }
 .gate-phase {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #0072c3, #00539a);
+  color: #ffffff;
+  border: 1px solid #38bdf8;
 }
 .gate-rot {
-  background: linear-gradient(135deg, #ec4899, #db2777);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+  background: linear-gradient(135deg, #1192e8, #005d9e);
+  color: #ffffff;
+  border: 1px solid #82cfff;
 }
 .gate-cnot {
-  background: linear-gradient(135deg, #a855f7, #9333ea);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+  background: linear-gradient(135deg, #0043ce, #002d9c);
+  color: #ffffff;
+  border: 1px solid #4589ff;
 }
 .gate-measure {
-  background: linear-gradient(135deg, #64748b, #475569);
-  color: #00f0ff;
-  border: 1px solid rgba(0, 240, 255, 0.4);
-}
-
-/* Animations */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); }
-  50% { box-shadow: 0 0 25px rgba(0, 240, 255, 0.5); }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s infinite ease-in-out;
-}
-
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
+  background: linear-gradient(135deg, #da1e28, #b21921);
+  color: #ffffff;
+  border: 1px solid #ff8389;
 }

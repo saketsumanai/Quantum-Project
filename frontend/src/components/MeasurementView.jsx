@@ -12,21 +12,27 @@ export default function MeasurementView({ simulationResult, statevectorData }) {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-      {/* 1. Measurement Histogram */}
-      <div className="glass-panel" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* 1. Measurement Histogram (BKLIT Engine) */}
+      <div className="liquid-glass-panel bklit-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderRadius: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BarChart3 size={18} color="#00f0ff" />
-            <h3 style={{ fontSize: '0.98rem', fontWeight: 700 }}>Measurement Distribution</h3>
+            <BarChart3 size={18} className="bklit-text-cyan" />
+            <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#f8fafc', textShadow: '0 0 10px rgba(255,255,255,0.4)' }}>
+              Measurement Distribution
+            </h3>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            <span><Clock size={12} style={{ verticalAlign: 'middle' }} /> {executionTime}ms</span>
-            <span><Gauge size={12} style={{ verticalAlign: 'middle' }} /> {shots} shots</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.75rem' }}>
+            <span className="bklit-metric-card" style={{ padding: '3px 8px', borderRadius: '4px', color: '#ffffff', fontWeight: 600 }}>
+              <Clock size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> {executionTime}ms
+            </span>
+            <span className="bklit-metric-card" style={{ padding: '3px 8px', borderRadius: '4px', color: '#a1a1aa', fontWeight: 600 }}>
+              <Gauge size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> {shots} shots
+            </span>
           </div>
         </div>
 
-        {/* Dynamic Animated Bars */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, justifyContent: 'center' }}>
+        {/* Dynamic Backlit Animated Bars */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, justifyContent: 'center' }}>
           {Object.keys(probs).length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.84rem', padding: '30px 0' }}>
               Run simulation to view projective measurement distribution.
@@ -44,34 +50,39 @@ export default function MeasurementView({ simulationResult, statevectorData }) {
                     width: '45px',
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 700,
-                    fontSize: '0.85rem',
-                    color: '#38bdf8'
+                    fontSize: '0.88rem',
+                    color: '#ffffff',
+                    textShadow: '0 0 10px rgba(255, 255, 255, 0.6)'
                   }}>
                     |{basis}⟩
                   </span>
 
-                  {/* Bar Track */}
+                  {/* Bar Track with LED Backlight */}
                   <div style={{
                     flex: 1,
-                    height: '24px',
-                    background: 'rgba(255,255,255,0.05)',
-                    borderRadius: '6px',
+                    height: '26px',
+                    background: 'rgba(10, 10, 10, 0.9)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '4px',
                     overflow: 'hidden',
-                    position: 'relative'
+                    position: 'relative',
+                    boxShadow: 'inset 0 0 8px rgba(0,0,0,0.9)'
                   }}>
-                    <div style={{
-                      width: barWidth,
-                      height: '100%',
-                      background: 'linear-gradient(90deg, #00f0ff 0%, #38bdf8 60%, #a855f7 100%)',
-                      borderRadius: '6px',
-                      transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-                    }} />
+                    <div
+                      className="bklit-bar-glow"
+                      style={{
+                        width: barWidth,
+                        height: '100%',
+                        borderRadius: '3px',
+                        transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                    />
                   </div>
 
                   {/* Value */}
-                  <div style={{ width: '85px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
-                    <span style={{ color: '#fff', fontWeight: 600 }}>{percent}%</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginLeft: '4px' }}>({count})</span>
+                  <div style={{ width: '85px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}>
+                    <span style={{ color: '#fff', fontWeight: 700, textShadow: '0 0 8px rgba(255,255,255,0.6)' }}>{percent}%</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginLeft: '4px' }}>({count})</span>
                   </div>
                 </div>
               );
@@ -81,21 +92,21 @@ export default function MeasurementView({ simulationResult, statevectorData }) {
       </div>
 
       {/* 2. Statevector Complex Amplitudes Table */}
-      <div className="glass-panel" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="liquid-glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', borderRadius: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Binary size={18} color="#a855f7" />
-          <h3 style={{ fontSize: '0.98rem', fontWeight: 700 }}>Pure Statevector (|ψ⟩)</h3>
+          <Binary size={18} className="bklit-text-cyan" />
+          <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#f8fafc' }}>Pure Statevector (|ψ⟩)</h3>
         </div>
 
         <div style={{ overflowY: 'auto', maxHeight: '220px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                <th style={{ padding: '6px 8px' }}>Basis</th>
-                <th style={{ padding: '6px 8px' }}>Real (α)</th>
-                <th style={{ padding: '6px 8px' }}>Imag (β)</th>
-                <th style={{ padding: '6px 8px' }}>|Amplitude|²</th>
-                <th style={{ padding: '6px 8px' }}>Phase (rad)</th>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-muted)', textAlign: 'left' }}>
+                <th style={{ padding: '8px' }}>Basis</th>
+                <th style={{ padding: '8px' }}>Real (α)</th>
+                <th style={{ padding: '8px' }}>Imag (β)</th>
+                <th style={{ padding: '8px' }}>|Amplitude|²</th>
+                <th style={{ padding: '8px' }}>Phase (rad)</th>
               </tr>
             </thead>
             <tbody>
@@ -107,12 +118,12 @@ export default function MeasurementView({ simulationResult, statevectorData }) {
                 </tr>
               ) : (
                 statevector.map((c) => (
-                  <tr key={c.basis_state} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td style={{ padding: '6px 8px', color: '#00f0ff', fontWeight: 700 }}>|{c.basis_state}⟩</td>
-                    <td style={{ padding: '6px 8px', color: '#e2e8f0' }}>{c.real.toFixed(4)}</td>
-                    <td style={{ padding: '6px 8px', color: '#e2e8f0' }}>{c.imag.toFixed(4)}i</td>
-                    <td style={{ padding: '6px 8px', color: '#a855f7', fontWeight: 600 }}>{c.amplitude_sq.toFixed(4)}</td>
-                    <td style={{ padding: '6px 8px', color: 'var(--text-secondary)' }}>{c.phase_rad.toFixed(3)}</td>
+                  <tr key={c.basis_state} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '8px', color: '#ffffff', fontWeight: 700, textShadow: '0 0 6px rgba(255, 255, 255, 0.5)' }}>|{c.basis_state}⟩</td>
+                    <td style={{ padding: '8px', color: '#f1f5f9' }}>{c.real.toFixed(4)}</td>
+                    <td style={{ padding: '8px', color: '#f1f5f9' }}>{c.imag.toFixed(4)}i</td>
+                    <td style={{ padding: '8px', color: '#e4e4e7', fontWeight: 600, textShadow: '0 0 6px rgba(255, 255, 255, 0.4)' }}>{c.amplitude_sq.toFixed(4)}</td>
+                    <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{c.phase_rad.toFixed(3)}</td>
                   </tr>
                 ))
               )}

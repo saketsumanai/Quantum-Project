@@ -66,12 +66,12 @@ export default function ExportModal({ isOpen, onClose, circuit, qasmExport }) {
       justifyContent: 'center',
       zIndex: 100
     }}>
-      <div className="glass-panel" style={{ width: '640px', maxWidth: '90vw', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="liquid-glass-panel" style={{ width: '640px', maxWidth: '90vw', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px', borderRadius: '8px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Terminal size={18} color="#00f0ff" />
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Export Quantum Algorithm</h3>
+            <Terminal size={18} className="bklit-text-cyan" />
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', textShadow: '0 0 10px rgba(255,255,255,0.4)' }}>Export Quantum Algorithm</h3>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <X size={20} />
@@ -92,16 +92,14 @@ export default function ExportModal({ isOpen, onClose, circuit, qasmExport }) {
           ))}
         </div>
 
-        {/* Code View */}
-        <div style={{
+        {/* Code View (BKLIT Container) */}
+        <div className="bklit-container" style={{
           position: 'relative',
-          background: '#07090e',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '8px',
-          padding: '16px',
+          borderRadius: '6px',
+          padding: '18px',
           fontFamily: 'var(--font-mono)',
-          fontSize: '0.8rem',
-          maxHeight: '320px',
+          fontSize: '0.82rem',
+          maxHeight: '340px',
           overflowY: 'auto'
         }}>
           <button
