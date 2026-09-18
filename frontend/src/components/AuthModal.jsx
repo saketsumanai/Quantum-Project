@@ -46,26 +46,25 @@ export default function AuthModal({ isOpen, onClose }) {
 
         {/* Animated Logo */}
         <div style={{
-          width: "72px", height: "72px", borderRadius: "20px",
-          background: "linear-gradient(135deg, rgba(0,240,255,0.15), rgba(168,85,247,0.2))",
-          border: "1px solid var(--border-glow)",
+          width: "64px", height: "64px", borderRadius: "6px",
+          background: "rgba(15, 98, 254, 0.18)",
+          border: "1px solid rgba(15, 98, 254, 0.4)",
+          boxShadow: "0 0 20px rgba(15, 98, 254, 0.4), inset 0 0 10px rgba(56, 189, 248, 0.3)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 0 30px rgba(0,240,255,0.2), 0 0 60px rgba(168,85,247,0.1)",
         }}>
-          <Atom className="animate-spin-slow" size={40} color="#00f0ff" />
+          <Atom className="animate-spin-slow" size={36} color="#38bdf8" />
         </div>
 
         {/* Title */}
         <div style={{ textAlign: "center" }}>
           <h2 style={{
-            fontSize: "1.75rem", fontWeight: 800, fontFamily: "var(--font-display)",
-            background: "linear-gradient(135deg, #00f0ff, #c084fc)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            fontSize: "1.6rem", fontWeight: 700, fontFamily: "var(--font-display)",
+            color: "#f4f4f4",
           }}>
             Quantum Leap
           </h2>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", marginTop: "6px" }}>
-            Sign in to save progress, earn XP, and unlock curriculum modules.
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "6px" }}>
+            Sign in to save circuit designs and sync learning progress.
           </p>
         </div>
 
@@ -75,8 +74,8 @@ export default function AuthModal({ isOpen, onClose }) {
           disabled={signing || isLoading}
           style={{
             width: "100%",
-            padding: "14px 20px",
-            borderRadius: "12px",
+            padding: "12px 20px",
+            borderRadius: "4px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

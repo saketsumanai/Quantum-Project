@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Sparkles, Send, BookOpen, Code, CheckCircle, XCircle, ChevronDown, ChevronUp, Bot } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Sparkles, Send, BookOpen, Bot, X, MessageSquare, ChevronRight, HelpCircle } from 'lucide-react';
 
 export default function AITutorChat({ circuitContext, activeTopic = "entanglement" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true);
   const [messages, setMessages] = useState([
     {
       sender: 'aura',
-      text: "Hello! I am Aura Quantum AI, your intelligent co-pilot. Build any circuit on the canvas and ask me anything about state superposition, entanglement, Bloch angles, or algorithm proofs.",
+      text: "Hello! I am your Quantum Chatbot co-pilot. Build any circuit on the canvas or explore modules, and ask me anything about state superposition, entanglement, Bloch angles, or Qiskit proofs.",
       latex: null,
       code: null,
       quiz: null,
@@ -14,9 +16,16 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
   ]);
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
   const [selectedQuizAnswer, setSelectedQuizAnswer] = useState(null);
   const [quizFeedback, setQuizFeedback] = useState(null);
+  const chatEndRef = useRef(null);
+
+  // Auto scroll to bottom when messages update
+  useEffect(() => {
+    if (isOpen) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isOpen]);
 
   const handleSendQuery = async (queryText) => {
     const textToSend = queryText || inputQuery;
@@ -72,7 +81,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
         ...prev,
         {
           sender: 'aura',
-          text: "Quantum Tutor is currently operating in offline mode. Entangled qubits (|Phi+>) yield identical outcomes upon measurement with 100% correlation.",
+          text: "Chatbot is operating in offline mode. Entangled qubits (|Φ+⟩) yield identical outcomes upon measurement with 100% correlation.",
           latex: "|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)",
           code: "from qiskit import QuantumCircuit\nqc = QuantumCircuit(2)\nqc.h(0)\nqc.cx(0, 1)",
           quiz: null,
@@ -87,144 +96,254 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
   const handleAnswerQuiz = (optionIdx, correctIdx) => {
     setSelectedQuizAnswer(optionIdx);
     if (optionIdx === correctIdx) {
-      setQuizFeedback({ correct: true, text: "🎉 Outstanding! Correct quantum intuition." });
+      setQuizFeedback({ correct: true, text: "Outstanding! Correct quantum intuition." });
     } else {
       setQuizFeedback({ correct: false, text: "Incorrect. Re-examine the unitary transformation!" });
     }
   };
 
   return (
-    <div className="glass-panel" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      transition: 'all 0.3s ease'
-    }}>
-      {/* Header bar */}
+    <>
+      {/* ── Global Floating Trigger Button (Bottom Right) ── */}
       <div
-        onClick={() => setIsExpanded(!isExpanded)}
         style={{
-          padding: '12px 18px',
-          background: 'linear-gradient(90deg, rgba(0, 240, 255, 0.1), rgba(168, 85, 247, 0.15))',
-          borderBottom: isExpanded ? '1px solid var(--border-subtle)' : 'none',
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer'
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={18} color="#00f0ff" />
-          <h3 style={{ fontSize: '0.94rem', fontWeight: 700, background: 'linear-gradient(to right, #00f0ff, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Aura AI Quantum Tutor
-          </h3>
-          <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '10px', background: 'rgba(168, 85, 247, 0.2)', color: '#d8b4fe', fontWeight: 600 }}>
-            RAG Active
-          </span>
-        </div>
-        {isExpanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+        {/* Floating Tooltip Bubble */}
+        {showTooltip && !isOpen && (
+          <div
+            style={{
+              position: 'relative',
+              background: 'rgba(10, 14, 23, 0.95)',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.8), 0 0 16px rgba(15, 98, 254, 0.3)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              maxWidth: '240px',
+              backdropFilter: 'blur(16px)',
+              animation: 'fadeInUp 0.3s ease-out',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '0.7rem', fontFamily: "'JetBrains Mono', monospace", color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase' }}>
+                Quantum Chatbot
+              </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowTooltip(false); }}
+                style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: 0 }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+            <p
+              onClick={() => setIsOpen(true)}
+              style={{ fontSize: "0.82rem", color: "#ffffff", margin: 0, cursor: "pointer", lineHeight: 1.4 }}
+            >
+              If you need help, I am there to help you!
+            </p>
+          </div>
+        )}
+
+        {/* Round Floating Action Button */}
+        <button
+          onClick={() => {
+            setIsOpen(!isOpen);
+            setShowTooltip(false);
+          }}
+          style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: isOpen ? 'linear-gradient(135deg, #27272a 0%, #18181b 100%)' : 'linear-gradient(135deg, #0F62FE 0%, #0353e9 100%)',
+            border: isOpen ? '1px solid rgba(255, 255, 255, 0.3)' : '2px solid #38bdf8',
+            boxShadow: isOpen ? '0 4px 20px rgba(0, 0, 0, 0.8)' : '0 0 25px rgba(15, 98, 254, 0.6), 0 8px 24px rgba(0,0,0,0.8)',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            outline: 'none',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.08)';
+            if (!isOpen) e.currentTarget.style.boxShadow = '0 0 35px rgba(56, 189, 248, 0.8)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            if (!isOpen) e.currentTarget.style.boxShadow = '0 0 25px rgba(15, 98, 254, 0.6), 0 8px 24px rgba(0,0,0,0.8)';
+          }}
+        >
+          {isOpen ? <X size={24} /> : <Bot size={26} />}
+        </button>
       </div>
 
-      {isExpanded && (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '360px' }}>
+      {/* ── Slide-Over Drawer Panel (Takes 1/4 Screen on Right) ── */}
+      {isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            bottom: 0,
+            right: 0,
+            width: 'min(420px, 90vw)',
+            height: '100vh',
+            zIndex: 10000,
+            background: 'rgba(10, 10, 12, 0.95)',
+            borderLeft: '1px solid rgba(255, 255, 255, 0.16)',
+            boxShadow: '-12px 0 36px rgba(0, 0, 0, 0.9)',
+            backdropFilter: 'blur(24px)',
+            display: 'flex',
+            flexDirection: 'column',
+            animation: 'slideInRight 0.3s ease-out',
+          }}
+        >
+          {/* Drawer Header */}
+          <div
+            style={{
+              padding: '16px 20px',
+              background: 'rgba(18, 18, 22, 0.9)',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(15, 98, 254, 0.2)', border: '1px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bot size={18} color="#38bdf8" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Chatbot
+                  </h3>
+                  <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(15, 98, 254, 0.2)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.4)', fontWeight: 600 }}>
+                    RAG Active
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#a1a1aa' }}>Quantum Intelligence Co-pilot</div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsOpen(false)}
+              style={{ background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '6px', width: '32px', height: '32px', color: '#a1a1aa', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
           {/* Quick Prompt Chips */}
-          <div style={{ padding: '8px 14px', display: 'flex', gap: '6px', overflowX: 'auto', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div style={{ padding: '10px 14px', display: 'flex', gap: '8px', overflowX: 'auto', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', background: '#050505' }}>
             {[
               "Explain current circuit",
               "Why is Bell State entangled?",
-              "Grover quadratic speedup",
+              "Grover algorithm",
               "Bloch sphere coordinates"
             ].map((chip, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendQuery(chip)}
                 style={{
-                  padding: '4px 10px',
-                  borderRadius: '16px',
+                  padding: '6px 12px',
+                  borderRadius: '9999px',
                   fontSize: '0.72rem',
+                  fontWeight: 500,
                   whiteSpace: 'nowrap',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-secondary)',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.16)',
+                  color: '#ffffff',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={(e) => e.target.style.borderColor = '#00f0ff'}
-                onMouseLeave={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#38bdf8';
+                  e.currentTarget.style.color = '#38bdf8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.16)';
+                  e.currentTarget.style.color = '#ffffff';
+                }}
               >
                 {chip}
               </button>
             ))}
           </div>
 
-          {/* Messages Area */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Scrollable Messages Area */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', background: '#000000' }}>
             {messages.map((m, idx) => (
               <div
                 key={idx}
                 style={{
                   alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
                   maxWidth: '92%',
-                  background: m.sender === 'user' ? 'rgba(0, 240, 255, 0.12)' : 'rgba(23, 29, 45, 0.85)',
-                  border: `1px solid ${m.sender === 'user' ? 'rgba(0, 240, 255, 0.3)' : 'var(--border-subtle)'}`,
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  fontSize: '0.84rem',
-                  lineHeight: '1.5'
+                  background: m.sender === 'user' ?
+                    'linear-gradient(135deg, #27272a 0%, #18181b 100%)' :
+                    'linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)',
+                  border: `1px solid ${m.sender === 'user' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)'}`,
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  fontSize: '0.86rem',
+                  lineHeight: '1.55',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.5)'
                 }}
               >
                 {/* Message Header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', fontSize: '0.72rem', color: m.sender === 'user' ? '#38bdf8' : '#a855f7', fontWeight: 700 }}>
-                  {m.sender === 'user' ? 'You' : <><Bot size={13} /> Aura AI Tutor</>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', fontSize: '0.72rem', color: m.sender === 'user' ? '#ffffff' : '#38bdf8', fontWeight: 700 }}>
+                  {m.sender === 'user' ? 'You' : <><Bot size={13} color="#38bdf8" /> Chatbot AI</>}
                 </div>
 
-                {/* Prose */}
-                <p style={{ color: 'var(--text-primary)' }}>{m.text}</p>
+                {/* Prose Text */}
+                <p style={{ color: m.sender === 'user' ? '#ffffff' : '#e2e8f0', margin: 0 }}>{m.text}</p>
 
                 {/* LaTeX Formula */}
                 {m.latex && (
                   <div style={{
                     marginTop: '8px',
                     padding: '8px 12px',
-                    background: 'rgba(0, 0, 0, 0.5)',
+                    background: '#050505',
                     borderRadius: '6px',
-                    borderLeft: '3px solid #00f0ff',
-                    fontFamily: 'var(--font-mono)',
+                    borderLeft: '3px solid #38bdf8',
+                    fontFamily: "'JetBrains Mono', monospace",
                     fontSize: '0.8rem',
-                    color: '#00f0ff'
+                    color: '#38bdf8',
                   }}>
                     {m.latex}
                   </div>
                 )}
 
-                {/* Executable Code */}
+                {/* Executable Qiskit Code */}
                 {m.code && (
                   <div style={{
                     marginTop: '8px',
-                    background: '#07090e',
+                    background: '#05070c',
                     borderRadius: '6px',
-                    padding: '10px',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.75rem',
-                    color: '#94a3b8',
+                    padding: '10px 12px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.76rem',
+                    color: '#e2e8f0',
                     overflowX: 'auto',
-                    border: '1px solid rgba(255,255,255,0.06)'
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
                   }}>
                     <pre style={{ margin: 0 }}>{m.code}</pre>
                   </div>
                 )}
 
-                {/* Generated Quiz */}
+                {/* Quiz Verification */}
                 {m.quiz && (
-                  <div style={{
-                    marginTop: '10px',
-                    padding: '10px',
-                    background: 'rgba(168, 85, 247, 0.08)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(168, 85, 247, 0.3)'
-                  }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.82rem', marginBottom: '8px', color: '#e2e8f0' }}>
-                      🧠 Quick Check: {m.quiz.question_string}
+                  <div style={{ marginTop: '10px', padding: '12px', background: 'rgba(15, 98, 254, 0.1)', borderRadius: '6px', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '8px', color: '#f8fafc' }}>
+                      Concept Check: {m.quiz.question_string}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {m.quiz.options_array.map((opt, oIdx) => (
@@ -233,14 +352,14 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
                           onClick={() => handleAnswerQuiz(oIdx, m.quiz.valid_index_pointer)}
                           style={{
                             padding: '6px 10px',
-                            borderRadius: '6px',
+                            borderRadius: '4px',
                             textAlign: 'left',
                             fontSize: '0.76rem',
                             cursor: 'pointer',
                             background: selectedQuizAnswer === oIdx ?
-                              (oIdx === m.quiz.valid_index_pointer ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)') :
-                              'rgba(255,255,255,0.05)',
-                            border: '1px solid var(--border-subtle)',
+                              (oIdx === m.quiz.valid_index_pointer ? 'rgba(52, 211, 153, 0.25)' : 'rgba(248, 113, 113, 0.25)') :
+                              'rgba(255, 255, 255, 0.05)',
+                            border: `1px solid ${selectedQuizAnswer === oIdx ? (oIdx === m.quiz.valid_index_pointer ? '#34d399' : '#f87171') : 'rgba(255, 255, 255, 0.12)'}`,
                             color: '#fff'
                           }}
                         >
@@ -258,7 +377,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
 
                 {/* Sources */}
                 {m.sources && m.sources.length > 0 && (
-                  <div style={{ marginTop: '8px', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  <div style={{ marginTop: '8px', fontSize: '0.7rem', color: '#71717a' }}>
                     <BookOpen size={11} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
                     Sources: {m.sources.join(' • ')}
                   </div>
@@ -267,37 +386,52 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
             ))}
 
             {isLoading && (
-              <div style={{ fontSize: '0.78rem', color: '#00f0ff', padding: '6px', fontStyle: 'italic' }}>
-                Aura AI is calculating state evolution & searching quantum literature...
+              <div style={{ fontSize: '0.78rem', color: '#38bdf8', padding: '6px', fontStyle: 'italic' }}>
+                Chatbot is searching literature & computing quantum state evolution...
               </div>
             )}
+            <div ref={chatEndRef} />
           </div>
 
-          {/* Input Bar */}
-          <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', gap: '8px' }}>
+          {/* Drawer Input Bar */}
+          <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', gap: '8px', background: '#050505' }}>
             <input
               type="text"
-              placeholder="Ask Aura AI about gates, math proofs, or algorithms..."
+              placeholder="Ask Chatbot about gates, formulas, code..."
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendQuery()}
               style={{
                 flex: 1,
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '8px',
-                padding: '8px 14px',
-                fontSize: '0.84rem',
+                background: 'rgba(20, 20, 24, 0.9)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '6px',
+                padding: '10px 14px',
+                fontSize: '0.86rem',
                 color: '#fff',
-                outline: 'none'
+                outline: 'none',
               }}
             />
-            <button className="btn btn-primary" onClick={() => handleSendQuery()} disabled={isLoading} style={{ padding: '8px 14px' }}>
+            <button
+              onClick={() => handleSendQuery()}
+              disabled={isLoading}
+              style={{
+                padding: '10px 16px',
+                background: 'linear-gradient(135deg, #0F62FE 0%, #0353e9 100%)',
+                border: '1px solid #38bdf8',
+                borderRadius: '6px',
+                color: '#fff',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Send size={15} />
             </button>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

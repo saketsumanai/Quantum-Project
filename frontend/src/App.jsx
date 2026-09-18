@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import Header from "./components/Header";
+import LandingPage from "./components/LandingPage";
 import CircuitCanvas from "./components/CircuitCanvas";
 import BlochSphere from "./components/BlochSphere";
 import MeasurementView from "./components/MeasurementView";
@@ -9,11 +10,12 @@ import CurriculumView from "./components/CurriculumView";
 import LearningHub from "./components/LearningHub";
 import ExportModal from "./components/ExportModal";
 import AuthModal from "./components/AuthModal";
+import GatewayFlow from "./components/ui/gateway-flow";
 
 const API = "http://localhost:8000/api/v1";
 
 function QuantumLeapApp() {
-  const [activeTab, setActiveTab] = useState("studio");
+  const [activeTab, setActiveTab] = useState("landing");
   const [numQubits, setNumQubits] = useState(2);
   const [instructions, setInstructions] = useState([
     { gate: "h", qubits: [0], params: [] },
@@ -89,7 +91,9 @@ function QuantumLeapApp() {
         backendStatus={backendStatus}
       />
 
-      {activeTab === "learning" ? (
+      {activeTab === "landing" ? (
+        <LandingPage onNavigate={setActiveTab} />
+      ) : activeTab === "learning" ? (
         <LearningHub onSwitchToStudio={(presetKey) => {
           if (presetKey) handleLoadPreset(presetKey);
           setActiveTab("studio");
@@ -124,17 +128,19 @@ function QuantumLeapApp() {
 
           {/* Right Column */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ height: "380px" }}>
+            <div style={{ height: "100%", minHeight: "580px" }}>
               <BlochSphere
                 blochCoordinates={statevectorData?.bloch_coordinates || []}
                 selectedQubit={selectedQubit}
                 onSelectQubit={setSelectedQubit}
               />
             </div>
-            <AITutorChat
-              circuitContext={{ num_qubits: numQubits, gates_applied: instructions.map((i) => i.gate) }}
-              activeTopic="entanglement"
-            />
+          </div>
+        </main>
+      ) : activeTab === "gateway" ? (
+        <main style={{ padding: "0 24px 24px 24px", flex: 1, minHeight: "680px" }}>
+          <div className="liquid-glass-panel" style={{ height: "100%", minHeight: "680px", width: "100%", overflow: "hidden", borderRadius: "8px" }}>
+            <GatewayFlow style={{ width: "100%", height: "100%", minHeight: "680px" }} />
           </div>
         </main>
       ) : (
@@ -152,6 +158,12 @@ function QuantumLeapApp() {
       />
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+
+      {/* Global Floating Chatbot Drawer (Present on ALL pages) */}
+      <AITutorChat
+        circuitContext={{ num_qubits: numQubits, gates_applied: instructions.map((i) => i.gate) }}
+        activeTopic="entanglement"
+      />
     </div>
   );
 }

@@ -12,7 +12,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
-// ⚠️ REPLACE WITH YOUR FIREBASE CONFIG:
+// REPLACE WITH YOUR FIREBASE CONFIG:
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || "YOUR_API_KEY",
   authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || "YOUR_PROJECT.firebaseapp.com",

@@ -1,4 +1,10 @@
 import os
+import sys
+
+# Ensure UTF-8 output encoding on Windows terminals to prevent CP1252 charmap crashes
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,13 +20,13 @@ def _init_firebase():
             if service_account_path and os.path.exists(service_account_path):
                 cred = credentials.Certificate(service_account_path)
                 firebase_admin.initialize_app(cred)
-                print("[Firebase] ✅ Initialized with service account.")
+                print("[Firebase] Initialized with service account.")
             else:
                 # Attempt default credentials (Cloud Run / App Engine)
                 firebase_admin.initialize_app()
-                print("[Firebase] ✅ Initialized with application default credentials.")
+                print("[Firebase] Initialized with application default credentials.")
     except Exception as e:
-        print(f"[Firebase] ⚠️  Init skipped (auth will be unavailable): {e}")
+        print(f"[Firebase] Init skipped (auth will be unavailable): {e}")
 
 
 # ─── SQLAlchemy DB Init ───────────────────────────────────────────────────────
@@ -28,7 +34,7 @@ def _init_db():
     from backend.app.db.database import engine, Base
     from backend.app.db import models  # noqa: F401 — imports trigger table registration
     Base.metadata.create_all(bind=engine)
-    print("[Database] ✅ SQLite tables created / verified.")
+    print("[Database] SQLite tables created / verified.")
 
 
 # ─── App Factory ─────────────────────────────────────────────────────────────

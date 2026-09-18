@@ -14,9 +14,9 @@ const FEATURED_COURSES = [
     lessons: 6,
     duration: "8 hours",
     topics: ["Qubits & States", "Superposition", "Entanglement", "Measurement", "Unitary Evolution", "No-Cloning"],
-    gradient: "linear-gradient(135deg, #001141 0%, #0F1F4A 100%)",
-    accent: "#0F62FE",
-    badge: "#78A9FF",
+    gradient: "linear-gradient(135deg, #09090b 0%, #18181b 100%)",
+    accent: "#27272a",
+    badge: "#ffffff",
   },
   {
     id: "quantum-algos",
@@ -28,19 +28,19 @@ const FEATURED_COURSES = [
     lessons: 5,
     duration: "12 hours",
     topics: ["Deutsch-Jozsa", "Grover Search", "Quantum Fourier Transform", "Phase Estimation", "Shor's Factoring"],
-    gradient: "linear-gradient(135deg, #1C0F30 0%, #2D1B4E 100%)",
-    accent: "#8A3FFC",
-    badge: "#A56EFF",
+    gradient: "linear-gradient(135deg, #0a0a0a 0%, #27272a 100%)",
+    accent: "#3f3f46",
+    badge: "#ffffff",
   },
 ];
 
 const LEARNING_PATHS = [
-  { id: "intro", label: "Introduction to Quantum", icon: "⚛", description: "Superposition, entanglement, and the basics", modules: 6, courses: 2 },
-  { id: "algorithms", label: "Quantum Algorithm Development", icon: "⚙", description: "Build circuits that achieve quantum speedups", modules: 8, courses: 3 },
-  { id: "ml", label: "Quantum Machine Learning", icon: "🧠", description: "Parameterized circuits, kernels, and QNNs", modules: 7, courses: 2 },
-  { id: "physics", label: "Physics & Chemistry Simulation", icon: "⚗", description: "VQE, molecular Hamiltonians, and Trotterization", modules: 5, courses: 2 },
-  { id: "error", label: "Error Correction & Fault Tolerance", icon: "🛡", description: "Stabilizer codes, surface codes, and thresholds", modules: 6, courses: 2 },
-  { id: "nisq", label: "NISQ Applications", icon: "📡", description: "Near-term algorithms on noisy hardware", modules: 5, courses: 2 },
+  { id: "intro", label: "Introduction to Quantum", icon: "", description: "Superposition, entanglement, and the basics", modules: 6, courses: 2 },
+  { id: "algorithms", label: "Quantum Algorithm Development", icon: "", description: "Build circuits that achieve quantum speedups", modules: 8, courses: 3 },
+  { id: "ml", label: "Quantum Machine Learning", icon: "", description: "Parameterized circuits, kernels, and QNNs", modules: 7, courses: 2 },
+  { id: "physics", label: "Physics & Chemistry Simulation", icon: "", description: "VQE, molecular Hamiltonians, and Trotterization", modules: 5, courses: 2 },
+  { id: "error", label: "Error Correction & Fault Tolerance", icon: "", description: "Stabilizer codes, surface codes, and thresholds", modules: 6, courses: 2 },
+  { id: "nisq", label: "NISQ Applications", icon: "", description: "Near-term algorithms on noisy hardware", modules: 5, courses: 2 },
 ];
 
 const ALL_COURSES = [
@@ -70,9 +70,9 @@ const MODULES = [
 ];
 
 const LEVEL_COLORS = {
-  Beginner: { bg: "rgba(16,185,129,0.12)", text: "#34d399", border: "rgba(16,185,129,0.3)" },
-  Intermediate: { bg: "rgba(120,169,255,0.12)", text: "#78A9FF", border: "rgba(120,169,255,0.3)" },
-  Advanced: { bg: "rgba(165,110,255,0.12)", text: "#A56EFF", border: "rgba(165,110,255,0.3)" },
+  Beginner: { bg: "rgba(255,255,255,0.06)", text: "#e4e4e7", border: "rgba(255,255,255,0.2)" },
+  Intermediate: { bg: "rgba(255,255,255,0.08)", text: "#ffffff", border: "rgba(255,255,255,0.25)" },
+  Advanced: { bg: "rgba(255,255,255,0.12)", text: "#ffffff", border: "rgba(255,255,255,0.35)" },
 };
 
 // ─── Sub-Components ───────────────────────────────────────────────────────────
@@ -94,46 +94,42 @@ function FeaturedCourseCard({ course, onEnroll }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
+      className="spatial-card"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onEnroll(course)}
       style={{
         display: "grid", gridTemplateColumns: "1fr 1fr",
-        background: hovered ? "var(--ql-layer-hover)" : "var(--ql-layer-02)",
-        cursor: "pointer", transition: "background 0.15s ease", minHeight: "280px",
-        border: "1px solid var(--ql-border)",
+        cursor: "pointer", transition: "all 0.2s ease", minHeight: "280px",
+        borderRadius: "8px", overflow: "hidden"
       }}
     >
       {/* Text side */}
-      <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "12px" }}>
-        <div style={{ fontSize: "0.72rem", color: "var(--ql-text-helper)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+      <div style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={{ fontSize: "0.72rem", color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
           Course
         </div>
-        <h3 style={{ fontSize: "1.4rem", fontWeight: 400, lineHeight: 1.3, color: "var(--ql-text-primary)", margin: 0 }}>
+        <h3 style={{ fontSize: "1.4rem", fontWeight: 600, lineHeight: 1.3, color: "#f8fafc", margin: 0, textShadow: "0 0 10px rgba(255,255,255,0.3)" }}>
           {course.title}
         </h3>
         <div>
-          <div style={{ fontSize: "0.95rem", fontWeight: 500, color: "var(--ql-text-primary)" }}>{course.courseLabel}</div>
+          <div style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--ql-text-primary)" }}>{course.courseLabel}</div>
           <div style={{ fontSize: "0.82rem", color: "var(--ql-text-helper)", marginTop: "4px" }}>with {course.instructor}</div>
         </div>
         <p style={{ fontSize: "0.83rem", color: "var(--ql-text-secondary)", lineHeight: 1.6, margin: 0, flexGrow: 1 }}>
           {course.description}
         </p>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
           <LevelBadge level={course.level} />
-          <span style={{ fontSize: "0.72rem", color: "var(--ql-text-helper)" }}>
+          <span style={{ fontSize: "0.74rem", color: "#38bdf8", background: "rgba(15, 98, 254, 0.15)", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>
             {course.lessons} units · {course.duration}
           </span>
         </div>
         <button
+          className="btn btn-primary"
           style={{
             marginTop: "auto", alignSelf: "flex-start",
-            padding: "10px 20px",
-            background: hovered ? course.accent : "transparent",
-            color: hovered ? "#fff" : course.badge,
-            border: `1px solid ${hovered ? course.accent : course.badge}`,
-            fontSize: "0.83rem", fontWeight: 600, cursor: "pointer",
-            transition: "all 0.15s ease", letterSpacing: "0.02em",
+            padding: "8px 20px", fontSize: "0.83rem"
           }}
         >
           Start this course →
@@ -147,7 +143,7 @@ function FeaturedCourseCard({ course, onEnroll }) {
         position: "relative", overflow: "hidden",
       }}>
         <div style={{
-          position: "absolute", inset: 0, opacity: 0.08,
+          position: "absolute", inset: 0, opacity: 0.15,
           backgroundImage: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.6) 0%, transparent 70%)",
         }} />
         <svg width="220" height="180" viewBox="0 0 220 180" style={{ opacity: 0.9 }}>
@@ -186,23 +182,23 @@ function PathTile({ path, onSelect }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
+      className="spatial-card"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onSelect(path)}
       style={{
-        background: hovered ? "var(--ql-layer-hover)" : "var(--ql-layer-02)",
-        padding: "16px 40px 16px 16px",
+        padding: "20px 40px 20px 20px",
         display: "flex", flexDirection: "column", gap: "8px",
-        cursor: "pointer", transition: "background 0.15s ease",
-        position: "relative", border: "1px solid var(--ql-border)",
-        minHeight: "100px",
+        cursor: "pointer", transition: "all 0.2s ease",
+        position: "relative", borderRadius: "8px",
+        minHeight: "110px",
       }}
     >
-      <div style={{ fontSize: "1.4rem" }}>{path.icon}</div>
-      <div style={{ fontSize: "0.95rem", fontWeight: 500, color: "var(--ql-text-primary)", lineHeight: 1.3 }}>
+      <div style={{ fontSize: "1.5rem" }}>{path.icon}</div>
+      <div style={{ fontSize: "0.98rem", fontWeight: 600, color: "var(--ql-text-primary)", lineHeight: 1.3 }}>
         {path.label}
       </div>
-      <div style={{ fontSize: "0.72rem", color: "var(--ql-text-helper)" }}>
+      <div style={{ fontSize: "0.74rem", color: "#38bdf8", fontWeight: 600 }}>
         {path.courses} courses · {path.modules} modules
       </div>
       <span style={{ position: "absolute", bottom: "14px", right: "14px", color: "var(--ql-text-secondary)", fontSize: "1rem" }}>
@@ -349,7 +345,7 @@ function ModuleDetailModal({ module, onClose, onOpenStudio }) {
                   onClick={handleCopy}
                   style={{ background: "var(--ql-layer-02)", border: "1px solid var(--ql-border)", color: "#78A9FF", padding: "4px 10px", fontSize: "0.75rem", cursor: "pointer" }}
                 >
-                  {copied ? "✓ Copied" : "📋 Copy Code"}
+                  {copied ? "✓ Copied" : "Copy Code"}
                 </button>
               </div>
               <pre style={{
@@ -378,7 +374,7 @@ function ModuleDetailModal({ module, onClose, onOpenStudio }) {
             }}
             style={{ padding: "10px 20px", background: "#0F62FE", border: "none", color: "#fff", fontWeight: 600, cursor: "pointer" }}
           >
-            ⚡ Open in Circuit Studio →
+            Open in Circuit Studio →
           </button>
         </div>
       </div>
@@ -642,7 +638,7 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
                 borderLeft: "4px solid #0F62FE", border: "1px solid rgba(15,98,254,0.2)",
                 fontSize: "0.88rem", color: "#c6c6c6", lineHeight: 1.7
               }}>
-                <strong style={{ color: "#78A9FF" }}>💡 Key Insight: </strong>
+                <strong style={{ color: "#78A9FF" }}>Key Insight: </strong>
                 {sec.callout}
               </div>
             )}
@@ -662,7 +658,7 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
                       cursor: "pointer", fontSize: "0.78rem"
                     }}
                   >
-                    {copiedIndex === `${sIdx}` ? "✓ Copied!" : "📋 Copy Code"}
+                    {copiedIndex === `${sIdx}` ? "✓ Copied!" : "Copy Code"}
                   </button>
                 </div>
                 <pre style={{
@@ -681,11 +677,11 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
         {activeUnit.quiz && (
           <div style={{
             padding: "24px 28px", background: "var(--ql-layer-02)",
-            border: "1px solid var(--ql-border)", borderLeft: "4px solid #8A3FFC",
+            border: "1px solid var(--ql-border)", borderLeft: "4px solid #0F62FE",
             display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "0.72rem", color: "#A56EFF", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
+              <span style={{ fontSize: "0.72rem", color: "#78A9FF", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
                 Knowledge Check
               </span>
               <span style={{ fontSize: "0.72rem", color: "var(--ql-text-helper)" }}>· Test your conceptual mastery</span>
@@ -750,7 +746,7 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
                 onClick={() => handleSubmitQuiz(activeUnit.id)}
                 style={{
                   alignSelf: "flex-start", padding: "10px 22px",
-                  background: quizAnswers[activeUnit.id] !== undefined ? "#8A3FFC" : "var(--ql-layer-hover)",
+                  background: quizAnswers[activeUnit.id] !== undefined ? "#0F62FE" : "var(--ql-layer-hover)",
                   border: "none", color: "#fff", fontWeight: 600, fontSize: "0.85rem",
                   cursor: quizAnswers[activeUnit.id] !== undefined ? "pointer" : "not-allowed",
                   marginTop: "4px"
@@ -764,7 +760,7 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
                 border: "1px solid var(--ql-border)", fontSize: "0.88rem",
                 lineHeight: 1.6, color: "var(--ql-text-secondary)"
               }}>
-                <strong style={{ color: "#A56EFF" }}>Explanation: </strong>
+                <strong style={{ color: "#78A9FF" }}>Explanation: </strong>
                 {activeUnit.quiz.explanation}
               </div>
             )}
@@ -793,7 +789,7 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
                 color: "#fff", fontWeight: 600, fontSize: "0.88rem", cursor: "pointer"
               }}
             >
-              ⚡ Open in Circuit Studio →
+              Open in Circuit Studio →
             </button>
           </div>
         </div>
@@ -964,14 +960,14 @@ export default function LearningHub({ onSwitchToStudio }) {
                   <path d="M 0 100 Q 60 40 120 100 Q 180 160 240 100 Q 300 40 360 100 Q 420 160 480 100"
                     fill="none" stroke="#0F62FE" strokeWidth="2.5" opacity="0.8" />
                   <path d="M 0 100 Q 60 160 120 100 Q 180 40 240 100 Q 300 160 360 100 Q 420 40 480 100"
-                    fill="none" stroke="#8A3FFC" strokeWidth="2.5" opacity="0.8" />
+                    fill="none" stroke="#38bdf8" strokeWidth="2.5" opacity="0.8" />
                   <circle cx="400" cy="100" r="60" fill="none" stroke="#78A9FF" strokeWidth="1.5" opacity="0.6" />
                   <ellipse cx="400" cy="100" rx="60" ry="18" fill="none" stroke="#78A9FF" strokeWidth="1" opacity="0.4" />
                   <line x1="400" y1="40" x2="400" y2="160" stroke="#78A9FF" strokeWidth="1" opacity="0.5" />
-                  <line x1="400" y1="100" x2="440" y2="72" stroke="#A56EFF" strokeWidth="2.5" opacity="0.9" />
+                  <line x1="400" y1="100" x2="440" y2="72" stroke="#38bdf8" strokeWidth="2.5" opacity="0.9" />
                   <circle cx="400" cy="100" r="3" fill="#78A9FF" />
                   {[60, 180, 300].map((x, i) => (
-                    <circle key={i} cx={x} cy={100} r="6" fill={["#0F62FE", "#8A3FFC", "#0F62FE"][i]} opacity="0.9" />
+                    <circle key={i} cx={x} cy={100} r="6" fill={["#0F62FE", "#38bdf8", "#0F62FE"][i]} opacity="0.9" />
                   ))}
                   <text x="80" y="32" fill="#c6c6c6" fontSize="12" fontFamily="IBM Plex Mono, monospace" opacity="0.7">|ψ⟩ = α|0⟩ + β|1⟩</text>
                   <text x="240" y="170" fill="#78A9FF" fontSize="11" fontFamily="IBM Plex Mono, monospace" opacity="0.7">7,323 chunks indexed from 76 books</text>

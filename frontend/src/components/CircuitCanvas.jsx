@@ -161,9 +161,9 @@ export default function CircuitCanvas({
               ['cx', 'cz', 'swap'].includes(g.id) ? 'gate-cnot' : 'gate-measure'
             }`}
             style={{
-              outline: selectedGate === g.id ? '2px solid #00f0ff' : 'none',
+              outline: selectedGate === g.id ? '2px solid #ffffff' : 'none',
               outlineOffset: '2px',
-              transform: selectedGate === g.id ? 'scale(1.08)' : 'scale(1)'
+              transform: selectedGate === g.id ? 'scale(1.05)' : 'scale(1)'
             }}
           >
             {g.label}
@@ -183,7 +183,7 @@ export default function CircuitCanvas({
               onChange={(e) => setRotationAngle(e.target.value)}
               style={{ width: '80px', cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--q-pink)' }}>
+            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: '#ffffff' }}>
               {parseFloat(rotationAngle).toFixed(2)}
             </span>
           </div>
@@ -213,11 +213,9 @@ export default function CircuitCanvas({
         )}
       </div>
 
-      {/* Circuit Grid Canvas */}
-      <div style={{
-        background: 'rgba(7, 9, 14, 0.7)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: '12px',
+      {/* Circuit Grid Canvas (Backlit QPU Engine) */}
+      <div className="bklit-container" style={{
+        borderRadius: '8px',
         padding: '24px 20px',
         display: 'flex',
         flexDirection: 'column',
@@ -232,7 +230,7 @@ export default function CircuitCanvas({
 
           return (
             <div key={wireIdx} style={{ display: 'flex', alignItems: 'center', position: 'relative', minHeight: '44px' }}>
-              {/* Qubit Wire Label */}
+              {/* Qubit Wire Label (BKLIT Readout) */}
               <div style={{
                 width: '64px',
                 display: 'flex',
@@ -240,40 +238,46 @@ export default function CircuitCanvas({
                 gap: '6px',
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.88rem',
-                color: '#38bdf8',
-                fontWeight: 600
+                color: '#ffffff',
+                fontWeight: 700,
+                textShadow: '0 0 8px rgba(255, 255, 255, 0.6)'
               }}>
                 <span>q[{wireIdx}]</span>
                 <span style={{ color: 'var(--text-muted)' }}>|0⟩</span>
               </div>
 
-              {/* Wire Line */}
+              {/* Wire Line (Illuminated LED Fiber) */}
               <div style={{
                 flex: 1,
-                height: '2px',
-                background: 'rgba(255, 255, 255, 0.15)',
+                height: '3px',
+                background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.2) 100%)',
+                boxShadow: '0 0 10px rgba(255, 255, 255, 0.2)',
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 padding: '0 10px'
               }}>
-                {/* Gate Drop Slot Trigger on Wire */}
+                {/* Gate Drop Slot Trigger on Wire (BKLIT LED Button) */}
                 <button
                   onClick={() => handleAddGate(wireIdx)}
                   style={{
                     position: 'absolute',
                     right: '10px',
-                    padding: '3px 8px',
+                    padding: '4px 10px',
                     borderRadius: '4px',
-                    background: 'rgba(0, 240, 255, 0.12)',
-                    border: '1px dashed rgba(0, 240, 255, 0.4)',
-                    color: '#00f0ff',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    boxShadow: '0 0 12px rgba(255, 255, 255, 0.12)',
+                    color: '#ffffff',
                     fontSize: '0.72rem',
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '4px',
+                    backdropFilter: 'blur(8px)',
+                    textShadow: '0 0 6px rgba(255, 255, 255, 0.6)'
                   }}
                   title={`Click to place selected ${selectedGate.toUpperCase()} gate on q[${wireIdx}]`}
                 >
@@ -301,7 +305,7 @@ export default function CircuitCanvas({
                         style={{
                           width: '42px',
                           height: '42px',
-                          borderRadius: '8px',
+                          borderRadius: '4px',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
@@ -310,14 +314,14 @@ export default function CircuitCanvas({
                           fontWeight: 700,
                           fontSize: '0.86rem',
                           cursor: 'pointer',
-                          boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                          boxShadow: '0 0 14px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
                           position: 'relative',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                          background: isControl ? '#1e1b4b' :
-                            inst.gate === 'h' ? 'linear-gradient(135deg, #0284c7, #0369a1)' :
-                            ['x', 'y', 'z'].includes(inst.gate) ? 'linear-gradient(135deg, #d97706, #b45309)' :
-                            ['cx', 'cz', 'swap'].includes(inst.gate) ? 'linear-gradient(135deg, #7c3aed, #6d28d9)' :
-                            'linear-gradient(135deg, #475569, #334155)',
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          background: isControl ? 'linear-gradient(135deg, #52525b, #27272a)' :
+                            inst.gate === 'h' ? 'linear-gradient(135deg, #27272a, #18181b)' :
+                            ['x', 'y', 'z'].includes(inst.gate) ? 'linear-gradient(135deg, #3f3f46, #27272a)' :
+                            ['cx', 'cz', 'swap'].includes(inst.gate) ? 'linear-gradient(135deg, #52525b, #27272a)' :
+                            'linear-gradient(135deg, #18181b, #09090b)',
                           color: '#fff'
                         }}
                       >
