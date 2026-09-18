@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Send, BookOpen, Bot, X, MessageSquare, ChevronRight, HelpCircle } from 'lucide-react';
+import MathBlock from './MathBlock';
 
 export default function AITutorChat({ circuitContext, activeTopic = "entanglement" }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +27,18 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen]);
+
+  // Listen for external trigger events (e.g. from Gate Hover Tooltips)
+  useEffect(() => {
+    const handleAskTutorEvent = (e) => {
+      if (e.detail && e.detail.prompt) {
+        setIsOpen(true);
+        handleSendQuery(e.detail.prompt);
+      }
+    };
+    window.addEventListener('ask-ai-tutor', handleAskTutorEvent);
+    return () => window.removeEventListener('ask-ai-tutor', handleAskTutorEvent);
+  }, [circuitContext, activeTopic]);
 
   const handleSendQuery = async (queryText) => {
     const textToSend = queryText || inputQuery;
@@ -307,20 +320,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
                 <p style={{ color: m.sender === 'user' ? '#ffffff' : '#e2e8f0', margin: 0 }}>{m.text}</p>
 
                 {/* LaTeX Formula */}
-                {m.latex && (
-                  <div style={{
-                    marginTop: '8px',
-                    padding: '8px 12px',
-                    background: '#050505',
-                    borderRadius: '6px',
-                    borderLeft: '3px solid #38bdf8',
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: '0.8rem',
-                    color: '#38bdf8',
-                  }}>
-                    {m.latex}
-                  </div>
-                )}
+                {m.latex && <MathBlock math={m.latex} />}
 
                 {/* Executable Qiskit Code */}
                 {m.code && (

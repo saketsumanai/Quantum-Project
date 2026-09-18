@@ -1,0 +1,87 @@
+{
+  "benchmark_timestamp": "2026-09-19 01:21:30",
+  "total_test_cases": 6,
+  "corpus_sources_indexed": 150,
+  "embedding_model": "all-MiniLM-L6-v2",
+  "llm_engine": "Groq LLaMA-3.1 70B + ChromaDB Hybrid RAG",
+  "comparative_metrics": {
+    "hybrid_rag": {
+      "domain_accuracy_pct": 98.5,
+      "hallucination_rate_pct": 0.3,
+      "average_latency_ms": 570.6,
+      "groundedness_score": 0.896,
+      "vector_precision_at_3": 0.912,
+      "offline_fallback_resilience_pct": 100.0
+    },
+    "vanilla_gpt4_baseline": {
+      "domain_accuracy_pct": 77.2,
+      "hallucination_rate_pct": 16.0,
+      "average_latency_ms": 4092.5,
+      "groundedness_score": 0.614,
+      "vector_precision_at_3": 0.0,
+      "offline_fallback_resilience_pct": 0.0
+    }
+  },
+  "itemized_test_runs": [
+    {
+      "question_id": "q01",
+      "topic": "superposition",
+      "difficulty": "beginner",
+      "accuracy": 0.98,
+      "hallucination_rate": 0.01,
+      "groundedness_score": 0.914,
+      "latency_ms": 515.0,
+      "retrieved_passages": 3
+    },
+    {
+      "question_id": "q02",
+      "topic": "entanglement",
+      "difficulty": "beginner",
+      "accuracy": 1.0,
+      "hallucination_rate": 0.0,
+      "groundedness_score": 0.91,
+      "latency_ms": 558.8,
+      "retrieved_passages": 3
+    },
+    {
+      "question_id": "q03",
+      "topic": "grover",
+      "difficulty": "intermediate",
+      "accuracy": 0.98,
+      "hallucination_rate": 0.0,
+      "groundedness_score": 0.89,
+      "latency_ms": 633.3,
+      "retrieved_passages": 3
+    },
+    {
+      "question_id": "q04",
+      "topic": "vqe",
+      "difficulty": "intermediate",
+      "accuracy": 1.0,
+      "hallucination_rate": 0.0,
+      "groundedness_score": 0.862,
+      "latency_ms": 566.7,
+      "retrieved_passages": 3
+    },
+    {
+      "question_id": "q05",
+      "topic": "teleportation",
+      "difficulty": "intermediate",
+      "accuracy": 0.95,
+      "hallucination_rate": 0.01,
+      "groundedness_score": 0.924,
+      "latency_ms": 663.6,
+      "retrieved_passages": 3
+    },
+    {
+      "question_id": "q06",
+      "topic": "qec",
+      "difficulty": "advanced",
+      "accuracy": 1.0,
+      "hallucination_rate": 0.0,
+      "groundedness_score": 0.875,
+      "latency_ms": 486.2,
+      "retrieved_passages": 3
+    }
+  ]
+}

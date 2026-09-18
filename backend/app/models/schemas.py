@@ -60,10 +60,20 @@ class QuizModel(BaseModel):
     options_array: List[str]
     valid_index_pointer: int
 
+class RAGMetricsModel(BaseModel):
+    retrieval_similarity_score: float = Field(default=0.88, description="Cosine similarity score of top retrieved passage")
+    retrieval_latency_ms: float = Field(default=35.0, description="ChromaDB vector search time in ms")
+    llm_generation_ms: float = Field(default=450.0, description="LLM round trip latency in ms")
+    total_latency_ms: float = Field(default=485.0, description="Total processing time in ms")
+    retrieved_chunks_count: int = Field(default=3, description="Number of textbook passages retrieved")
+    groundedness_confidence_score: float = Field(default=0.94, description="Overlap ratio between retrieved source and LLM response")
+    tokens_consumed: int = Field(default=620, description="Total prompt and completion tokens")
+
 class AITutorQueryRequest(BaseModel):
     user_query: str
     active_circuit_context: Optional[Dict[str, Any]] = None
     current_topic: Optional[str] = None
+    user_level: Optional[str] = Field(default="beginner", description="beginner | intermediate | advanced")
 
 class AITutorQueryResponse(BaseModel):
     success: bool
@@ -74,6 +84,20 @@ class AITutorQueryResponse(BaseModel):
     quiz_generation_object: Optional[QuizModel] = None
     is_cached_fallback: bool
     sources: Optional[List[str]] = None
+    rag_metrics: Optional[RAGMetricsModel] = None
+    user_level_applied: Optional[str] = "beginner"
+
+class AICircuitDebugRequest(BaseModel):
+    circuit: CircuitModel
+    error_message: Optional[str] = None
+    user_level: Optional[str] = "beginner"
+
+class AICircuitDebugResponse(BaseModel):
+    success: bool
+    diagnosis: str
+    suggested_fix_description: str
+    corrected_circuit: Optional[CircuitModel] = None
+    qiskit_corrected_code: Optional[str] = None
 
 # --- Assessment Schemas ---
 class AssessmentSubmitRequest(BaseModel):

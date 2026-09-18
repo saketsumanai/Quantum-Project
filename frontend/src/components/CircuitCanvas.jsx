@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Play, RotateCcw, Plus, Minus, Layers, Zap, Settings, Trash2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Play, RotateCcw, Plus, Minus, Layers, Zap, Settings, Trash2, BookOpen } from 'lucide-react';
+import GateTooltip from './GateTooltip';
 
 const GATE_PALETTE = [
   { id: 'h', label: 'H', category: 'superposition', title: 'Hadamard (Superposition)' },
@@ -29,6 +30,37 @@ export default function CircuitCanvas({
   const [selectedGate, setSelectedGate] = useState('h');
   const [rotationAngle, setRotationAngle] = useState(1.5708); // pi/2
   const [cnotControl, setCnotControl] = useState(0);
+  const [hoveredGate, setHoveredGate] = useState(null);
+  const hoverTimeoutRef = useRef(null);
+
+  const handleGateMouseEnter = (gateId, event) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    const rect = event.currentTarget.getBoundingClientRect();
+    setHoveredGate({
+      id: gateId,
+      position: {
+        x: rect.left + rect.width / 2,
+        top: rect.top,
+        bottom: rect.bottom
+      }
+    });
+  };
+
+  const handleGateMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredGate(null);
+    }, 200);
+  };
+
+  const handleTooltipMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+  };
+
+  const handleTooltipMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredGate(null);
+    }, 150);
+  };
 
   // Add gate to target qubit wire
   const handleAddGate = (wireIdx) => {
@@ -80,8 +112,8 @@ export default function CircuitCanvas({
             <button
               className="btn btn-glass"
               style={{ width: '28px', height: '28px', padding: 0 }}
-              disabled={numQubits >= 5}
-              onClick={() => onUpdateNumQubits(Math.min(5, numQubits + 1))}
+              disabled={numQubits >= 16}
+              onClick={() => onUpdateNumQubits(Math.min(16, numQubits + 1))}
             >
               <Plus size={14} />
             </button>
@@ -152,7 +184,8 @@ export default function CircuitCanvas({
           <button
             key={g.id}
             onClick={() => setSelectedGate(g.id)}
-            title={g.title}
+            onMouseEnter={(e) => handleGateMouseEnter(g.id, e)}
+            onMouseLeave={handleGateMouseLeave}
             className={`gate-badge ${
               g.id === 'h' ? 'gate-h' :
               ['x', 'y', 'z'].includes(g.id) ? 'gate-pauli' :
@@ -301,6 +334,8 @@ export default function CircuitCanvas({
                       <div
                         key={instIdx}
                         onClick={() => handleRemoveInstruction(instIdx)}
+                        onMouseEnter={(e) => handleGateMouseEnter(inst.gate, e)}
+                        onMouseLeave={handleGateMouseLeave}
                         title="Click to remove gate"
                         style={{
                           width: '42px',
@@ -340,6 +375,15 @@ export default function CircuitCanvas({
           );
         })}
       </div>
+
+      {/* Interactive High-Contrast Solid-Dark Gate Tooltip with data/books/ Citations */}
+      <GateTooltip
+        gateId={hoveredGate?.id}
+        position={hoveredGate?.position}
+        onClose={() => setHoveredGate(null)}
+        onMouseEnter={handleTooltipMouseEnter}
+        onMouseLeave={handleTooltipMouseLeave}
+      />
     </div>
   );
 }
