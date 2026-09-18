@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Play, RotateCcw, Plus, Minus, Layers, Zap, Settings, Trash2, BookOpen } from 'lucide-react';
 import GateTooltip from './GateTooltip';
+import { InteractiveHoverButton } from './ui/interactive-hover-button';
 
 const GATE_PALETTE = [
   { id: 'h', label: 'H', category: 'superposition', title: 'Hadamard (Superposition)' },
@@ -155,14 +156,12 @@ export default function CircuitCanvas({
           <button className="btn btn-glass" onClick={handleClearAll} title="Clear all gates">
             <RotateCcw size={14} /> Reset
           </button>
-          <button
-            className="btn btn-primary"
+          <InteractiveHoverButton
+            text={isSimulating ? 'Simulating...' : 'Simulate'}
             onClick={onRunSimulation}
             disabled={isSimulating}
-            style={{ minWidth: '140px' }}
-          >
-            <Play size={15} fill="#07090e" /> {isSimulating ? 'Simulating...' : 'Simulate Circuit'}
-          </button>
+            className="w-36 h-9 py-1 px-3 text-xs bg-zinc-900 border-zinc-700 text-white hover:border-zinc-500"
+          />
         </div>
       </div>
 
