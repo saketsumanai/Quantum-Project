@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Cpu, GraduationCap, BookOpen, ArrowRight, ChevronRight, ChevronLeft, Zap, Globe, Activity, Layers, Award, Sparkles } from "lucide-react";
 import { animate, stagger } from "animejs";
+import WhyUsMetricsSection from "./WhyUsMetricsSection";
 
 export default function LandingPage({ onNavigate }) {
   const titleRef = useRef(null);
@@ -9,6 +10,20 @@ export default function LandingPage({ onNavigate }) {
   const [activeBelief, setActiveBelief] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeLangIdx, setActiveLangIdx] = useState(0);
+  const [ragMetricsData, setRagMetricsData] = useState(null);
+
+  // Fetch live RAG benchmark metrics on mount
+  useEffect(() => {
+    fetch("http://localhost:8000/api/v1/ai-tutor/metrics")
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("Failed to fetch metrics");
+      })
+      .then((data) => setRagMetricsData(data))
+      .catch((err) => {
+        console.warn("Live metrics fetch notice:", err);
+      });
+  }, []);
 
   // Original Multilingual Quantum Principles
   const multilingualHeadlines = [
@@ -434,6 +449,9 @@ export default function LandingPage({ onNavigate }) {
           <div style={{ width: "2px", height: "18px", background: "linear-gradient(to bottom, #ffffff, transparent)", borderRadius: "1px" }} />
         </div>
       </div>
+
+      {/* ── Section: Why Us? Live Empirical Evaluation Metrics ── */}
+      <WhyUsMetricsSection telemetry={ragMetricsData} />
 
       {/* ── Section 2: Core Principles (Sticky Progress Navigation Sidebar) ── */}
       <div id="core-beliefs" style={{ position: "relative", zIndex: 2, padding: "100px 24px", maxWidth: "1280px", margin: "0 auto", width: "100%" }}>
