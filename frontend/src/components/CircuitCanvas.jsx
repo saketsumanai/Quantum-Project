@@ -1,21 +1,22 @@
 import React, { useState, useRef } from 'react';
-import { Play, RotateCcw, Plus, Minus } from 'lucide-react';
+import { Play, RotateCcw, Plus, Minus, Info, Download, FileText, FileJson, Cpu, Share2, Sparkles, CheckCircle2, AlertTriangle, X, Copy, Check } from 'lucide-react';
 import GateTooltip from './GateTooltip';
+import { InteractiveHoverButton } from './ui/interactive-hover-button';
 
 const GATE_PALETTE = [
-  { id: 'h', label: 'H', category: 'superposition', title: 'Hadamard (Superposition)' },
-  { id: 'x', label: 'X', category: 'pauli', title: 'Pauli-X (Bit Flip)' },
-  { id: 'y', label: 'Y', category: 'pauli', title: 'Pauli-Y' },
-  { id: 'z', label: 'Z', category: 'pauli', title: 'Pauli-Z (Phase Flip)' },
-  { id: 's', label: 'S', category: 'phase', title: 'Phase Gate (S)' },
-  { id: 't', label: 'T', category: 'phase', title: 'T Gate (pi/4)' },
-  { id: 'rx', label: 'Rx', category: 'rot', title: 'Rotation X(theta)' },
-  { id: 'ry', label: 'Ry', category: 'rot', title: 'Rotation Y(theta)' },
-  { id: 'rz', label: 'Rz', category: 'rot', title: 'Rotation Z(theta)' },
-  { id: 'cx', label: 'CX', category: 'cnot', title: 'Controlled-NOT (CNOT)' },
-  { id: 'cz', label: 'CZ', category: 'cnot', title: 'Controlled-Z' },
-  { id: 'swap', label: 'SWAP', category: 'cnot', title: 'SWAP Qubits' },
-  { id: 'measure', label: 'M', category: 'measure', title: 'Measurement' }
+  { id: 'h', label: 'H', desc: 'Hadamard: Creates equal superposition' },
+  { id: 'x', label: 'X', desc: 'Pauli-X: Quantum NOT gate (bit flip)' },
+  { id: 'y', label: 'Y', desc: 'Pauli-Y: Bit + phase flip' },
+  { id: 'z', label: 'Z', desc: 'Pauli-Z: Phase flip gate' },
+  { id: 's', label: 'S', desc: 'S Gate: Phase rotation by π/2' },
+  { id: 't', label: 'T', desc: 'T Gate: Phase rotation by π/4 (non-Clifford)' },
+  { id: 'rx', label: 'Rx(θ)', desc: 'Rotation around X-axis by angle θ' },
+  { id: 'ry', label: 'Ry(θ)', desc: 'Rotation around Y-axis by angle θ' },
+  { id: 'rz', label: 'Rz(θ)', desc: 'Rotation around Z-axis by angle θ' },
+  { id: 'cx', label: 'CNOT', desc: 'Controlled-NOT: Entangles two qubits' },
+  { id: 'cz', label: 'CZ', desc: 'Controlled-Z: Controlled phase flip' },
+  { id: 'swap', label: 'SWAP', desc: 'SWAP: Exchanges quantum states' },
+  { id: 'measure', label: 'M', desc: 'Measurement: Projects qubit into classical bit' }
 ];
 
 export default function CircuitCanvas({
@@ -25,13 +26,23 @@ export default function CircuitCanvas({
   onUpdateInstructions,
   onRunSimulation,
   isSimulating = false,
-  onLoadPreset
+  onLoadPreset,
+  noiseEnabled = false,
+  onToggleNoise,
+  noiseProfile = 'ibm_eagle',
+  onSelectNoiseProfile,
+  onOpenExport,
 }) {
   const [selectedGate, setSelectedGate] = useState('h');
   const [rotationAngle, setRotationAngle] = useState(1.5708); // pi/2
   const [cnotControl, setCnotControl] = useState(0);
-  const [selectedFramework, setSelectedFramework] = useState('auto');
   const [hoveredGate, setHoveredGate] = useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingJson, setDownloadingJson] = useState(false);
+  const [isDebugOpen, setIsDebugOpen] = useState(false);
+  const [isDebugging, setIsDebugging] = useState(false);
+  const [debugResult, setDebugResult] = useState(null);
+  const [copiedCode, setCopiedCode] = useState(false);
   const hoverTimeoutRef = useRef(null);
 
   const handleGateMouseEnter = (gateId, event) => {
@@ -92,98 +103,147 @@ export default function CircuitCanvas({
     onUpdateInstructions([]);
   };
 
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/report/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuit: { num_qubits: numQubits, instructions: instructions },
+          algorithm_name: 'Quantum Algorithm Experiment',
+          author_name: 'Team Gitwolves',
+          include_noise: noiseEnabled,
+          noise_profile: noiseProfile,
+          shots: 1024,
+        }),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Quantum_Lab_Report_${Date.now()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('PDF report failed:', err);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadJson = async () => {
+    setDownloadingJson(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/report/json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuit: { num_qubits: numQubits, instructions: instructions },
+          algorithm_name: 'Quantum Algorithm Experiment',
+          author_name: 'Team Gitwolves',
+          include_noise: noiseEnabled,
+          noise_profile: noiseProfile,
+          shots: 1024,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Quantum_Lab_Report_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('JSON report failed:', err);
+    } finally {
+      setDownloadingJson(false);
+    }
+  };
+
+  const handleRunDebugger = async () => {
+    setIsDebugging(true);
+    setIsDebugOpen(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuit: { num_qubits: numQubits, instructions: instructions },
+          user_level: 'beginner',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDebugResult(data);
+      }
+    } catch (err) {
+      console.error('AI Circuit Debugger request failed:', err);
+    } finally {
+      setIsDebugging(false);
+    }
+  };
+
+  const handleApplyDebugFix = () => {
+    if (debugResult?.corrected_circuit?.instructions) {
+      onUpdateInstructions(debugResult.corrected_circuit.instructions);
+      setIsDebugOpen(false);
+    }
+  };
+
+  const handleCopyCode = () => {
+    if (debugResult?.qiskit_corrected_code) {
+      navigator.clipboard.writeText(debugResult.qiskit_corrected_code);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  };
+
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)',
-      border: '1px solid rgba(255, 255, 255, 0.12)',
-      borderRadius: '16px',
-      boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6)',
-      padding: '24px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '18px'
-    }}>
-      {/* Top Toolbar: Qubits count, Engine Selector, Presets, Simulation Button */}
+    <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Top Toolbar: Qubits count, Presets, Reset, Simulate */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          {/* Qubit Counter (Scalable up to 16 Qubits) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Qubits:
-            </span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Qubits:</span>
             <button
-              onClick={() => onUpdateNumQubits(Math.max(1, numQubits - 1))}
+              className="btn btn-glass"
+              style={{ width: '28px', height: '28px', padding: 0 }}
               disabled={numQubits <= 1}
-              style={{
-                width: '28px', height: '28px', padding: 0,
-                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)',
-                borderRadius: '6px', color: '#fff', cursor: numQubits <= 1 ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              onClick={() => onUpdateNumQubits(Math.max(1, numQubits - 1))}
             >
-              <Minus size={12} />
+              <Minus size={14} />
             </button>
-            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.9rem', minWidth: '20px', textAlign: 'center', color: '#fff' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', minWidth: '20px', textAlign: 'center' }}>
               {numQubits}
             </span>
             <button
-              onClick={() => onUpdateNumQubits(Math.min(16, numQubits + 1))}
+              className="btn btn-glass"
+              style={{ width: '28px', height: '28px', padding: 0 }}
               disabled={numQubits >= 16}
-              style={{
-                width: '28px', height: '28px', padding: 0,
-                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)',
-                borderRadius: '6px', color: '#fff', cursor: numQubits >= 16 ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              onClick={() => onUpdateNumQubits(Math.min(16, numQubits + 1))}
             >
-              <Plus size={12} />
+              <Plus size={14} />
             </button>
           </div>
 
-          {/* Engine Selector Dropdown */}
+          {/* Algorithm Presets Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Engine:
-            </span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Preset:</span>
             <select
-              value={selectedFramework}
-              onChange={(e) => setSelectedFramework(e.target.value)}
               style={{
-                background: '#0e0e12',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.14)',
+                background: 'rgba(0,0,0,0.4)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '6px',
                 padding: '5px 10px',
-                fontSize: '0.78rem',
-                fontFamily: 'var(--font-mono)',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="auto">Auto (Smart Dispatch)</option>
-              <option value="ibm_quantum">IBM Quantum (156Q Heron QPU)</option>
-              <option value="bluequbit">BlueQubit Cloud (GPU/MPS)</option>
-              <option value="qiskit">Qiskit Aer Simulator</option>
-              <option value="cirq">Google Cirq QVM</option>
-              <option value="pennylane">PennyLane Quantum</option>
-              <option value="qbraid">qBraid Cloud Bridge</option>
-            </select>
-          </div>
-
-          {/* Preset Circuits Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Presets:
-            </span>
-            <select
-              style={{
-                background: '#0e0e12',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.14)',
-                borderRadius: '6px',
-                padding: '5px 12px',
-                fontSize: '0.78rem',
-                fontFamily: 'var(--font-sans)',
+                fontSize: '0.8rem',
+                fontFamily: 'var(--font-body)',
                 outline: 'none',
                 cursor: 'pointer'
               }}
@@ -192,88 +252,202 @@ export default function CircuitCanvas({
               }}
               defaultValue=""
             >
-              <option value="" disabled style={{ background: '#0e0e12', color: '#fff' }}>Load Algorithm...</option>
-              <optgroup label="Foundations" style={{ background: '#0e0e12', color: '#a1a1aa' }}>
-                <option value="superposition" style={{ background: '#0e0e12', color: '#fff' }}>Single Qubit Superposition (|+⟩)</option>
-                <option value="bell_state" style={{ background: '#0e0e12', color: '#fff' }}>Bell State (|Φ+⟩)</option>
-                <option value="ghz_state" style={{ background: '#0e0e12', color: '#fff' }}>GHZ State (3-Qubit)</option>
-                <option value="quantum_teleportation" style={{ background: '#0e0e12', color: '#fff' }}>Quantum Teleportation</option>
+              <option value="" disabled>Load Algorithm Track...</option>
+              <optgroup label="Foundations & Entanglement">
+                <option value="superposition">1-Qubit Superposition (H)</option>
+                <option value="bell_state">Bell State (|Φ+⟩ EPR Pair)</option>
+                <option value="ghz_state">3-Qubit GHZ Entangled State</option>
+                <option value="quantum_teleportation">Quantum State Teleportation</option>
               </optgroup>
-              <optgroup label="Quantum Algorithms" style={{ background: '#0e0e12', color: '#a1a1aa' }}>
-                <option value="deutsch_jozsa" style={{ background: '#0e0e12', color: '#fff' }}>Deutsch-Jozsa Algorithm</option>
-                <option value="grover_2qubit" style={{ background: '#0e0e12', color: '#fff' }}>Grover 2-Qubit Search</option>
-                <option value="qft" style={{ background: '#0e0e12', color: '#fff' }}>Quantum Fourier Transform (QFT)</option>
-                <option value="shor_15" style={{ background: '#0e0e12', color: '#fff' }}>Shor Factorization (N=15)</option>
+              <optgroup label="Quantum Algorithms">
+                <option value="deutsch_jozsa">Deutsch-Jozsa Algorithm</option>
+                <option value="grover_2qubit">Grover 2-Qubit Search</option>
+                <option value="qft">Quantum Fourier Transform (QFT)</option>
+                <option value="shor_15">Shor Factorization (N=15)</option>
               </optgroup>
-              <optgroup label="Variational & QML" style={{ background: '#0e0e12', color: '#a1a1aa' }}>
-                <option value="vqe_h2" style={{ background: '#0e0e12', color: '#fff' }}>VQE Molecular H2 Ansatz</option>
-                <option value="qml_kernel" style={{ background: '#0e0e12', color: '#fff' }}>QML Parameterized Feature Map</option>
+              <optgroup label="Variational & QML">
+                <option value="vqe_h2">VQE Molecular H2 Ansatz</option>
+                <option value="qml_kernel">QML Parameterized Feature Map</option>
               </optgroup>
-              <optgroup label="Fault Tolerance & QEC" style={{ background: '#0e0e12', color: '#a1a1aa' }}>
-                <option value="qec_bitflip" style={{ background: '#0e0e12', color: '#fff' }}>3-Qubit Bit-Flip Code</option>
-                <option value="surface_code" style={{ background: '#0e0e12', color: '#fff' }}>Rotated Surface Code Plaquette</option>
+              <optgroup label="Fault Tolerance & QEC">
+                <option value="qec_bitflip">3-Qubit Bit-Flip Code</option>
+                <option value="surface_code">Rotated Surface Code Plaquette</option>
               </optgroup>
             </select>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
-            onClick={handleClearAll}
-            className="btn-overview-secondary"
+            className="btn btn-glass"
+            onClick={handleRunDebugger}
+            disabled={isDebugging}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#d4d4d8',
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <RotateCcw size={12} /> Reset
-          </button>
-          <button
-            onClick={() => onRunSimulation(selectedFramework)}
-            disabled={isSimulating}
-            className="btn-overview-primary"
-            style={{
-              padding: '6px 16px',
-              borderRadius: '8px',
-              background: '#ffffff',
-              border: 'none',
-              color: '#000000',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              cursor: isSimulating ? 'not-allowed' : 'pointer',
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 4px 14px rgba(255, 255, 255, 0.2)'
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              background: 'rgba(56, 189, 248, 0.08)',
+              color: '#38bdf8',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+            }}
+            title="Run AI Circuit Debugger for anti-patterns and noise risks"
+          >
+            <Sparkles size={14} className={isDebugging ? 'spin-icon' : ''} />
+            {isDebugging ? 'Analyzing...' : 'AI Debug'}
+          </button>
+          <button className="btn btn-glass" onClick={handleClearAll} title="Clear all gates">
+            <RotateCcw size={14} /> Reset
+          </button>
+          <InteractiveHoverButton
+            text={isSimulating ? 'Simulating...' : 'Simulate'}
+            onClick={onRunSimulation}
+            disabled={isSimulating}
+            className="w-36 h-9 py-1 px-3 text-xs bg-zinc-900 border-zinc-700 text-white hover:border-zinc-500"
+          />
+        </div>
+      </div>
+
+      {/* NISQ Hardware Noise & Export Toolbar Row */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '10px',
+        padding: '8px 12px',
+        background: '#0c0c0e',
+        border: '1px solid #27272a',
+        borderRadius: '6px',
+      }}>
+        {/* Left: Hardware Noise Toggle & Profile */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={onToggleNoise}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              border: noiseEnabled ? '1px solid #38bdf8' : '1px solid #27272a',
+              background: noiseEnabled ? '#18181b' : 'transparent',
+              color: noiseEnabled ? '#38bdf8' : '#71717a',
+              fontSize: '0.76rem',
+              fontWeight: 600,
+              cursor: 'pointer',
             }}
           >
-            <Play size={13} fill="#000000" /> {isSimulating ? 'Simulating…' : 'Simulate Circuit'}
+            <Cpu size={13} />
+            NISQ Hardware Noise: {noiseEnabled ? 'ON' : 'OFF'}
+          </button>
+
+          {noiseEnabled && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <select
+                value={noiseProfile}
+                onChange={(e) => onSelectNoiseProfile && onSelectNoiseProfile(e.target.value)}
+                style={{
+                  background: '#18181b',
+                  color: '#ffffff',
+                  border: '1px solid #38bdf8',
+                  borderRadius: '4px',
+                  padding: '3px 8px',
+                  fontSize: '0.74rem',
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="ibm_eagle">IBM Eagle 127Q (Superconducting)</option>
+                <option value="rigetti_aspen">Rigetti Aspen-M3</option>
+                <option value="ionq_forte">IonQ Forte (Trapped Ion)</option>
+              </select>
+              <span style={{ fontSize: '0.7rem', color: '#a1a1aa' }}>
+                {noiseProfile === 'ibm_eagle' && 'T1: 120µs | T2: 90µs | Readout Err: 1.8%'}
+                {noiseProfile === 'rigetti_aspen' && 'T1: 30µs | T2: 25µs | Readout Err: 4.2%'}
+                {noiseProfile === 'ionq_forte' && 'T1: 10ms | T2: 1ms | Readout Err: 0.3%'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Export Code & Download Reports */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {onOpenExport && (
+            <button
+              onClick={onOpenExport}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                border: '1px solid #27272a',
+                background: '#18181b',
+                color: '#ffffff',
+                fontSize: '0.74rem',
+                cursor: 'pointer',
+              }}
+            >
+              <Share2 size={12} />
+              Export Code
+            </button>
+          )}
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              border: '1px solid #27272a',
+              background: '#18181b',
+              color: '#38bdf8',
+              fontSize: '0.74rem',
+              cursor: 'pointer',
+            }}
+          >
+            <FileText size={12} />
+            {downloadingPdf ? 'Generating...' : 'Report (PDF)'}
+          </button>
+          <button
+            onClick={handleDownloadJson}
+            disabled={downloadingJson}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              border: '1px solid #27272a',
+              background: '#18181b',
+              color: '#a1a1aa',
+              fontSize: '0.74rem',
+              cursor: 'pointer',
+            }}
+          >
+            <FileJson size={12} />
+            {downloadingJson ? 'Bundling...' : 'Report (JSON)'}
           </button>
         </div>
       </div>
 
-      {/* Gate Palette Bar with Interactive Hover Tooltips */}
+      {/* Gate Palette Bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
+        gap: '8px',
         padding: '10px 14px',
-        background: 'rgba(255, 255, 255, 0.02)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(0, 0, 0, 0.35)',
+        borderRadius: '10px',
+        border: '1px solid var(--border-subtle)',
         overflowX: 'auto'
       }}>
-        <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginRight: '6px' }}>
+        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginRight: '6px' }}>
           Gates:
         </span>
         {GATE_PALETTE.map((g) => (
@@ -282,28 +456,17 @@ export default function CircuitCanvas({
             onClick={() => setSelectedGate(g.id)}
             onMouseEnter={(e) => handleGateMouseEnter(g.id, e)}
             onMouseLeave={handleGateMouseLeave}
-            title={g.title}
+            className={`gate-badge ${
+              g.id === 'h' ? 'gate-h' :
+              ['x', 'y', 'z'].includes(g.id) ? 'gate-pauli' :
+              ['s', 't'].includes(g.id) ? 'gate-phase' :
+              ['rx', 'ry', 'rz'].includes(g.id) ? 'gate-rot' :
+              ['cx', 'cz', 'swap'].includes(g.id) ? 'gate-cnot' : 'gate-measure'
+            }`}
             style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '6px',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              border: selectedGate === g.id ? '2px solid #ffffff' : '1px solid rgba(255,255,255,0.12)',
-              background:
-                g.id === 'h' ? '#0f62fe' :
-                ['x', 'y', 'z'].includes(g.id) ? '#b45309' :
-                ['s', 't'].includes(g.id) ? '#047857' :
-                ['rx', 'ry', 'rz'].includes(g.id) ? '#be185d' :
-                ['cx', 'cz', 'swap'].includes(g.id) ? '#6d28d9' : '#27272a',
-              color: '#ffffff',
-              transform: selectedGate === g.id ? 'scale(1.05)' : 'scale(1)',
-              transition: 'all 0.1s ease',
+              outline: selectedGate === g.id ? '2px solid #ffffff' : 'none',
+              outlineOffset: '2px',
+              transform: selectedGate === g.id ? 'scale(1.05)' : 'scale(1)'
             }}
           >
             {g.label}
@@ -313,7 +476,7 @@ export default function CircuitCanvas({
         {/* Context parameters for rotation gates */}
         {['rx', 'ry', 'rz'].includes(selectedGate) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
-            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>θ:</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>θ:</span>
             <input
               type="range"
               min="0"
@@ -332,14 +495,14 @@ export default function CircuitCanvas({
         {/* Control qubit selector for multi-qubit gates */}
         {['cx', 'cz', 'swap'].includes(selectedGate) && numQubits > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
-            <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontFamily: 'var(--font-mono)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Control:</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Control:</span>
             <select
               value={cnotControl}
               onChange={(e) => setCnotControl(parseInt(e.target.value))}
               style={{
-                background: '#0b0f19',
+                background: 'rgba(0,0,0,0.5)',
                 color: '#fff',
-                border: '1px solid rgba(255,255,255,0.12)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '4px',
                 padding: '2px 6px',
                 fontSize: '0.75rem'
@@ -353,47 +516,51 @@ export default function CircuitCanvas({
         )}
       </div>
 
-      {/* Circuit Grid Canvas */}
-      <div style={{
-        background: 'rgba(0, 0, 0, 0.45)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '12px',
-        padding: '24px',
+      {/* Circuit Grid Canvas (Backlit QPU Engine) */}
+      <div className="bklit-container" style={{
+        borderRadius: '8px',
+        padding: '24px 20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
+        gap: '24px',
         position: 'relative',
         overflowX: 'auto'
       }}>
         {Array.from({ length: numQubits }).map((_, wireIdx) => {
+          // Find instructions targeting this wire
+          const wireInstructions = instructions.map((inst, index) => ({ inst, index }))
+            .filter(({ inst }) => inst.qubits.includes(wireIdx));
+
           return (
             <div key={wireIdx} style={{ display: 'flex', alignItems: 'center', position: 'relative', minHeight: '44px' }}>
-              {/* Qubit Wire Label */}
+              {/* Qubit Wire Label (BKLIT Readout) */}
               <div style={{
-                width: '60px',
+                width: '64px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 fontFamily: 'var(--font-mono)',
-                fontSize: '0.84rem',
-                color: '#f3f4f6',
-                fontWeight: 600
+                fontSize: '0.88rem',
+                color: '#ffffff',
+                fontWeight: 700,
+                textShadow: '0 0 8px rgba(255, 255, 255, 0.6)'
               }}>
                 <span>q[{wireIdx}]</span>
-                <span style={{ color: '#6b7280', fontSize: '0.74rem' }}>|0⟩</span>
+                <span style={{ color: 'var(--text-muted)' }}>|0⟩</span>
               </div>
 
-              {/* Wire Line */}
+              {/* Wire Line (Illuminated LED Fiber) */}
               <div style={{
                 flex: 1,
-                height: '1px',
-                background: 'rgba(255, 255, 255, 0.2)',
+                height: '3px',
+                background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.2) 100%)',
+                boxShadow: '0 0 10px rgba(255, 255, 255, 0.2)',
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 padding: '0 10px'
               }}>
-                {/* Gate Drop Slot Trigger on Wire */}
+                {/* Gate Drop Slot Trigger on Wire (BKLIT LED Button) */}
                 <button
                   onClick={() => handleAddGate(wireIdx)}
                   style={{
@@ -401,24 +568,27 @@ export default function CircuitCanvas({
                     right: '10px',
                     padding: '4px 10px',
                     borderRadius: '4px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px dashed rgba(255, 255, 255, 0.25)',
-                    color: '#d1d5db',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    boxShadow: '0 0 12px rgba(255, 255, 255, 0.12)',
+                    color: '#ffffff',
                     fontSize: '0.72rem',
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
                     backdropFilter: 'blur(8px)',
+                    textShadow: '0 0 6px rgba(255, 255, 255, 0.6)'
                   }}
-                  title={`Place ${selectedGate.toUpperCase()} on q[${wireIdx}]`}
+                  title={`Click to place selected ${selectedGate.toUpperCase()} gate on q[${wireIdx}]`}
                 >
-                  <Plus size={11} /> Place {selectedGate.toUpperCase()}
+                  <Plus size={12} /> Place {selectedGate.toUpperCase()}
                 </button>
 
                 {/* Placed Gates along the wire */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', zIndex: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 2 }}>
                   {instructions.map((inst, instIdx) => {
                     const isTarget = inst.qubits[0] === wireIdx;
                     const isMulti = inst.qubits.length > 1;
@@ -426,7 +596,8 @@ export default function CircuitCanvas({
                     const isControlledTarget = isMulti && inst.qubits[1] === wireIdx;
 
                     if (!isTarget && !isControlledTarget) {
-                      return <div key={instIdx} style={{ width: '38px', height: '38px' }} />;
+                      // Spacer to align columns
+                      return <div key={instIdx} style={{ width: '42px', height: '42px' }} />;
                     }
 
                     return (
@@ -437,31 +608,31 @@ export default function CircuitCanvas({
                         onMouseLeave={handleGateMouseLeave}
                         title="Click to remove gate"
                         style={{
-                          width: '38px',
-                          height: '38px',
-                          borderRadius: '6px',
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '4px',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontFamily: 'var(--font-mono)',
                           fontWeight: 700,
-                          fontSize: '0.82rem',
+                          fontSize: '0.86rem',
                           cursor: 'pointer',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                          background: isControl ? (inst.gate === 'swap' ? '#6d28d9' : '#1e1b4b') :
-                            inst.gate === 'h' ? '#0f62fe' :
-                            ['x', 'y', 'z'].includes(inst.gate) ? '#b45309' :
-                            ['s', 't'].includes(inst.gate) ? '#047857' :
-                            ['rx', 'ry', 'rz'].includes(inst.gate) ? '#be185d' :
-                            ['cx', 'cz', 'swap'].includes(inst.gate) ? '#6d28d9' :
-                            '#334155',
+                          boxShadow: '0 0 14px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
+                          position: 'relative',
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          background: isControl ? 'linear-gradient(135deg, #52525b, #27272a)' :
+                            inst.gate === 'h' ? 'linear-gradient(135deg, #27272a, #18181b)' :
+                            ['x', 'y', 'z'].includes(inst.gate) ? 'linear-gradient(135deg, #3f3f46, #27272a)' :
+                            ['cx', 'cz', 'swap'].includes(inst.gate) ? 'linear-gradient(135deg, #52525b, #27272a)' :
+                            'linear-gradient(135deg, #18181b, #09090b)',
                           color: '#fff'
                         }}
                       >
-                        {inst.gate === 'swap' ? '✕' : isControl ? '●' : isControlledTarget && inst.gate === 'cx' ? '⊕' : isControlledTarget && inst.gate === 'cz' ? 'Z' : inst.gate.toUpperCase()}
+                        {isControl ? '●' : isControlledTarget && inst.gate === 'cx' ? '⊕' : inst.gate.toUpperCase()}
                         {inst.params && inst.params.length > 0 && (
-                          <span style={{ fontSize: '0.52rem', opacity: 0.8 }}>
+                          <span style={{ fontSize: '0.55rem', opacity: 0.8 }}>
                             {inst.params[0].toFixed(1)}
                           </span>
                         )}
@@ -475,7 +646,213 @@ export default function CircuitCanvas({
         })}
       </div>
 
-      {/* Interactive Solid-Dark Gate Tooltip with Literature Citations */}
+      {/* AI Circuit Debugger Modal */}
+      {isDebugOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#09090b',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            borderRadius: '10px',
+            width: '100%',
+            maxWidth: '720px',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.2)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '18px 24px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+              background: '#0c0c0e'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Sparkles size={18} color="#38bdf8" />
+                <h3 style={{
+                  fontFamily: "'Times New Roman', Times, serif !important",
+                  fontSize: '1.25rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  margin: 0,
+                  textShadow: '0 0 10px rgba(255, 255, 255, 0.3)'
+                }}>
+                  AI Circuit Diagnostics & Quantum AST Verification
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsDebugOpen(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {isDebugging ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#38bdf8', fontSize: '0.9rem' }}>
+                  Analyzing quantum gate commutation, ancilla leakage, and physical NISQ decoherence risks...
+                </div>
+              ) : debugResult ? (
+                <>
+                  {/* Diagnostic Findings */}
+                  <div style={{
+                    padding: '16px 20px',
+                    borderRadius: '6px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <AlertTriangle size={16} color="#38bdf8" />
+                      <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Diagnostic Analysis
+                      </span>
+                    </div>
+                    <pre style={{
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '0.84rem',
+                      lineHeight: '1.6',
+                      color: '#e2e8f0'
+                    }}>
+                      {debugResult.diagnosis}
+                    </pre>
+                  </div>
+
+                  {/* Suggested Fix Description */}
+                  <div style={{
+                    padding: '16px 20px',
+                    borderRadius: '6px',
+                    background: 'rgba(15, 98, 254, 0.1)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckCircle2 size={16} color="#38bdf8" />
+                      <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Recommended Corrective Actions
+                      </span>
+                    </div>
+                    <pre style={{
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '0.84rem',
+                      lineHeight: '1.6',
+                      color: '#e2e8f0'
+                    }}>
+                      {debugResult.suggested_fix_description}
+                    </pre>
+                  </div>
+
+                  {/* Corrected Qiskit Code Preview */}
+                  {debugResult.qiskit_corrected_code && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 600 }}>
+                          Optimized Qiskit 1.0 Code
+                        </span>
+                        <button
+                          onClick={handleCopyCode}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: copiedCode ? '#34d399' : '#e2e8f0',
+                            borderRadius: '4px',
+                            padding: '3px 10px',
+                            fontSize: '0.72rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+                          {copiedCode ? 'Copied' : 'Copy Code'}
+                        </button>
+                      </div>
+                      <pre style={{
+                        margin: 0,
+                        padding: '12px 16px',
+                        background: '#040405',
+                        border: '1px solid #27272a',
+                        borderRadius: '6px',
+                        fontSize: '0.76rem',
+                        fontFamily: 'var(--font-mono)',
+                        color: '#38bdf8',
+                        overflowX: 'auto',
+                        maxHeight: '140px'
+                      }}>
+                        {debugResult.qiskit_corrected_code}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              padding: '16px 24px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+              background: '#0c0c0e'
+            }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setIsDebugOpen(false)}
+                style={{ fontSize: '0.82rem' }}
+              >
+                Close
+              </button>
+              {debugResult?.corrected_circuit && (
+                <button
+                  className="btn btn-primary"
+                  onClick={handleApplyDebugFix}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem' }}
+                >
+                  <Sparkles size={14} /> Apply Suggested Fix to Canvas
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive High-Contrast Solid-Dark Gate Tooltip with data/books/ Citations */}
       <GateTooltip
         gateId={hoveredGate?.id}
         position={hoveredGate?.position}

@@ -409,6 +409,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("ql_token");
   };
 
+<<<<<<< HEAD
   // ─── Progress Tracking Functions ─────────────────────────────────────────────
 
   /**
@@ -561,6 +562,17 @@ export function AuthProvider({ children }) {
     } catch (_) {}
   }, [user]);
 
+  const authFetch = useCallback(async (endpointOrUrl, options = {}) => {
+    const url = endpointOrUrl.startsWith("http")
+      ? endpointOrUrl
+      : `${API_BASE}${endpointOrUrl.startsWith("/") ? "" : "/"}${endpointOrUrl}`;
+    const headers = { ...(options.headers || {}) };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    return fetch(url, { ...options, headers });
+  }, [token]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -575,6 +587,8 @@ export function AuthProvider({ children }) {
         registerWithCredentials,
         continueAsGuest,
         signOut,
+        authFetch,
+        refetchProfile: () => token && fetchProfile(token),
         updateUserTopics,
         recordTest,
         updateUserProfile,

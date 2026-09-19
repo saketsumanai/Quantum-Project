@@ -68,6 +68,7 @@ export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAu
           { id: "landing", label: "Overview" },
           { id: "chat", label: "AI Tutor" },
           { id: "studio", label: "Circuit Studio" },
+          { id: "dashboard", label: "Dashboard" },
           { id: "learning", label: "Learning Hub" },
           { id: "videos", label: "Video Lectures" },
           { id: "curriculum", label: "Curriculum" },

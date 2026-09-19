@@ -13,6 +13,7 @@ import ExportModal from "./components/ExportModal";
 import AuthModal from "./components/AuthModal";
 import QuantumChatGPT from "./components/QuantumChatGPT";
 import VideoLecturesHub from "./components/VideoLecturesHub";
+import StudentDashboard from "./components/StudentDashboard";
 import GatewayFlow from "./components/ui/gateway-flow";
 
 const API = "http://localhost:8000/api/v1";
@@ -37,6 +38,8 @@ function QuantumLeapApp() {
   const [backendStatus, setBackendStatus] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [noiseEnabled, setNoiseEnabled] = useState(false);
+  const [noiseProfile, setNoiseProfile] = useState("ibm_eagle");
 
   // ── Dark / Light theme ──
   const [theme, setTheme] = useState(() => {
@@ -58,7 +61,7 @@ function QuantumLeapApp() {
       .catch(() => setBackendStatus(false));
   }, []);
 
-  const executeSimulation = async (insts, qubits, framework = "auto") => {
+  const executeSimulation = async (insts, qubits, framework = "auto", withNoise = noiseEnabled, profile = noiseProfile) => {
     setIsSimulating(true);
     setSimulationError(null);
     const targetQubits = qubits ?? numQubits;
@@ -69,7 +72,13 @@ function QuantumLeapApp() {
         fetch(`${API}/simulation/run`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ shots: 1024, framework: framework || "auto", circuit: circ }),
+          body: JSON.stringify({
+            shots: 1024,
+            framework: framework || "auto",
+            circuit: circ,
+            noise_enabled: withNoise,
+            noise_profile: profile,
+          }),
         }).then(async (r) => {
           const data = await r.json();
           if (!r.ok) throw new Error(data?.detail?.message || (typeof data?.detail === "string" ? data.detail : "Simulation failed"));
@@ -95,7 +104,7 @@ function QuantumLeapApp() {
     }
   };
 
-  useEffect(() => { executeSimulation(); }, []); // eslint-disable-line
+  useEffect(() => { executeSimulation(); }, [noiseEnabled, noiseProfile]); // eslint-disable-line
 
   const handleLoadPreset = async (presetTarget) => {
     try {
@@ -218,12 +227,19 @@ function QuantumLeapApp() {
               onRunSimulation={(fw) => executeSimulation(instructions, numQubits, fw)}
               isSimulating={isSimulating}
               onLoadPreset={handleLoadPreset}
+              noiseEnabled={noiseEnabled}
+              onToggleNoise={() => setNoiseEnabled((prev) => !prev)}
+              noiseProfile={noiseProfile}
+              onSelectNoiseProfile={setNoiseProfile}
+              onOpenExport={() => setIsExportOpen(true)}
             />
             <MeasurementView
               simulationResult={simulationResult}
               statevectorData={statevectorData}
               simulationError={simulationError}
               isSimulating={isSimulating}
+              noiseEnabled={noiseEnabled}
+              noiseProfile={noiseProfile}
             />
           </div>
 
@@ -238,8 +254,17 @@ function QuantumLeapApp() {
             </div>
           </div>
         </main>
-
-      /* ── Curriculum ── */
+      ) : activeTab === "gateway" ? (
+        <main style={{ padding: "0 24px 24px 24px", flex: 1, minHeight: "680px" }}>
+          <div className="liquid-glass-panel" style={{ height: "100%", minHeight: "680px", width: "100%", overflow: "hidden", borderRadius: "8px" }}>
+            <GatewayFlow style={{ width: "100%", height: "100%", minHeight: "680px" }} />
+          </div>
+        </main>
+      ) : activeTab === "dashboard" ? (
+        <StudentDashboard
+          onNavigateToStudio={() => setActiveTab("studio")}
+          onNavigateToCurriculum={() => setActiveTab("curriculum")}
+        />
       ) : (
         <CurriculumView
           onLoadCircuitPreset={handleLoadCircuitFromCurriculum}
