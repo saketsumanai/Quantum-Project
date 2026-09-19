@@ -19,7 +19,10 @@ const API = "http://localhost:8000/api/v1";
 
 // ─── Main Application ─────────────────────────────────────────────────────────
 function QuantumLeapApp() {
-  const [activeTab, setActiveTab] = useState("landing");
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = (typeof window !== "undefined" ? window.location.hash.replace("#", "") : "");
+    return ["landing", "chat", "videos", "learning", "assessment", "gateway", "studio", "curriculum"].includes(hash) ? hash : "landing";
+  });
   const [chatParams, setChatParams] = useState({ query: "", language: "en" });
   const [numQubits, setNumQubits] = useState(2);
   const [instructions, setInstructions] = useState([
