@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union
 from pydantic import BaseModel, Field
 
 # --- Circuit Representation ---
@@ -85,7 +85,9 @@ class AITutorQueryResponse(BaseModel):
     is_cached_fallback: bool
     sources: Optional[List[str]] = None
     rag_metrics: Optional[RAGMetricsModel] = None
-    user_level_applied: Optional[str] = "beginner"
+    reasoning_process: Optional[Union[str, Dict[str, Any], List[Any]]] = Field(
+        default=None, description="Step-by-step chain-of-thought quantum reasoning and theorem verification"
+    )
 
 class AICircuitDebugRequest(BaseModel):
     circuit: CircuitModel
