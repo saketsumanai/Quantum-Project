@@ -146,60 +146,281 @@ _chroma_searcher = ChromaSearcher()
 
 # ─── Groq LLM Query ──────────────────────────────────────────────────────────
 
-async def _query_groq_with_context(query: str, context_passages: List[Dict], circuit_ctx: Dict) -> Optional[Dict]:
+async def _query_groq_with_context(
+    query: str,
+    context_passages: List[Dict],
+    circuit_ctx: Dict,
+    current_course_unit: str = "",
+    history: Optional[List[Dict[str, str]]] = None,
+    language: str = "en",
+    preferred_model: str = "auto",
+    generate_diagram: bool = False,
+) -> Optional[Dict]:
     import httpx
+    from dotenv import load_dotenv
+    load_dotenv(override=False)
 
-    groq_key = os.getenv("GROQ_API_KEY", "").strip()
+    if preferred_model == "failsafe":
+        return None
+
+    groq_key = (os.getenv("GROQ_API_KEY") or "").strip()
     if not groq_key:
         return None
 
-    # Build passage context block
+    # Build passage context block from RAG
     ctx_block = ""
     if context_passages:
         ctx_block = "\n\n".join([
-            f"[Source: {p['source']}]\n{p['text'][:800]}"
-            for p in context_passages[:4]
+            f"[Source: {p['source']}]\n{p['text'][:900]}"
+            for p in context_passages[:5]
         ])
 
-    system_prompt = """You are Aura Quantum AI, an elite quantum computing professor for Smart India Hackathon 2026 (Quantum Leap platform, Team Gitwolves).
-You have access to retrieved passages from the 76-book quantum computing corpus below.
-Use this knowledge to give precise, mathematically rigorous explanations.
-Return ONLY valid JSON with exactly these keys:
-- intent_classification (short string)
-- vocal_prose_script (3-5 scientific sentences)
-- mathematical_latex_formula (LaTeX string)
-- qiskit_executable_code (runnable Python)
-- quiz (object with: question str, options [4 strings], answer int 0-3)"""
+    INDIAN_LANG_MAP = {
+        "hi": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in HINDI (हिंदी) using authentic Devanagari script for the entire vocal_prose_script and quiz questions/options/explanation. "
+            "Keep technical quantum terms crystal clear (e.g. mention 'सुपरपोज़िशन (Superposition)', 'एंटैंगलमेंट (Entanglement)', 'क्यूबिट (Qubit)'). "
+            "Preserve all mathematical formulas in proper LaTeX notation (e.g. |0\\rangle, |1\\rangle, matrices) and Python code standard."
+        ),
+        "hinglish": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond in natural, conversational HINGLISH (conversational Hindi written using the English/Latin alphabet, exactly as popular Indian tech and engineering educators speak, e.g., 'Quantum Superposition ka matlab hai ki ek qubit ek hi time par |0> aur |1> dono states ka linear combination hold karta hai...'). "
+            "Preserve all mathematical formulas in proper LaTeX notation and keep Python code standard."
+        ),
+        "ta": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in TAMIL (தமிழ்) script for the entire vocal_prose_script and quiz. "
+            "Explain quantum physics and computing concepts fluently in Tamil. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+        "te": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in TELUGU (తెలుగు) script for the entire vocal_prose_script and quiz. "
+            "Explain quantum physics and computing concepts fluently in Telugu. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+        "bn": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in BENGALI (বাংলা) script for the entire vocal_prose_script and quiz. "
+            "Explain quantum computing concepts fluently in Bengali. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+        "mr": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in MARATHI (मराठी) script for the entire vocal_prose_script and quiz. "
+            "Explain quantum computing concepts fluently in Marathi. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+        "gu": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in GUJARATI (ગુજરાતી) script for the entire vocal_prose_script and quiz. "
+            "Explain quantum computing concepts fluently in Gujarati. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+        "kn": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in KANNADA (ಕನ್ನಡ) script for the entire vocal_prose_script and quiz. "
+            "Explain quantum computing concepts fluently in Kannada. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+        "ml": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in MALAYALAM (മലയാളം) script for the entire vocal_prose_script and quiz. "
+            "Explain quantum computing concepts fluently in Malayalam. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+        "pa": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in PUNJABI (ਪੰਜਾਬੀ Gurmukhi script) for the entire vocal_prose_script and quiz. "
+            "Explain quantum computing concepts fluently in Punjabi. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+        "or": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in ODIA (ଓଡ଼ିଆ script) for the entire vocal_prose_script and quiz. "
+            "Explain quantum computing concepts fluently in Odia. "
+            "Preserve all mathematical formulas in proper LaTeX notation and Python code standard."
+        ),
+    }
 
-    user_msg = f"""Retrieved Quantum Knowledge:
-{ctx_block}
+    lang_instruction = INDIAN_LANG_MAP.get(
+        (language or "en").lower(),
+        "LANGUAGE INSTRUCTION: If the student asks in an Indian language (e.g. Hindi, Hinglish, Tamil, Telugu, Bengali, etc.), respond in that language with full fluency. Otherwise, provide your response in clear, lucid English."
+    )
 
-Circuit Context: {json.dumps(circuit_ctx or {})}
+    visual_requested = generate_diagram or any(w in query.lower() for w in ["diagram", "circuit", "visualize", "visual", "image", "bloch", "sphere", "draw", "plot", "picture"])
 
-Student Question: {query}
+    system_prompt = f"""You are Aura Quantum AI — an elite multilingual quantum computing scientist and conversational professor powering the Quantum Leap platform (combining the pedagogy of John Preskill, Scott Aaronson, and the IBM Quantum team).
 
-Respond in JSON only."""
+The user can ask you ANY question — whether conceptual, mathematical, algorithmic, hardware-related, or code-related. You respond with the clarity, depth, and helpfulness of ChatGPT and Gemini, specialized for Quantum Computing.
+
+{lang_instruction}
+
+GUIDELINES FOR YOUR RESPONSE:
+1. vocal_prose_script:
+   - Provide a deep, lucid, and comprehensive explanation.
+   - Begin with an intuitive conceptual analogy that builds intuition without dumbing down the physics.
+   - Explain the underlying quantum mechanics or mathematics rigorously.
+   - Use clear paragraphs and Markdown formatting (bold key terms, lists where helpful).
+   - Answer the student's exact question directly and insightfully.
+2. mathematical_latex_formula:
+   - Provide the single most important mathematical formulation for the topic in proper LaTeX syntax (e.g., bra-ket Dirac notation |\\psi\\rangle, Pauli matrices, unitary operators U, expectation values \\langle A \\rangle, tensor products \\otimes).
+   - If the topic does not involve a specific formula, provide the relevant state or Hamiltonian.
+3. qiskit_executable_code:
+   - If relevant to the question, provide complete, runnable Python code using the modern Qiskit 1.0+ API (e.g., using `from qiskit_aer import AerSimulator`, `QuantumCircuit`, `sim.run()`). If pure theory/conceptual and code is not applicable, provide a concise pedagogical snippet or set to "".
+4. quiz:
+   - Provide a probing multiple-choice question testing conceptual understanding.
+   - Include 4 realistic options, the zero-based index of the correct answer, and an explanation.
+5. diagram:
+   - {"The student requested a visual diagram. You MUST generate a structured quantum diagram object." if visual_requested else "If a visual schematic, circuit, Bloch sphere, or probability distribution significantly aids understanding, provide a diagram object; otherwise set to null."}
+   - Supported diagram formats:
+     * Circuit Diagram: {{"type": "circuit", "title": "Circuit Title", "num_qubits": 2, "gates": [{{"gate": "H", "qubits": [0]}}, {{"gate": "CX", "qubits": [0, 1]}}]}}
+     * Bloch Sphere: {{"type": "bloch_sphere", "title": "State on Bloch Sphere", "theta": 1.5708, "phi": 0.0, "state_label": "|+⟩"}}
+     * State Histogram: {{"type": "histogram", "title": "Measurement Probabilities", "distribution": {{"00": 0.5, "11": 0.5}}}}
+
+You MUST respond strictly in valid JSON format with EXACTLY these keys:
+{{
+  "intent_classification": "snake_case_topic",
+  "vocal_prose_script": "detailed, rich explanation with intuitive analogy and physical depth",
+  "mathematical_latex_formula": "LaTeX equation string",
+  "qiskit_executable_code": "Python Qiskit 1.0+ code or empty string",
+  "diagram": null or diagram_object,
+  "quiz": {{
+    "question": "Conceptual probe question",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "answer": 0,
+    "explanation": "Why the correct answer is right and why others are wrong"
+  }}
+}}"""
+
+    # Build messages array including conversation history if provided
+    messages = [{"role": "system", "content": system_prompt}]
+
+    # Include recent conversation turns (up to last 6 messages) for multi-turn conversational context
+    if history:
+        for turn in history[-6:]:
+            r = turn.get("role", "user")
+            c = turn.get("content", "")
+            if c and r in ("user", "assistant"):
+                messages.append({"role": r, "content": c})
+
+    rag_section = f"RETRIEVED EXPERT LITERATURE:\n{ctx_block}\n\n" if ctx_block else ""
+    course_ctx = f"Active Course Topic: {current_course_unit}\n" if current_course_unit else ""
+    circuit_desc = f"Active Circuit Context: {json.dumps(circuit_ctx)}\n" if circuit_ctx else ""
+
+    current_prompt = f"{rag_section}{course_ctx}{circuit_desc}Student Question: {query}"
+    messages.append({"role": "user", "content": current_prompt})
+
+    default_models = [
+        "qwen/qwen3.8-27b",       # Qwen 27B — ultra fast, exceptional at physics/math
+        "openai/gpt-oss-120b",    # 120B GPT-class model on Groq
+        "groq/compound",          # Groq compound model
+        "openai/gpt-oss-20b",     # Fast fallback
+    ]
+    if preferred_model and preferred_model != "auto" and preferred_model in default_models:
+        candidate_models = [preferred_model] + [m for m in default_models if m != preferred_model]
+    else:
+        candidate_models = default_models
+
+    models_to_try = list(dict.fromkeys(m for m in candidate_models if m))
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=18.0) as client:
+            for model_name in models_to_try:
+                try:
+                    resp = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {groq_key}",
+                            "User-Agent": "QuantumLeapAI/2.0",
+                        },
+                        json={
+                            "model": model_name,
+                            "response_format": {"type": "json_object"},
+                            "messages": messages,
+                            "temperature": 0.25,
+                            "max_tokens": 2500,
+                        },
+                    )
+                    if resp.status_code == 200:
+                        raw_data = resp.json()
+                        content_str = raw_data["choices"][0]["message"]["content"]
+                        # Strip markdown if present
+                        if "```json" in content_str:
+                            content_str = content_str.split("```json")[1].split("```")[0].strip()
+                        elif "```" in content_str:
+                            content_str = content_str.split("```")[1].split("```")[0].strip()
+                        res = json.loads(content_str)
+                        display_name = (
+                            model_name
+                            .replace("openai/gpt-oss-120b", "GPT-OSS 120B (Groq)")
+                            .replace("groq/compound", "Groq Compound")
+                            .replace("qwen/qwen3.8-27b", "Qwen 3.8 27B")
+                            .replace("openai/gpt-oss-20b", "GPT-OSS 20B")
+                        )
+                        res["_active_model"] = display_name
+                        res["_rag_active"] = len(context_passages) > 0
+                        print(f"[Groq] ✓ {model_name} generated response successfully")
+                        return res
+                    print(f"[Groq] {model_name} → {resp.status_code}: {resp.text[:200]}")
+                except Exception as model_err:
+                    print(f"[Groq] Error with {model_name}: {model_err}")
+                    continue
+    except Exception as e:
+        print(f"[Groq] Connection error: {e}")
+    return None
+
+
+# ─── Custom Fine-Tuned LLaMA Endpoint (Ollama / vLLM / Colab ngrok) ───────────
+
+async def _query_custom_llm_with_context(query: str, context_passages: List[Dict], circuit_ctx: Dict, current_course_unit: str = "") -> Optional[Dict]:
+    import httpx
+
+    custom_url = os.getenv("CUSTOM_LLM_URL") or os.getenv("OLLAMA_BASE_URL")
+    if not custom_url:
+        return None
+
+    # Normalize url to include chat/completions if not present
+    endpoint = custom_url.rstrip("/")
+    if not endpoint.endswith("/chat/completions"):
+        if endpoint.endswith("/v1"):
+            endpoint = f"{endpoint}/chat/completions"
+        else:
+            endpoint = f"{endpoint}/v1/chat/completions"
+
+    model_name = os.getenv("CUSTOM_LLM_MODEL", "quantum-llama3-tutor")
+    api_key = os.getenv("CUSTOM_LLM_API_KEY", "ollama")
+
+    ctx_block = ""
+    if context_passages:
+        ctx_block = "\n\n".join([f"[Source: {p['source']}]\n{p['text'][:800]}" for p in context_passages[:4]])
+
+    system_prompt = (
+        "You are Aura Quantum AI — an elite quantum computing professor and world-class researcher powering Quantum Leap.\n"
+        "Explain concepts using clear intuitive analogies, exact LaTeX Dirac formulas, 100% runnable Qiskit 1.0+ code, "
+        "and a diagnostic Socratic quiz. Respond strictly in valid JSON format with keys: "
+        "intent_classification, vocal_prose_script, mathematical_latex_formula, qiskit_executable_code, quiz(question,options[4],answer,explanation)."
+    )
+    user_msg = f"Knowledge Passages:\n{ctx_block}\n\nCircuit Context: {json.dumps(circuit_ctx or {})}\nTopic: {current_course_unit}\nQuestion: {query}"
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            headers = {"Content-Type": "application/json"}
+            if api_key:
+                headers["Authorization"] = f"Bearer {api_key}"
             resp = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {groq_key}"},
+                endpoint,
+                headers=headers,
                 json={
-                    "model": "llama-3.1-8b-instant",
-                    "response_format": {"type": "json_object"},
+                    "model": model_name,
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_msg},
                     ],
-                    "temperature": 0.3,
-                    "max_tokens": 1024,
+                    "temperature": 0.25,
+                    "max_tokens": 1500,
                 },
             )
             if resp.status_code == 200:
-                return json.loads(resp.json()["choices"][0]["message"]["content"])
+                content_str = resp.json()["choices"][0]["message"]["content"]
+                if "```json" in content_str:
+                    content_str = content_str.split("```json")[1].split("```")[0].strip()
+                elif "```" in content_str:
+                    content_str = content_str.split("```")[1].split("```")[0].strip()
+                res = json.loads(content_str)
+                res["_active_model"] = f"Fine-Tuned Llama ({model_name})"
+                return res
     except Exception as e:
-        print(f"[Groq] Error: {e}")
+        print(f"[Custom LLM] Failed: {e}, falling back to cloud providers...")
     return None
 
 
@@ -245,20 +466,65 @@ class AITutorService:
         query_lower = req.user_query.lower()
 
         # 1. Semantic retrieval from ChromaDB
-        passages = _chroma_searcher.search(req.user_query, top_k=5)
+
+        # 1. Semantic retrieval with expanded candidates for re-ranking
+        candidates = _chroma_searcher.search(req.user_query, top_k=15)
+        
+        # --- RAG Optimization: Keyword-Based Re-ranking ---
+        # We boost passages that contain key technical terms found in the user query
+        # to ensure mathematical precision over generic semantic similarity.
+        if candidates:
+            query_words = set(req.user_query.lower().split())
+            # Technical keywords that should trigger a boost
+            tech_keywords = {"qubit", "hadamard", "entanglement", "grover", "vqe", "bloch", "statevector", "unitary", "phase", "superposition"}
+            
+            scored_candidates = []
+            for p in candidates:
+                text_lower = p["text"].lower()
+                # Start with the semantic score from ChromaDB
+                score = p.get("score", 0.0)
+                
+                # Boost based on technical keyword overlap
+                overlap = len(query_words.intersection(set(text_lower.split())))
+                tech_overlap = len(tech_keywords.intersection(set(text_lower.split())))
+                
+                # Final score: semantic + technical weight
+                final_score = score + (overlap * 0.05) + (tech_overlap * 0.1)
+                scored_candidates.append((final_score, p))
+            
+            # Sort by new score and take top 5
+            scored_candidates.sort(key=lambda x: x[0], reverse=True)
+            passages = [p for score, p in scored_candidates[:5]]
+        else:
+            passages = []
+
         rag_active = len(passages) > 0
         sources = list({p["source"] for p in passages}) if passages else []
 
-        # 2. Try Groq (preferred) then Gemini with retrieved context
+        # 2. Try Custom Fine-Tuned Llama, then Groq, then Gemini
         parsed = None
-        if passages:
-            parsed = await _query_groq_with_context(
-                req.user_query, passages, req.active_circuit_context or {}
+        course_unit_ctx = req.current_topic or ""
+        req_model = getattr(req, "model", "auto") or "auto"
+        req_diagram = bool(getattr(req, "generate_diagram", False))
+
+        if req_model != "failsafe":
+            parsed = await _query_custom_llm_with_context(
+                req.user_query, passages, req.active_circuit_context or {},
+                current_course_unit=course_unit_ctx
             )
-        if parsed is None:
-            parsed = await _query_gemini_with_context(
-                req.user_query, passages, req.active_circuit_context or {}
-            )
+            if parsed is None:
+                parsed = await _query_groq_with_context(
+                    req.user_query, passages, req.active_circuit_context or {},
+                    current_course_unit=course_unit_ctx,
+                    history=req.conversation_history,
+                    language=getattr(req, "language", "en") or "en",
+                    preferred_model=req_model,
+                    generate_diagram=req_diagram,
+                )
+            if parsed is None:
+                parsed = await _query_gemini_with_context(
+                    req.user_query, passages, req.active_circuit_context or {}
+                )
 
         if parsed:
             quiz_data = parsed.get("quiz", {})
@@ -269,8 +535,13 @@ class AITutorService:
                     options_array=quiz_data["options"],
                     valid_index_pointer=int(quiz_data.get("answer", 0)),
                 )
-            if not sources:
-                sources = ["Quantum Leap 76-Book Corpus (Live RAG)", "Groq Llama-3.1-8B"]
+            active_model_name = parsed.get("_active_model", "Qwen 3.8 27B")
+            tutor_sources = [f"Model: {active_model_name}"]
+            if sources:
+                tutor_sources.extend(sources[:3])
+            else:
+                tutor_sources.append("Quantum Leap 76-Book Corpus (RAG)")
+
             return AITutorQueryResponse(
                 success=True,
                 intent_classification=parsed.get("intent_classification", "quantum_query"),
@@ -279,7 +550,9 @@ class AITutorService:
                 qiskit_executable_code=parsed.get("qiskit_executable_code", ""),
                 quiz_generation_object=quiz_obj,
                 is_cached_fallback=False,
-                sources=sources[:4],
+                sources=tutor_sources[:4],
+                diagram=parsed.get("diagram"),
+                model_used=active_model_name,
             )
 
         # 3. If LLM unavailable, return retrieved passages directly

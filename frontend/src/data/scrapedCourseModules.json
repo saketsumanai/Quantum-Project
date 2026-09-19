@@ -1,0 +1,13 @@
+{
+  "qiskit_textbook": [],
+  "meta": {
+    "total_records": 495,
+    "sources": {
+      "stackexchange": 399,
+      "qiskit_textbook": 0,
+      "pennylane": 8,
+      "arxiv": 74,
+      "wikipedia": 14
+    }
+  }
+}

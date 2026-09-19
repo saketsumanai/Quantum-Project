@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CheckCircle2, HelpCircle, Award, PlayCircle, ArrowRight } from 'lucide-react';
+import { PlayCircle, ArrowRight } from 'lucide-react';
 
 export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }) {
   const [modules, setModules] = useState([]);
@@ -43,8 +43,8 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
     setQuizResult({
       isCorrect,
       explanation: isCorrect ?
-        "Perfect! You've mastered the quantum state transformation for this concept." :
-        "Incorrect. Review the theory notes and circuit representation above!"
+        "Correct. You have verified the quantum transformation." :
+        "Incorrect. Review the theory notes and circuit representation."
     });
 
     if (isCorrect) {
@@ -53,24 +53,47 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px', padding: '0 24px 24px 24px', flex: 1 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px', padding: '0 24px 24px 24px', flex: 1 }}>
       {/* Left Sidebar: Modules & Lessons Navigation */}
-      <div className="glass-panel" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BookOpen size={18} color="#00f0ff" />
-            <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Curriculum Index</h3>
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        borderRadius: '16px',
+        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6)',
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+          <div>
+            <h3 style={{ fontSize: '0.92rem', fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
+              Curriculum Index
+            </h3>
+            <span style={{ fontSize: '0.7rem', color: '#a1a1aa', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Academic modules &amp; exercises
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '3px 8px', borderRadius: '12px' }}>
-            <Award size={14} color="#f59e0b" />
-            <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#f59e0b' }}>{userScore} XP</span>
-          </div>
+          <span style={{
+            fontSize: '0.72rem',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            color: '#ffffff',
+            background: 'rgba(255, 255, 255, 0.06)',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
+            padding: '3px 10px',
+            borderRadius: '9999px',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase'
+          }}>
+            {userScore} PTS
+          </span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto' }}>
           {modules.map((mod) => (
-            <div key={mod.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
+            <div key={mod.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontSize: '0.7rem', color: '#a1a1aa', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em' }}>
                 {mod.title}
               </div>
               {mod.lessons.map((les) => (
@@ -78,23 +101,24 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
                   key={les.id}
                   onClick={() => handleSelectLesson(les)}
                   style={{
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
                     textAlign: 'left',
-                    background: activeLesson?.id === les.id ? 'rgba(0, 240, 255, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                    border: `1px solid ${activeLesson?.id === les.id ? 'var(--border-glow)' : 'var(--border-subtle)'}`,
-                    color: activeLesson?.id === les.id ? '#fff' : 'var(--text-secondary)',
+                    background: activeLesson?.id === les.id ? '#ffffff' : 'rgba(255, 255, 255, 0.03)',
+                    border: `1px solid ${activeLesson?.id === les.id ? '#ffffff' : 'rgba(255, 255, 255, 0.08)'}`,
+                    color: activeLesson?.id === les.id ? '#000000' : '#a1a1aa',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.15s ease',
                     fontSize: '0.82rem',
-                    fontWeight: 600,
+                    fontWeight: activeLesson?.id === les.id ? 700 : 500,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    boxShadow: activeLesson?.id === les.id ? '0 0 16px rgba(255, 255, 255, 0.25)' : 'none',
                   }}
                 >
                   <span>{les.title}</span>
-                  <span style={{ fontSize: '0.68rem', color: '#00f0ff', padding: '2px 6px', background: 'rgba(0, 240, 255, 0.1)', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.68rem', opacity: 0.8, fontFamily: 'var(--font-mono)' }}>
                     {les.duration_min}m
                   </span>
                 </button>
@@ -105,45 +129,81 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
       </div>
 
       {/* Right Main Content: Lesson Reader & Interactive Challenge */}
-      <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        borderRadius: '16px',
+        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6)',
+        padding: '28px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
         {activeLesson ? (
           <>
             {/* Title & Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <span style={{ fontSize: '0.72rem', color: '#38bdf8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
-                  {activeLesson.difficulty} • {activeLesson.duration_min} Minutes
+                <span style={{
+                  fontSize: '0.72rem',
+                  fontFamily: 'var(--font-mono)',
+                  color: '#a1a1aa',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  padding: '4px 12px',
+                  borderRadius: '9999px',
+                  border: '1px solid rgba(255, 255, 255, 0.14)',
+                  display: 'inline-block',
+                  marginBottom: '8px'
+                }}>
+                  {activeLesson.difficulty} · {activeLesson.duration_min} Minutes
                 </span>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginTop: '4px' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 500, color: '#ffffff', letterSpacing: '-0.03em', margin: 0, textTransform: 'uppercase' }}>
                   {activeLesson.title}
                 </h2>
               </div>
 
               {activeLesson.preset_circuit && (
-                <button className="btn btn-primary" onClick={handleOpenInStudio}>
-                  <PlayCircle size={16} /> Load in Circuit Studio <ArrowRight size={14} />
+                <button
+                  onClick={handleOpenInStudio}
+                  className="btn-overview-primary"
+                >
+                  <PlayCircle size={14} /> Open in Circuit Studio <ArrowRight size={12} />
                 </button>
               )}
             </div>
 
             {/* Theory Text */}
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px 20px', borderRadius: '10px', border: '1px solid var(--border-subtle)', lineHeight: '1.7', fontSize: '0.92rem', color: '#e2e8f0' }}>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              padding: '20px 24px',
+              borderRadius: '12px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              lineHeight: '1.7',
+              fontSize: '0.92rem',
+              color: '#d4d4d8'
+            }}>
               <p>{activeLesson.theory_md}</p>
             </div>
 
             {/* Quiz Section */}
             {activeLesson.quiz && (
-              <div style={{ background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.25)', borderRadius: '12px', padding: '18px 20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <HelpCircle size={18} color="#c084fc" />
-                  <h4 style={{ fontSize: '0.96rem', fontWeight: 700, color: '#f8fafc' }}>
-                    Interactive Concept Check
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.10)',
+                borderRadius: '14px',
+                padding: '22px'
+              }}>
+                <div style={{ marginBottom: '14px' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#a1a1aa', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
+                    Concept Check
+                  </span>
+                  <h4 style={{ fontSize: '1.02rem', fontWeight: 500, color: '#ffffff', marginTop: '4px' }}>
+                    {activeLesson.quiz.question_string}
                   </h4>
                 </div>
-
-                <p style={{ fontSize: '0.88rem', color: '#e2e8f0', marginBottom: '14px', fontWeight: 500 }}>
-                  {activeLesson.quiz.question_string}
-                </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   {activeLesson.quiz.options_array.map((opt, idx) => (
@@ -151,34 +211,34 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
                       key={idx}
                       onClick={() => !quizSubmitted && setSelectedQuizAnswer(idx)}
                       style={{
-                        padding: '10px 14px',
+                        padding: '12px 16px',
                         borderRadius: '8px',
                         textAlign: 'left',
-                        fontSize: '0.82rem',
+                        fontSize: '0.84rem',
                         cursor: quizSubmitted ? 'default' : 'pointer',
-                        background: selectedQuizAnswer === idx ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                        border: `1px solid ${selectedQuizAnswer === idx ? '#00f0ff' : 'var(--border-subtle)'}`,
+                        background: selectedQuizAnswer === idx ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                        border: `1px solid ${selectedQuizAnswer === idx ? '#ffffff' : 'rgba(255, 255, 255, 0.08)'}`,
                         color: '#fff',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      <strong style={{ color: '#00f0ff', marginRight: '6px' }}>{String.fromCharCode(65 + idx)}.</strong>
+                      <strong style={{ color: '#a1a1aa', marginRight: '6px', fontFamily: 'var(--font-mono)' }}>{String.fromCharCode(65 + idx)}.</strong>
                       {opt}
                     </button>
                   ))}
                 </div>
 
-                <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   {!quizSubmitted ? (
                     <button
-                      className="btn btn-accent"
                       onClick={handleSubmitQuiz}
                       disabled={selectedQuizAnswer === null}
+                      className="btn-overview-primary"
                     >
                       Submit Verification
                     </button>
                   ) : (
-                    <div style={{ fontSize: '0.84rem', fontWeight: 600, color: quizResult?.isCorrect ? '#34d399' : '#f87171' }}>
+                    <div style={{ fontSize: '0.86rem', fontWeight: 600, color: quizResult?.isCorrect ? '#10b981' : '#f87171' }}>
                       {quizResult?.explanation}
                     </div>
                   )}
@@ -187,7 +247,7 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
             )}
           </>
         ) : (
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '50px' }}>
+          <div style={{ textAlign: 'center', color: '#a1a1aa', padding: '50px' }}>
             Select a curriculum module from the index.
           </div>
         )}

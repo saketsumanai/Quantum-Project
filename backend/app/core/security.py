@@ -13,7 +13,27 @@ JWT_SECRET = os.getenv("SECRET_KEY", "change-me-in-production-quantum-leap-sih-2
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24h
 
+import hashlib
+import secrets
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    """Securely hashes a password using PBKDF2-HMAC-SHA256 with 100,000 rounds and random salt."""
+    salt = secrets.token_hex(16)
+    pwd_hash = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+    return f"{salt}${pwd_hash}"
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifies a plain password against stored salt$hash in constant time."""
+    if not hashed_password or "$" not in hashed_password:
+        return False
+    try:
+        salt, expected_hash = hashed_password.split("$", 1)
+        actual_hash = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+        return secrets.compare_digest(actual_hash, expected_hash)
+    except Exception:
+        return False
 
 # ─── Internal JWT (returned to frontend after Firebase verification) ──────────
 

@@ -64,6 +64,10 @@ class AITutorQueryRequest(BaseModel):
     user_query: str
     active_circuit_context: Optional[Dict[str, Any]] = None
     current_topic: Optional[str] = None
+    conversation_history: Optional[List[Dict[str, str]]] = None
+    language: Optional[str] = "en"  # "en" | "hi" | "hinglish" | "ta" | "te" | "bn" | "mr" | "gu" | "kn" | "ml" | "pa" | "or"
+    model: Optional[str] = "auto"
+    generate_diagram: Optional[bool] = False
 
 class AITutorQueryResponse(BaseModel):
     success: bool
@@ -74,12 +78,17 @@ class AITutorQueryResponse(BaseModel):
     quiz_generation_object: Optional[QuizModel] = None
     is_cached_fallback: bool
     sources: Optional[List[str]] = None
+    diagram: Optional[Dict[str, Any]] = None
+    model_used: Optional[str] = None
 
-# --- Assessment Schemas ---
+# --- Assessment & Test Center Schemas ---
 class AssessmentSubmitRequest(BaseModel):
     quiz_id: str
     selected_option_index: int
     time_taken_seconds: Optional[int] = 0
+    correct_index: Optional[int] = None
+    explanation: Optional[str] = None
+    topic: Optional[str] = None
 
 class AssessmentSubmitResponse(BaseModel):
     success: bool
@@ -87,6 +96,70 @@ class AssessmentSubmitResponse(BaseModel):
     points_earned: int
     explanation: str
     user_mastery: Dict[str, Any]
+
+class QuizQuestion(BaseModel):
+    id: str
+    question: str
+    options: List[str]
+    correct_index: int
+    explanation: str
+    topic: Optional[str] = "quantum_computing"
+    formula: Optional[str] = None
+    code_snippet: Optional[str] = None
+
+class AIQuizGenerateRequest(BaseModel):
+    topic: str
+    difficulty: Optional[str] = "intermediate"  # "beginner" | "intermediate" | "advanced"
+    num_questions: Optional[int] = 5
+    include_code: Optional[bool] = True
+    custom_content: Optional[str] = None
+
+class AIQuizGenerateResponse(BaseModel):
+    success: bool
+    quiz_id: str
+    title: str
+    topic: str
+    difficulty: str
+    estimated_minutes: int
+    questions: List[QuizQuestion]
+    is_ai_generated: bool
+    sources: Optional[List[str]] = None
+
+class QuestionReviewItem(BaseModel):
+    question_id: str
+    question: str
+    options: List[str]
+    selected_index: Optional[int] = None
+    correct_index: int
+    is_correct: bool
+    explanation: str
+    topic: Optional[str] = None
+
+class TestReportSaveRequest(BaseModel):
+    quiz_id: str
+    title: str
+    topic: str
+    difficulty: Optional[str] = "intermediate"
+    total_questions: int
+    correct_count: int
+    score_percentage: float
+    time_taken_seconds: int
+    question_reviews: List[QuestionReviewItem]
+    ai_feedback: Optional[Dict[str, Any]] = None
+
+class TestReportResponse(BaseModel):
+    id: str
+    user_id: Optional[str] = None
+    title: str
+    topic: str
+    difficulty: str
+    total_questions: int
+    correct_count: int
+    score_percentage: float
+    time_taken_seconds: int
+    question_reviews: List[Dict[str, Any]]
+    ai_feedback: Optional[Dict[str, Any]] = None
+    created_at: str
 
 # --- Curriculum Schemas ---
 class LessonChallenge(BaseModel):
@@ -117,3 +190,17 @@ class CurriculumModule(BaseModel):
     icon: str
     description: str
     lessons: List[CurriculumLesson]
+
+
+# --- Circuit Grader Schemas ---
+class CircuitVerifyRequest(BaseModel):
+    circuit: CircuitModel
+    target_probabilities: Dict[str, float]
+    tolerance: float = Field(default=0.05, ge=0.0, le=1.0)
+
+class CircuitVerifyResponse(BaseModel):
+    success: bool
+    is_correct: bool
+    similarity_score: float
+    diff_metrics: Dict[str, float]
+    feedback: str

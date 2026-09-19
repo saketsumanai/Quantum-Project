@@ -1,61 +1,138 @@
 /* ==============================================================================
-   QuantumForge Master Design System - SIH 2026
-   Aesthetic: Cybernetic Deep-Space Quantum Laboratory
+   Quantum Leap Master Design System — SIH 2026
+   Aesthetic: IBM Quantum Learning (Carbon) & Coursera Academic Enterprise
+   Clean, authentic, data-dense, pedagogical, and professional.
+   Supports Dark and Light Themes.
    ============================================================================== */
 
-/* ── IBM Quantum Learning-inspired palette for LearningHub ── */
-:root {
-  --ql-bg: #161616;
-  --ql-layer-01: #1c1c1c;
-  --ql-layer-02: #262626;
-  --ql-layer-hover: #333333;
-  --ql-border: #393939;
-  --ql-text-primary: #f4f4f4;
-  --ql-text-secondary: #c6c6c6;
-  --ql-text-helper: #8d8d8d;
-  --ql-blue: #0F62FE;
-  --ql-blue-dark: #78A9FF;
-  --ql-purple: #8A3FFC;
-  --ql-purple-dark: #A56EFF;
-  /* Color Palette - HSL Tailored */
-  --bg-space: #07090e;
-  --bg-subtle: #0d111a;
-  --bg-surface: #131824;
-  --bg-surface-glass: rgba(19, 24, 36, 0.75);
-  --bg-card: rgba(23, 29, 45, 0.65);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(0, 240, 255, 0.25);
-  --border-active: #00f0ff;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-  /* Quantum Accents */
-  --q-cyan: #00f0ff;
-  --q-cyan-glow: rgba(0, 240, 255, 0.35);
-  --q-purple: #a855f7;
-  --q-purple-glow: rgba(168, 85, 247, 0.35);
-  --q-pink: #ec4899;
-  --q-emerald: #10b981;
-  --q-amber: #f59e0b;
-  --q-blue: #3b82f6;
+:root, [data-theme="dark"] {
+  /* ── Overview Page Harmonized Dark Aesthetic ── */
+  --bg-canvas: #08080a;          /* Obsidian black matched to Overview page */
+  --bg-surface: #0e0e12;         /* Pure dark card surface */
+  --bg-surface-elevated: #141418;/* Level 2 interactive surface */
+  --bg-surface-hover: #1c1c24;   /* Hover state */
+  --bg-subtle: #0c0c10;          /* Input & nested containers */
 
-  /* Typography */
-  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  /* Borders & Dividers */
+  --border-subtle: rgba(255, 255, 255, 0.10);
+  --border-default: rgba(255, 255, 255, 0.16);
+  --border-focus: #ffffff;
+
+  /* Typography — Harmonized with Overview Page */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Inter';
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
 
   /* Text Colors */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-highlight: #38bdf8;
+  --text-primary: #ffffff;       /* Pure white high-contrast */
+  --text-secondary: #a1a1aa;     /* Zinc 400 */
+  --text-muted: #71717a;         /* Zinc 500 */
+  --text-link: #60a5fa;
 
-  /* Shadows & Lighting */
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --shadow-glow-cyan: 0 0 20px rgba(0, 240, 255, 0.2);
-  --shadow-glow-purple: 0 0 20px rgba(168, 85, 247, 0.2);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  /* Quantum Learning (--ql-) Design Tokens */
+  --ql-layer-01: #0e0e12;
+  --ql-layer-02: #141418;
+  --ql-layer-hover: #1c1c24;
+  --ql-border: rgba(255, 255, 255, 0.12);
+  --ql-text-primary: #ffffff;
+  --ql-text-secondary: #a1a1aa;
+  --ql-text-helper: #71717a;
+
+  /* Authentic Professional Accent Palette (IBM Blue + Quantum Functional) */
+  --ibm-blue: #0f62fe;
+  --ibm-blue-hover: #0353e9;
+  --ibm-blue-light: #78a9ff;
+  --quantum-teal: #06b6d4;
+  --quantum-indigo: #6366f1;
+  --quantum-emerald: #10b981;
+  --quantum-amber: #f59e0b;
+  --quantum-rose: #f43f5e;
+
+  /* Legacy variable compatibility */
+  --bg-space: var(--bg-canvas);
+  --bg-surface-glass: var(--bg-surface);
+  --bg-card: var(--bg-surface-elevated);
+  --border-glow: var(--border-default);
+  --border-active: var(--ibm-blue);
+  --q-cyan: var(--quantum-teal);
+  --q-purple: var(--quantum-indigo);
+  --font-display: var(--font-sans);
+  --font-body: var(--font-sans);
+
+  /* Shadows (Subtle, professional, no neon blur) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 10px 24px -3px rgba(0, 0, 0, 0.45);
+  --shadow-glass: var(--shadow-md);
+
+  /* Radii (Enterprise software standard) */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+[data-theme="light"], .light-theme {
+  /* ── IBM Quantum Learning / Carbon Light Theme Tokens ── */
+  --bg-canvas: #f8fafc;          /* Clean institutional light slate */
+  --bg-surface: #ffffff;         /* Level 1 surface card */
+  --bg-surface-elevated: #f1f5f9;/* Level 2 interactive surface */
+  --bg-surface-hover: #e2e8f0;   /* Hover state */
+  --bg-subtle: #f8fafc;          /* Input & nested containers */
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-focus: #0f62fe;
+
+  /* Text Colors */
+  --text-primary: #0f172a;       /* High-contrast readable dark text */
+  --text-secondary: #475569;     /* Balanced body / metadata */
+  --text-muted: #94a3b8;         /* Helper / disabled */
+  --text-link: #2563eb;
+
+  /* Quantum Learning (--ql-) Design Tokens */
+  --ql-layer-01: #ffffff;
+  --ql-layer-02: #f8fafc;
+  --ql-layer-hover: #f1f5f9;
+  --ql-border: rgba(0, 0, 0, 0.10);
+  --ql-text-primary: #0f172a;
+  --ql-text-secondary: #475569;
+  --ql-text-helper: #94a3b8;
+
+  /* Authentic Professional Accent Palette (IBM Blue + Quantum Functional) */
+  --ibm-blue: #0f62fe;
+  --ibm-blue-hover: #0353e9;
+  --ibm-blue-light: #2563eb;
+  --quantum-teal: #0891b2;
+  --quantum-indigo: #4f46e5;
+  --quantum-emerald: #059669;
+  --quantum-amber: #d97706;
+  --quantum-rose: #e11d48;
+
+  /* Legacy variable compatibility */
+  --bg-space: var(--bg-canvas);
+  --bg-surface-glass: var(--bg-surface);
+  --bg-card: var(--bg-surface-elevated);
+  --border-glow: var(--border-default);
+  --border-active: var(--ibm-blue);
+  --q-cyan: var(--quantum-teal);
+  --q-purple: var(--quantum-indigo);
+  --font-display: var(--font-sans);
+  --font-body: var(--font-sans);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-glass: var(--shadow-md);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 * {
@@ -67,211 +144,356 @@
 html, body {
   width: 100%;
   height: 100%;
-  background-color: var(--bg-space);
+  background-color: var(--bg-canvas);
   color: var(--text-primary);
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
   overflow-x: hidden;
-}
-
-/* Dynamic Radial Quantum Ambient Background */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: 
-    radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 85% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
   position: relative;
-  z-index: 1;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-subtle);
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--q-cyan);
+/* ==============================================================================
+   Overview-Harmonized Typography Hierarchy & Utility System
+   ============================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.2;
 }
 
-/* Typography Utilities */
-h1, h2, h3, h4, .font-display {
-  font-family: var(--font-display);
-  letter-spacing: -0.02em;
-  font-weight: 700;
+h1 {
+  letter-spacing: -0.04em;
 }
 
-.font-mono {
+p {
+  letter-spacing: -0.01em;
+  line-height: 1.6;
+}
+
+/* Pill / Eyebrow Badge (Directly harmonized with Overview Landing Page) */
+.pill-tag, .eyebrow-tag, .badge-mono {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  font-size: 0.74rem;
   font-family: var(--font-mono);
+  color: #a1a1aa;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* Glassmorphic Panel Utility */
-.glass-panel {
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-glass);
-  border-radius: var(--radius-md);
+/* Uppercase Section Eyebrow Header */
+.section-eyebrow, .category-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* Display Metric / Numerical Counter */
+.metric-mono {
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+/* Modern Tracked Buttons */
+.btn-upper {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.btn-pill-upper {
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  padding: 10px 22px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+/* Custom Clean Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Clean Panels — Harmonized with Overview Page */
+.glass-panel, .overview-card {
+  background: linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-panel:hover, .overview-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .glass-panel-glow {
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glow);
-  box-shadow: var(--shadow-glow-cyan);
-  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(24, 24, 28, 0.95) 0%, rgba(12, 12, 16, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+  border-radius: 16px;
+  transition: border-color 0.2s ease;
 }
 
-/* Buttons */
+/* Overview-style Primary & Secondary Buttons */
+.btn-overview-primary {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #ffffff !important;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-overview-primary:hover {
+  background: #f4f4f5 !important;
+  box-shadow: 0 0 28px rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+.btn-overview-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-overview-secondary {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #a1a1aa !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.btn-overview-secondary:hover {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(255, 255, 255, 0.30) !important;
+  color: #ffffff !important;
+}
+
+/* Professional Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 18px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  font-family: var(--font-display);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   border: 1px solid transparent;
   outline: none;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
-  color: #07090e;
-  box-shadow: 0 4px 14px rgba(0, 240, 255, 0.3);
+  background: var(--ibm-blue);
+  color: #ffffff;
+  border: 1px solid var(--ibm-blue);
 }
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.45);
+  background: var(--ibm-blue-hover);
+  border-color: var(--ibm-blue-hover);
 }
 
 .btn-accent {
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  background: var(--quantum-indigo);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
 }
 .btn-accent:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
+  opacity: 0.9;
 }
 
 .btn-glass {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-surface-elevated);
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
 }
 .btn-glass:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--bg-surface-hover);
+  border-color: var(--border-default);
 }
 
 .btn-danger {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--quantum-rose);
+  border: 1px solid rgba(244, 63, 94, 0.3);
 }
 .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.5);
 }
 
-/* Quantum Gate Palette Items */
+/* Gate Palette Badges */
 .gate-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.95rem;
-  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
   user-select: none;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   position: relative;
 }
 
 .gate-badge:hover {
-  transform: scale(1.1) translateY(-2px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .gate-h {
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+  background: #0284c7;
+  color: #ffffff;
 }
 .gate-pauli {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #000;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+  background: #d97706;
+  color: #ffffff;
 }
 .gate-phase {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  background: #059669;
+  color: #ffffff;
 }
 .gate-rot {
-  background: linear-gradient(135deg, #ec4899, #db2777);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+  background: #db2777;
+  color: #ffffff;
 }
 .gate-cnot {
-  background: linear-gradient(135deg, #a855f7, #9333ea);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+  background: #7c3aed;
+  color: #ffffff;
 }
 .gate-measure {
-  background: linear-gradient(135deg, #64748b, #475569);
-  color: #00f0ff;
-  border: 1px solid rgba(0, 240, 255, 0.4);
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
 }
 
-/* Animations */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); }
-  50% { box-shadow: 0 0 25px rgba(0, 240, 255, 0.5); }
+/* ==============================================================================
+   Spatial Cards & Backlit (BKLIT) UI System (Apurva Enhancements)
+   ============================================================================== */
+
+.spatial-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%), rgba(14, 14, 14, 0.8);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 3s infinite ease-in-out;
+.spatial-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.75), 0 0 25px rgba(15, 98, 254, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.bklit-container {
+  position: relative;
+  background: radial-gradient(circle at 50% 0%, rgba(15, 98, 254, 0.18) 0%, rgba(10, 10, 10, 0.98) 75%), #050505;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: inset 0 0 20px rgba(15, 98, 254, 0.15), 0 0 25px rgba(56, 189, 248, 0.25);
 }
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
+
+.bklit-text-cyan {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.7), 0 0 20px rgba(56, 189, 248, 0.3);
 }
+
+.bklit-text-blue {
+  color: #78A9FF;
+  text-shadow: 0 0 10px rgba(120, 169, 255, 0.6);
+}
+
+.bklit-text-white {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+.bklit-bar-glow {
+  background: linear-gradient(90deg, #0F62FE 0%, #38bdf8 100%);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.bklit-metric-card {
+  background: rgba(15, 15, 15, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: inset 0 0 12px rgba(15, 98, 254, 0.15), 0 4px 16px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+}
+
+.liquid-glass-panel {
+  background: linear-gradient(135deg, rgba(15, 98, 254, 0.12) 0%, rgba(15, 15, 15, 0.9) 100%);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.2), 0 0 24px rgba(15, 98, 254, 0.3), 0 16px 40px rgba(0, 0, 0, 0.8);
+  border-radius: var(--radius-md);
+}
+

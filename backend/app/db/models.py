@@ -11,12 +11,16 @@ from backend.app.db.database import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String, primary_key=True)          # Firebase UID
+    id = Column(String, primary_key=True)          # Firebase UID or user_id
     email = Column(String, unique=True, nullable=False, index=True)
     display_name = Column(String, nullable=True)
+    password_hash = Column(String, nullable=True)  # Salted hash for email/password credentials
     photo_url = Column(String, nullable=True)
     provider = Column(String, default="google")    # "google" | "email"
-    role = Column(String, default="student")       # "student" | "admin"
+    role = Column(String, default="student")       # "student" | "admin" | "researcher"
+    age = Column(Integer, nullable=True)           # User age
+    topics_covered = Column(Text, default="[]")    # JSON list of covered quantum topics
+    tests_count = Column(Integer, default=0)       # Number of diagnostic tests completed
     total_xp = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -70,3 +74,20 @@ class QuizAttempt(Base):
     attempted_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="quiz_attempts")
+
+
+class TestReport(Base):
+    __tablename__ = "test_reports"
+
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    title = Column(String, nullable=False)
+    topic = Column(String, nullable=False)
+    difficulty = Column(String, default="intermediate")
+    total_questions = Column(Integer, nullable=False)
+    correct_count = Column(Integer, nullable=False)
+    score_percentage = Column(Float, nullable=False)
+    time_taken_seconds = Column(Integer, default=0)
+    question_reviews = Column(Text, nullable=False)  # JSON encoded detailed review
+    ai_feedback = Column(Text, nullable=True)        # JSON encoded diagnosis
+    created_at = Column(DateTime, default=datetime.utcnow)

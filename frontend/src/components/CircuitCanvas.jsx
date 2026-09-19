@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, RotateCcw, Plus, Minus, Layers, Zap, Settings, Trash2 } from 'lucide-react';
+import { Play, RotateCcw, Plus, Minus } from 'lucide-react';
 
 const GATE_PALETTE = [
   { id: 'h', label: 'H', category: 'superposition', title: 'Hadamard (Superposition)' },
@@ -29,6 +29,7 @@ export default function CircuitCanvas({
   const [selectedGate, setSelectedGate] = useState('h');
   const [rotationAngle, setRotationAngle] = useState(1.5708); // pi/2
   const [cnotControl, setCnotControl] = useState(0);
+  const [selectedFramework, setSelectedFramework] = useState('auto');
 
   // Add gate to target qubit wire
   const handleAddGate = (wireIdx) => {
@@ -60,45 +61,97 @@ export default function CircuitCanvas({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Top Toolbar: Qubits count, Presets, Simulation Button */}
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      borderRadius: '16px',
+      boxShadow: '0 12px 36px rgba(0, 0, 0, 0.6)',
+      padding: '24px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '18px'
+    }}>
+      {/* Top Toolbar: Qubits count, Engine Selector, Presets, Simulation Button */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          {/* Qubit Counter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Qubits:</span>
+            <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Qubits:
+            </span>
             <button
-              className="btn btn-glass"
-              style={{ width: '28px', height: '28px', padding: 0 }}
-              disabled={numQubits <= 1}
               onClick={() => onUpdateNumQubits(Math.max(1, numQubits - 1))}
+              disabled={numQubits <= 1}
+              style={{
+                width: '28px', height: '28px', padding: 0,
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)',
+                borderRadius: '6px', color: '#fff', cursor: numQubits <= 1 ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
             >
-              <Minus size={14} />
+              <Minus size={12} />
             </button>
-            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', minWidth: '20px', textAlign: 'center' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.9rem', minWidth: '20px', textAlign: 'center', color: '#fff' }}>
               {numQubits}
             </span>
             <button
-              className="btn btn-glass"
-              style={{ width: '28px', height: '28px', padding: 0 }}
-              disabled={numQubits >= 5}
               onClick={() => onUpdateNumQubits(Math.min(5, numQubits + 1))}
+              disabled={numQubits >= 5}
+              style={{
+                width: '28px', height: '28px', padding: 0,
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)',
+                borderRadius: '6px', color: '#fff', cursor: numQubits >= 5 ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
             >
-              <Plus size={14} />
+              <Plus size={12} />
             </button>
+          </div>
+
+          {/* Engine Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Engine:
+            </span>
+            <select
+              value={selectedFramework}
+              onChange={(e) => setSelectedFramework(e.target.value)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.14)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-sans)',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="auto" style={{ background: '#0e0e12', color: '#fff' }}>Auto (Optimal Engine)</option>
+              <option value="bluequbit" style={{ background: '#0e0e12', color: '#fff' }}>BlueQubit Cloud (GPU / CPU)</option>
+              <option value="ibm_quantum" style={{ background: '#0e0e12', color: '#fff' }}>IBM Quantum (156Q Heron QPU)</option>
+              <option value="qiskit_aer" style={{ background: '#0e0e12', color: '#fff' }}>Qiskit Aer (Local)</option>
+              <option value="pennylane" style={{ background: '#0e0e12', color: '#fff' }}>PennyLane (QML)</option>
+              <option value="cirq" style={{ background: '#0e0e12', color: '#fff' }}>Google Cirq</option>
+              <option value="qbraid" style={{ background: '#0e0e12', color: '#fff' }}>qBraid Transpiler</option>
+            </select>
           </div>
 
           {/* Algorithm Presets Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Preset:</span>
+            <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Preset:
+            </span>
             <select
               style={{
-                background: 'rgba(0,0,0,0.4)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '6px',
-                padding: '5px 10px',
-                fontSize: '0.8rem',
-                fontFamily: 'var(--font-body)',
+                background: 'rgba(255, 255, 255, 0.04)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.14)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-sans)',
                 outline: 'none',
                 cursor: 'pointer'
               }}
@@ -107,29 +160,31 @@ export default function CircuitCanvas({
               }}
               defaultValue=""
             >
-              <option value="" disabled>Load Algorithm...</option>
-              <option value="bell_state">Bell State (|Phi+&gt;)</option>
-              <option value="ghz_state">GHZ State (3-Qubit)</option>
-              <option value="superposition">Single Qubit Superposition</option>
-              <option value="grover_2qubit">Grover 2-Qubit Search</option>
-              <option value="deutsch_jozsa">Deutsch-Jozsa Algorithm</option>
-              <option value="quantum_teleportation">Quantum Teleportation</option>
+              <option value="" disabled style={{ background: '#0e0e12', color: '#fff' }}>Select Algorithm...</option>
+              <option value="bell_state" style={{ background: '#0e0e12', color: '#fff' }}>Bell State (|Φ+⟩)</option>
+              <option value="ghz_state" style={{ background: '#0e0e12', color: '#fff' }}>GHZ State (3-Qubit)</option>
+              <option value="superposition" style={{ background: '#0e0e12', color: '#fff' }}>Superposition (|+⟩)</option>
+              <option value="grover_2qubit" style={{ background: '#0e0e12', color: '#fff' }}>Grover 2-Qubit Search</option>
+              <option value="deutsch_jozsa" style={{ background: '#0e0e12', color: '#fff' }}>Deutsch-Jozsa</option>
+              <option value="quantum_teleportation" style={{ background: '#0e0e12', color: '#fff' }}>Quantum Teleportation</option>
             </select>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button className="btn btn-glass" onClick={handleClearAll} title="Clear all gates">
-            <RotateCcw size={14} /> Reset
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={handleClearAll}
+            className="btn-overview-secondary"
+          >
+            <RotateCcw size={12} /> Reset
           </button>
           <button
-            className="btn btn-primary"
-            onClick={onRunSimulation}
+            onClick={() => onRunSimulation(selectedFramework)}
             disabled={isSimulating}
-            style={{ minWidth: '140px' }}
+            className="btn-overview-primary"
           >
-            <Play size={15} fill="#07090e" /> {isSimulating ? 'Simulating...' : 'Simulate Circuit'}
+            <Play size={13} fill="#000000" /> {isSimulating ? 'Simulating…' : 'Simulate Circuit'}
           </button>
         </div>
       </div>
@@ -138,14 +193,14 @@ export default function CircuitCanvas({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '6px',
         padding: '10px 14px',
-        background: 'rgba(0, 0, 0, 0.35)',
-        borderRadius: '10px',
-        border: '1px solid var(--border-subtle)',
+        background: 'rgba(255, 255, 255, 0.02)',
+        borderRadius: '12px',
+        border: '1px solid rgba(255,255,255,0.08)',
         overflowX: 'auto'
       }}>
-        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginRight: '6px' }}>
+        <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginRight: '6px' }}>
           Gates:
         </span>
         {GATE_PALETTE.map((g) => (
@@ -153,17 +208,27 @@ export default function CircuitCanvas({
             key={g.id}
             onClick={() => setSelectedGate(g.id)}
             title={g.title}
-            className={`gate-badge ${
-              g.id === 'h' ? 'gate-h' :
-              ['x', 'y', 'z'].includes(g.id) ? 'gate-pauli' :
-              ['s', 't'].includes(g.id) ? 'gate-phase' :
-              ['rx', 'ry', 'rz'].includes(g.id) ? 'gate-rot' :
-              ['cx', 'cz', 'swap'].includes(g.id) ? 'gate-cnot' : 'gate-measure'
-            }`}
             style={{
-              outline: selectedGate === g.id ? '2px solid #00f0ff' : 'none',
-              outlineOffset: '2px',
-              transform: selectedGate === g.id ? 'scale(1.08)' : 'scale(1)'
+              width: '34px',
+              height: '34px',
+              borderRadius: '4px',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              fontSize: '0.82rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: selectedGate === g.id ? '2px solid #ffffff' : '1px solid rgba(255,255,255,0.12)',
+              background:
+                g.id === 'h' ? '#0f62fe' :
+                ['x', 'y', 'z'].includes(g.id) ? '#b45309' :
+                ['s', 't'].includes(g.id) ? '#047857' :
+                ['rx', 'ry', 'rz'].includes(g.id) ? '#be185d' :
+                ['cx', 'cz', 'swap'].includes(g.id) ? '#6d28d9' : '#374151',
+              color: '#ffffff',
+              transform: selectedGate === g.id ? 'scale(1.05)' : 'scale(1)',
+              transition: 'all 0.1s ease',
             }}
           >
             {g.label}
@@ -173,7 +238,7 @@ export default function CircuitCanvas({
         {/* Context parameters for rotation gates */}
         {['rx', 'ry', 'rz'].includes(selectedGate) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>θ:</span>
+            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>θ:</span>
             <input
               type="range"
               min="0"
@@ -183,7 +248,7 @@ export default function CircuitCanvas({
               onChange={(e) => setRotationAngle(e.target.value)}
               style={{ width: '80px', cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--q-pink)' }}>
+            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: '#f43f5e' }}>
               {parseFloat(rotationAngle).toFixed(2)}
             </span>
           </div>
@@ -192,14 +257,14 @@ export default function CircuitCanvas({
         {/* Control qubit selector for multi-qubit gates */}
         {['cx', 'cz', 'swap'].includes(selectedGate) && numQubits > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Control:</span>
+            <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontFamily: 'var(--font-mono)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Control:</span>
             <select
               value={cnotControl}
               onChange={(e) => setCnotControl(parseInt(e.target.value))}
               style={{
-                background: 'rgba(0,0,0,0.5)',
+                background: '#0b0f19',
                 color: '#fff',
-                border: '1px solid var(--border-subtle)',
+                border: '1px solid rgba(255,255,255,0.12)',
                 borderRadius: '4px',
                 padding: '2px 6px',
                 fontSize: '0.75rem'
@@ -215,49 +280,45 @@ export default function CircuitCanvas({
 
       {/* Circuit Grid Canvas */}
       <div style={{
-        background: 'rgba(7, 9, 14, 0.7)',
-        border: '1px solid var(--border-subtle)',
+        background: 'rgba(0, 0, 0, 0.45)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
         borderRadius: '12px',
-        padding: '24px 20px',
+        padding: '24px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '24px',
+        gap: '20px',
         position: 'relative',
         overflowX: 'auto'
       }}>
         {Array.from({ length: numQubits }).map((_, wireIdx) => {
-          // Find instructions targeting this wire
-          const wireInstructions = instructions.map((inst, index) => ({ inst, index }))
-            .filter(({ inst }) => inst.qubits.includes(wireIdx));
-
           return (
-            <div key={wireIdx} style={{ display: 'flex', alignItems: 'center', position: 'relative', minHeight: '44px' }}>
+            <div key={wireIdx} style={{ display: 'flex', alignItems: 'center', position: 'relative', minHeight: '42px' }}>
               {/* Qubit Wire Label */}
               <div style={{
-                width: '64px',
+                width: '60px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 fontFamily: 'var(--font-mono)',
-                fontSize: '0.88rem',
-                color: '#38bdf8',
+                fontSize: '0.84rem',
+                color: '#f3f4f6',
                 fontWeight: 600
               }}>
                 <span>q[{wireIdx}]</span>
-                <span style={{ color: 'var(--text-muted)' }}>|0⟩</span>
+                <span style={{ color: '#6b7280', fontSize: '0.74rem' }}>|0⟩</span>
               </div>
 
               {/* Wire Line */}
               <div style={{
                 flex: 1,
-                height: '2px',
-                background: 'rgba(255, 255, 255, 0.15)',
+                height: '1px',
+                background: 'rgba(255, 255, 255, 0.2)',
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 padding: '0 10px'
               }}>
-                {/* Gate Drop Slot Trigger on Wire */}
+                {/* Gate Drop Slot Trigger on Wire (Clean, no neon border) */}
                 <button
                   onClick={() => handleAddGate(wireIdx)}
                   style={{
@@ -265,23 +326,23 @@ export default function CircuitCanvas({
                     right: '10px',
                     padding: '3px 8px',
                     borderRadius: '4px',
-                    background: 'rgba(0, 240, 255, 0.12)',
-                    border: '1px dashed rgba(0, 240, 255, 0.4)',
-                    color: '#00f0ff',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px dashed rgba(255, 255, 255, 0.25)',
+                    color: '#d1d5db',
                     fontSize: '0.72rem',
-                    fontWeight: 600,
+                    fontWeight: 500,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px'
                   }}
-                  title={`Click to place selected ${selectedGate.toUpperCase()} gate on q[${wireIdx}]`}
+                  title={`Place ${selectedGate.toUpperCase()} on q[${wireIdx}]`}
                 >
-                  <Plus size={12} /> Place {selectedGate.toUpperCase()}
+                  <Plus size={11} /> Place {selectedGate.toUpperCase()}
                 </button>
 
                 {/* Placed Gates along the wire */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', zIndex: 2 }}>
                   {instructions.map((inst, instIdx) => {
                     const isTarget = inst.qubits[0] === wireIdx;
                     const isMulti = inst.qubits.length > 1;
@@ -289,8 +350,7 @@ export default function CircuitCanvas({
                     const isControlledTarget = isMulti && inst.qubits[1] === wireIdx;
 
                     if (!isTarget && !isControlledTarget) {
-                      // Spacer to align columns
-                      return <div key={instIdx} style={{ width: '42px', height: '42px' }} />;
+                      return <div key={instIdx} style={{ width: '38px', height: '38px' }} />;
                     }
 
                     return (
@@ -299,31 +359,31 @@ export default function CircuitCanvas({
                         onClick={() => handleRemoveInstruction(instIdx)}
                         title="Click to remove gate"
                         style={{
-                          width: '42px',
-                          height: '42px',
-                          borderRadius: '8px',
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '4px',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontFamily: 'var(--font-mono)',
                           fontWeight: 700,
-                          fontSize: '0.86rem',
+                          fontSize: '0.82rem',
                           cursor: 'pointer',
-                          boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-                          position: 'relative',
                           border: '1px solid rgba(255,255,255,0.2)',
-                          background: isControl ? '#1e1b4b' :
-                            inst.gate === 'h' ? 'linear-gradient(135deg, #0284c7, #0369a1)' :
-                            ['x', 'y', 'z'].includes(inst.gate) ? 'linear-gradient(135deg, #d97706, #b45309)' :
-                            ['cx', 'cz', 'swap'].includes(inst.gate) ? 'linear-gradient(135deg, #7c3aed, #6d28d9)' :
-                            'linear-gradient(135deg, #475569, #334155)',
+                          background: isControl ? (inst.gate === 'swap' ? '#6d28d9' : '#1e1b4b') :
+                            inst.gate === 'h' ? '#0f62fe' :
+                            ['x', 'y', 'z'].includes(inst.gate) ? '#b45309' :
+                            ['s', 't'].includes(inst.gate) ? '#047857' :
+                            ['rx', 'ry', 'rz'].includes(inst.gate) ? '#be185d' :
+                            ['cx', 'cz', 'swap'].includes(inst.gate) ? '#6d28d9' :
+                            '#334155',
                           color: '#fff'
                         }}
                       >
-                        {isControl ? '●' : isControlledTarget && inst.gate === 'cx' ? '⊕' : inst.gate.toUpperCase()}
+                        {inst.gate === 'swap' ? '✕' : isControl ? '●' : isControlledTarget && inst.gate === 'cx' ? '⊕' : isControlledTarget && inst.gate === 'cz' ? 'Z' : inst.gate.toUpperCase()}
                         {inst.params && inst.params.length > 0 && (
-                          <span style={{ fontSize: '0.55rem', opacity: 0.8 }}>
+                          <span style={{ fontSize: '0.52rem', opacity: 0.8 }}>
                             {inst.params[0].toFixed(1)}
                           </span>
                         )}

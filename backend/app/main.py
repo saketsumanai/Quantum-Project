@@ -1,12 +1,27 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Ensure environment variables from root .env are loaded first
+_root_env = Path(__file__).resolve().parents[2] / ".env"
+if not _root_env.exists():
+    _root_env = Path(__file__).resolve().parents[3] / ".env"
+
+if _root_env.exists():
+    load_dotenv(dotenv_path=_root_env, override=True)
+else:
+    load_dotenv(override=True)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from backend.app.routers import simulation, ai_tutor, curriculum, assessment, auth
+from backend.app.routers import simulation, ai_tutor, curriculum, assessment, auth, dubbing
 
 # ─── Firebase Admin Init ──────────────────────────────────────────────────────
 def _init_firebase():
     service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "")
+    project_id = os.getenv("FIREBASE_PROJECT_ID", "")
     try:
         import firebase_admin
         from firebase_admin import credentials
@@ -15,8 +30,13 @@ def _init_firebase():
                 cred = credentials.Certificate(service_account_path)
                 firebase_admin.initialize_app(cred)
                 print("[Firebase] ✅ Initialized with service account.")
+            elif project_id:
+                # Dev mode: no service account needed — just pass the project ID
+                # Firebase Admin will verify tokens using Google's public JWKS endpoint
+                firebase_admin.initialize_app(options={"projectId": project_id})
+                print(f"[Firebase] ✅ Initialized with project ID: {project_id}")
             else:
-                # Attempt default credentials (Cloud Run / App Engine)
+                # Attempt application default credentials (Cloud Run / App Engine)
                 firebase_admin.initialize_app()
                 print("[Firebase] ✅ Initialized with application default credentials.")
     except Exception as e:
@@ -25,9 +45,27 @@ def _init_firebase():
 
 # ─── SQLAlchemy DB Init ───────────────────────────────────────────────────────
 def _init_db():
+    from sqlalchemy import text
     from backend.app.db.database import engine, Base
     from backend.app.db import models  # noqa: F401 — imports trigger table registration
     Base.metadata.create_all(bind=engine)
+    
+    # Auto-migrate columns for SQLite compatibility if table was created previously
+    try:
+        with engine.connect() as conn:
+            cursor = conn.execute(text("PRAGMA table_info(users)"))
+            cols = [row[1] for row in cursor.fetchall()]
+            if cols:
+                if "age" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN age INTEGER"))
+                if "topics_covered" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN topics_covered TEXT DEFAULT '[]'"))
+                if "tests_count" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN tests_count INTEGER DEFAULT 0"))
+                conn.commit()
+    except Exception as err:
+        print(f"[Database] Migration note: {err}")
+
     print("[Database] ✅ SQLite tables created / verified.")
 
 
@@ -51,6 +89,50 @@ cors_origins_env = os.getenv(
 origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
 origins.append("*")
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Enforces strict enterprise security headers on all incoming API requests:
+    - Protection against MIME sniffing
+    - Clickjacking prevention via X-Frame-Options
+    - Referrer leakage protection
+    - Device capability lock-down
+    - XSS filtering
+    """
+    async def dispatch(self, request: Request, call_next):
+        # Enforce maximum payload size (15MB) to protect against DoS attacks
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > 15 * 1024 * 1024:
+            return Response(
+                content='{"error": "Payload Too Large", "detail": "Request payload exceeds the 15MB security threshold."}',
+                status_code=413,
+                media_type="application/json"
+            )
+
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+        # CSP allowing required external services (YouTube, Firebase, KaTeX, Google Fonts)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+            "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+            "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.firebaseapp.com; "
+            "img-src 'self' data: blob: https: https://img.youtube.com https://lh3.googleusercontent.com; "
+            "connect-src 'self' http://localhost:* http://127.0.0.1:* https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://api.groq.com https://api.sarvam.ai https://api.elevenlabs.io;"
+        )
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -65,6 +147,12 @@ app.include_router(simulation.router, prefix="/api/v1")
 app.include_router(ai_tutor.router,   prefix="/api/v1")
 app.include_router(curriculum.router, prefix="/api/v1")
 app.include_router(assessment.router, prefix="/api/v1")
+app.include_router(dubbing.router,    prefix="/api/v1")
+
+# ─── Static files for dubbed video lectures ───────────────────────────────────
+_dubs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../platform_dubs"))
+os.makedirs(_dubs_dir, exist_ok=True)
+app.mount("/platform_dubs", StaticFiles(directory=_dubs_dir), name="platform_dubs")
 
 
 @app.get("/")
@@ -92,7 +180,11 @@ def health():
         "quantum_engine": "active",
         "rag_vector_store": "indexed" if rag_ready else "not_indexed_run_build_rag_index.py",
         "max_qubits": 16,
-        "firebase_auth": "enabled" if os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH") else "pending_config",
+        "firebase_auth": (
+            "service_account" if (os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH") and os.path.exists(os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "")))
+            else ("project_id_jwks" if os.getenv("FIREBASE_PROJECT_ID") else "pending_config")
+        ),
+        "firebase_project_id": os.getenv("FIREBASE_PROJECT_ID", ""),
         "environment": os.getenv("ENVIRONMENT", "development"),
     }
 

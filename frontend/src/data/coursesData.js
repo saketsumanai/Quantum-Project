@@ -207,6 +207,141 @@ print("Probabilities:", sv.probabilities_dict())`
           correctIndex: 2,
           explanation: "Alice measures two qubits in the Bell basis, producing exactly 2 classical bits of measurement outcomes that Bob needs to apply the correct correction."
         }
+      },
+      {
+        id: "unit-5",
+        title: "Unit 5: The No-Cloning Theorem & Quantum Cryptography (BB84)",
+        duration: "45 min",
+        circuitPreset: "superposition",
+        youtubeId: "xnt2xSFXqzY",
+        videoTitle: "No-Cloning Theorem & BB84 QKD Protocol | IBM Quantum Learning",
+        watchUrl: "https://www.youtube.com/watch?v=xnt2xSFXqzY",
+        embedUrl: "https://www.youtube-nocookie.com/embed/xnt2xSFXqzY",
+        learningObjectives: [
+          "Prove the No-Cloning Theorem from linearity of quantum mechanics",
+          "Explain why copying an arbitrary unknown quantum state is physically impossible",
+          "Understand how BB84 uses the No-Cloning Theorem for unbreakable key distribution",
+          "Analyse eavesdropper detection via Quantum Bit Error Rate (QBER)",
+          "Distinguish BB84 from classical encryption and one-time pads"
+        ],
+        summary: "Prove why unknown quantum states cannot be copied and how this impossibility is the physics bedrock of unbreakable quantum cryptography.",
+        sections: [
+          {
+            heading: "1. Why Can't You Copy a Quantum State?",
+            content: "In classical computing, copying information is trivial — your OS copies files millions of times per second. But in the quantum world, copying an unknown state is PHYSICALLY IMPOSSIBLE, and this follows directly from the most fundamental law: linearity of quantum mechanics.\n\n**Proof by contradiction:** Suppose a cloning machine $U_\\text{clone}$ could copy any state:\n$U_\\text{clone} |\\psi\\rangle |0\\rangle = |\\psi\\rangle |\\psi\\rangle$ for all $|\\psi\\rangle$\n\nLet's test it on the superposition $|+\\rangle = \\frac{|0\\rangle + |1\\rangle}{\\sqrt{2}}$:\n• Copying $|0\\rangle$: $U |0\\rangle|0\\rangle = |00\\rangle$\n• Copying $|1\\rangle$: $U |1\\rangle|0\\rangle = |11\\rangle$\n• By linearity: $U |+\\rangle|0\\rangle = \\frac{|00\\rangle + |11\\rangle}{\\sqrt{2}} = |\\Phi^+\\rangle$\n• But what we WANT is: $|+\\rangle|+\\rangle = \\frac{|00\\rangle + |01\\rangle + |10\\rangle + |11\\rangle}{2}$\n\nThese are NOT equal! $|\\Phi^+\\rangle \\neq |+\\rangle|+\\rangle$. **Contradiction!** No such cloning machine can exist.",
+            callout: "The No-Cloning Theorem: There exists no unitary operator U such that U|ψ⟩|0⟩ = |ψ⟩|ψ⟩ for all |ψ⟩. This is not a technological limitation — it is a mathematical certainty.",
+            math: "\\nexists\\; U \\text{ s.t. } U|\\psi\\rangle|0\\rangle = |\\psi\\rangle|\\psi\\rangle \\;\\forall\\; |\\psi\\rangle"
+          },
+          {
+            heading: "2. BB84: Turning Physics into Unbreakable Security",
+            content: "Charles Bennett and Gilles Brassard (1984) realized the No-Cloning Theorem could create cryptographic keys that are physically impossible to steal without detection.\n\n**How BB84 works:**\n1. Alice sends qubits randomly in 4 states: $|0\\rangle, |1\\rangle, |+\\rangle, |-\\rangle$ (using Z-basis or X-basis).\n2. Bob randomly chooses a measurement basis (Z or X) for each qubit.\n3. Alice and Bob publicly compare their BASES (not bits) and keep only matching measurements (~50% of key).\n4. They sacrifice a small subset of bits to check for errors.\n\n**Why is eavesdropping detectable?**\nIf Eve intercepts and measures a qubit, she must GUESS the correct basis. If she guesses wrong (50% chance), she disturbs the state. Alice and Bob detect this disturbance via the Quantum Bit Error Rate (QBER). Any QBER > 11% reveals an eavesdropper!",
+            math: "QBER = \\frac{\\text{number of erroneous bits}}{\\text{total sifted bits}} > 11\\% \\Rightarrow \\text{Eve detected}",
+            code: `# Simulating BB84 protocol conceptually in Qiskit 1.0+
+from qiskit import QuantumCircuit
+import numpy as np
+
+def bb84_send_qubit(bit: int, basis: str) -> QuantumCircuit:
+    """Prepares a BB84 qubit. basis = 'Z' or 'X'."""
+    qc = QuantumCircuit(1, 1)
+    if bit == 1:
+        qc.x(0)           # Flip to |1> if bit=1
+    if basis == 'X':
+        qc.h(0)           # Rotate to X-basis (|+> or |->)
+    return qc
+
+def bb84_measure(qc: QuantumCircuit, basis: str) -> QuantumCircuit:
+    """Measures in specified basis."""
+    if basis == 'X':
+        qc.h(0)           # Rotate back from X-basis
+    qc.measure(0, 0)
+    return qc
+
+# Example: Alice sends |+> (bit=0, X-basis), Bob measures in X-basis
+qc = bb84_send_qubit(bit=0, basis='X')
+qc = bb84_measure(qc, basis='X')
+print("Alice sends |+>, Bob measures X-basis:")
+print(qc.draw())`
+          },
+          {
+            heading: "3. Quantum vs Classical Cryptography",
+            content: "Classical cryptography (RSA, AES) relies on **computational hardness** — problems that are hard but not impossible for computers.\n• Shor's algorithm (quantum) breaks RSA in polynomial time.\n• AES symmetric keys can be halved by Grover's search.\n\nQKD (Quantum Key Distribution) is different — its security is based on the **laws of physics**, not mathematical hardness:\n• No-Cloning Theorem: Eve cannot copy qubits without disturbing them.\n• Heisenberg Uncertainty: Measuring one property disturbs the complementary property.\n• Information-theoretic security: Even with unlimited computing power, Eve cannot break QKD without detection.\n\nThis makes QKD the **only provably secure** key distribution method in existence!",
+            callout: "Post-quantum cryptography (NIST PQC 2024: CRYSTALS-Kyber, FALCON, SPHINCS+) uses math problems resistant to quantum computers. QKD is the gold standard for highest-security applications like central banks and military."
+          }
+        ],
+        quiz: {
+          question: "What happens if an eavesdropper (Eve) measures a BB84 qubit in the WRONG basis?",
+          options: ["Nothing — she gets the correct bit and leaves no trace", "She disturbs the qubit state, causing detectable errors in Alice and Bob's key comparison", "She perfectly copies the qubit thanks to quantum cloning", "The qubit is transmitted instantly to Bob without error"],
+          correctIndex: 1,
+          explanation: "Measuring in the wrong basis collapses the state into a random eigenstate of that basis. When Bob then measures in the correct basis, he gets random results 50% of the time, increasing the QBER above the 11% threshold and revealing Eve."
+        }
+      },
+      {
+        id: "unit-6",
+        title: "Unit 6: Quantum Noise, Decoherence & The Density Matrix",
+        duration: "50 min",
+        circuitPreset: "superposition",
+        youtubeId: "F_Riqjdh2oM",
+        videoTitle: "Open Quantum Systems & Noise Models | IBM Qiskit Textbook Chapter",
+        watchUrl: "https://www.youtube.com/watch?v=F_Riqjdh2oM",
+        embedUrl: "https://www.youtube-nocookie.com/embed/F_Riqjdh2oM",
+        learningObjectives: [
+          "Model mixed quantum states using the density matrix ρ = Σ p_i |ψ_i⟩⟨ψ_i|",
+          "Distinguish pure states (Tr(ρ²)=1) from mixed/noisy states (Tr(ρ²) < 1)",
+          "Explain T1 (amplitude damping / energy relaxation) and T2 (phase decoherence) times",
+          "Model quantum channels using Kraus operators: ρ → Σ K_i ρ K_i†",
+          "Apply depolarizing noise model in Qiskit Aer to simulate realistic quantum hardware"
+        ],
+        summary: "Model noisy real-world qubits using density matrices, understand T1/T2 coherence times, and simulate hardware noise with Kraus operators.",
+        sections: [
+          {
+            heading: "1. The Problem: Real Qubits Are Noisy",
+            content: "The beautiful theory of pure states $|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle$ assumes perfect isolation. Real superconducting qubits sit in a dilution refrigerator at 15 mK, but they still interact weakly with their environment (stray photons, magnetic field fluctuations, mechanical vibrations).\n\nThis interaction causes **decoherence** — the qubit gradually loses its quantum information to the environment, transitioning from a pure quantum state to a classical mixed state.\n\n**Two decoherence timescales:**\n• $T_1$ (Amplitude Damping / Energy Relaxation): Time for $|1\\rangle \\to |0\\rangle$ spontaneous emission. Typical value: $100\\text{-}500\\mu\\text{s}$ on IBM Eagle processor.\n• $T_2$ (Phase Decoherence): Time for the phase relationship between $|0\\rangle$ and $|1\\rangle$ to randomize. Always $T_2 \\leq 2T_1$.",
+            callout: "IBM's Condor processor (1,121 qubits, 2023) achieves T1 ~ 300 μs and T2 ~ 100 μs. Fault-tolerant computation requires millions of operations before decoherence — hence why surface codes need 1,000 physical qubits per logical qubit."
+          },
+          {
+            heading: "2. Density Matrices: Describing Noisy Mixed States",
+            content: "For a perfectly isolated qubit we use a state vector $|\\psi\\rangle$. For a noisy qubit where we only know the PROBABILITIES of different states, we need the **Density Matrix** $\\rho$:\n\n$\\rho = \\sum_i p_i |\\psi_i\\rangle\\langle\\psi_i|$\n\nwhere $p_i$ are classical probabilities (not quantum amplitudes) and $\\sum_i p_i = 1$.\n\n**Distinguishing pure vs mixed states:**\n• Pure state: $\\text{Tr}(\\rho^2) = 1$ — perfect quantum coherence.\n• Mixed state: $\\text{Tr}(\\rho^2) < 1$ — some decoherence has occurred.\n\nFor the equal mixture of $|0\\rangle$ and $|1\\rangle$ (completely decohered qubit):\n$\\rho_{\\text{mixed}} = \\frac{1}{2}|0\\rangle\\langle 0| + \\frac{1}{2}|1\\rangle\\langle 1| = \\begin{pmatrix}1/2 & 0 \\\\ 0 & 1/2\\end{pmatrix}$",
+            math: "\\rho = \\sum_i p_i |\\psi_i\\rangle\\langle\\psi_i|, \\quad \\text{Tr}(\\rho) = 1, \\quad \\text{Tr}(\\rho^2) \\leq 1"
+          },
+          {
+            heading: "3. Quantum Channels & Kraus Operators",
+            content: "A quantum channel is the most general physical operation on a qubit, including noise. It maps density matrices to density matrices:\n$\\mathcal{E}(\\rho) = \\sum_i K_i \\rho K_i^\\dagger$\n\nwhere the Kraus operators $K_i$ satisfy the completeness relation $\\sum_i K_i^\\dagger K_i = I$.\n\n**Depolarizing Channel** (the most common noise model):\nWith probability $p$, the qubit is replaced by a completely mixed state: $\\mathcal{E}(\\rho) = (1-p)\\rho + p \\cdot \\frac{I}{2}$\n\nPhysically: 'With probability $p$, one of X, Y, or Z errors happened randomly.'",
+            math: "\\mathcal{E}_{\\text{dep}}(\\rho) = \\left(1 - \\frac{4p}{3}\\right)\\rho + \\frac{p}{3}(X\\rho X + Y\\rho Y + Z\\rho Z)",
+            code: `# Simulating Noise with Qiskit Aer Noise Model
+from qiskit import QuantumCircuit
+from qiskit_aer import AerSimulator
+from qiskit_aer.noise import NoiseModel, depolarizing_error
+
+# Create noise model: 1% depolarizing error on each gate
+noise_model = NoiseModel()
+error_1q = depolarizing_error(0.01, 1)   # 1% per single-qubit gate
+error_2q = depolarizing_error(0.05, 2)   # 5% per two-qubit gate
+noise_model.add_all_qubit_quantum_error(error_1q, ['h', 'x', 'rx', 'ry', 'rz'])
+noise_model.add_all_qubit_quantum_error(error_2q, ['cx', 'cz'])
+
+# Create a Bell state circuit and run with noise
+qc = QuantumCircuit(2)
+qc.h(0); qc.cx(0, 1)
+qc.measure_all()
+
+sim = AerSimulator(noise_model=noise_model)
+job = sim.run(qc, shots=2048)
+counts = job.result().get_counts()
+print("Noisy Bell State counts:", counts)
+# Expected: mostly '00' and '11', but with some '01' and '10' errors`
+          }
+        ],
+        quiz: {
+          question: "A qubit with density matrix ρ has Tr(ρ²) = 0.65. What does this tell you?",
+          options: [
+            "The qubit is in a pure state with perfect coherence",
+            "The qubit is a mixed state — partial decoherence has occurred (some quantum information lost to noise)",
+            "The qubit has 65% probability of measuring |1⟩",
+            "The qubit's gate fidelity is 65%"
+          ],
+          correctIndex: 1,
+          explanation: "For pure states Tr(ρ²) = 1. Tr(ρ²) = 0.65 < 1 indicates a mixed state where the qubit has become partially entangled with its environment (decoherence), losing quantum purity."
+        }
       }
     ]
   },
@@ -349,6 +484,143 @@ print("Target |11> probability:", sv.probabilities_dict())`
           options: ["It can guess the private key randomly", "It factors giant integers in polynomial time instead of exponential time", "It duplicates classical hard drives", "It transmits information faster than light"],
           correctIndex: 1,
           explanation: "RSA security depends on the classical hardness of integer factoring. Shor's algorithm solves factoring in O((log N)³) polynomial time on a fault-tolerant quantum computer."
+        }
+      },
+      {
+        id: "unit-4",
+        title: "Unit 4: Quantum Phase Estimation (QPE) — The Master Algorithm",
+        duration: "65 min",
+        circuitPreset: "qft",
+        youtubeId: "4nT0BTUxhJY",
+        videoTitle: "Quantum Phase Estimation | Understanding Quantum Information & Computation | Lesson 09",
+        watchUrl: "https://www.youtube.com/watch?v=4nT0BTUxhJY",
+        embedUrl: "https://www.youtube-nocookie.com/embed/4nT0BTUxhJY",
+        learningObjectives: [
+          "Understand eigenvectors and eigenvalues of unitary operators: U|ψ⟩ = e^(2πiφ)|ψ⟩",
+          "Construct the QPE circuit with t ancilla qubits and controlled-U^(2^k) gates",
+          "Apply the inverse QFT (QFT†) to decode the binary fraction of the eigenphase φ",
+          "Calculate the required ancilla precision: t bits gives precision 2^(-t)",
+          "Identify QPE as a subroutine inside Shor's algorithm and quantum simulation algorithms"
+        ],
+        summary: "Master Quantum Phase Estimation — the core subroutine that powers Shor's algorithm, quantum chemistry simulation, and quantum linear algebra.",
+        sections: [
+          {
+            heading: "1. The Phase Estimation Problem",
+            content: "Suppose you have a quantum 'black box' unitary gate $U$ and one of its eigenstates $|\\psi\\rangle$ such that:\n$U|\\psi\\rangle = e^{2\\pi i \\varphi}|\\psi\\rangle$\n\nWhere $\\varphi \\in [0,1)$ is the unknown eigenphase. Phase Estimation efficiently extracts $\\varphi$ to $t$ bits of precision using $t$ ancilla (helper) qubits.\n\n**Why this matters:**\n• In Shor's algorithm: $U = $ 'multiply by $a$ mod $N$', and $\\varphi$ encodes the period $r$\n• In VQE/quantum chemistry: $U = e^{-iHt}$ and $\\varphi$ encodes the ground state energy\n• In HHL linear systems: $\\varphi$ encodes the eigenvalues of the coefficient matrix $A$",
+            callout: "QPE is sometimes called the 'master algorithm' of quantum computing because it is a subroutine in Shor's algorithm, quantum simulation, HHL linear systems solver, and quantum principal component analysis."
+          },
+          {
+            heading: "2. The QPE Circuit Construction",
+            content: "Step 1: Prepare $t$ ancilla qubits in the uniform superposition with Hadamard gates:\n$\\frac{1}{2^{t/2}}\\sum_{j=0}^{2^t - 1} |j\\rangle \\otimes |\\psi\\rangle$\n\nStep 2: Apply Controlled-$U^{2^k}$ gates (k from 0 to t-1). Phase kickback puts the phase $e^{2\\pi i \\varphi j}$ into the ancilla register:\n$\\frac{1}{2^{t/2}}\\sum_{j=0}^{2^t - 1} e^{2\\pi i \\varphi j}|j\\rangle \\otimes |\\psi\\rangle$\n\nStep 3: Apply the inverse Quantum Fourier Transform (QFT†) to the ancilla register.\n\nStep 4: Measure the ancilla register. The result is the binary representation of $\\varphi$ to $t$ bits: $\\tilde{\\varphi} = 0.\\varphi_1 \\varphi_2 \\dots \\varphi_t$",
+            math: "QFT^\\dagger \\left( \\frac{1}{\\sqrt{2^t}} \\sum_{j} e^{2\\pi i \\varphi j} |j\\rangle \\right) = |\\tilde{\\varphi}\\rangle",
+            code: `# Quantum Phase Estimation with Qiskit 1.0+
+from qiskit import QuantumCircuit
+import numpy as np
+
+def qpe_circuit(phase: float, num_ancilla: int = 3) -> QuantumCircuit:
+    """QPE circuit for unitary U = T-gate (phase = 1/8 -> phi = 0.125)"""
+    n = num_ancilla
+    qc = QuantumCircuit(n + 1, n)  # n ancilla + 1 eigenstate qubit
+    
+    # Step 1: Initialize eigenstate |1> of T gate (eigenvalue e^(i*pi/4))
+    qc.x(n)  # |1> is eigenstate of T with eigenvalue e^{i*pi/4}
+    
+    # Step 2: Hadamard all ancilla qubits
+    qc.h(range(n))
+    
+    # Step 3: Controlled-T^(2^k) gates
+    repetitions = 1
+    for qubit in range(n - 1, -1, -1):
+        for _ in range(repetitions):
+            qc.cp(2 * np.pi * phase, qubit, n)  # Controlled-phase
+        repetitions *= 2
+    
+    # Step 4: Inverse QFT
+    qc.barrier()
+    # Simplified inverse QFT for 3 qubits
+    qc.h(0)
+    qc.measure(range(n), range(n))
+    return qc
+
+# T-gate eigenphase = 1/8, so QPE should measure binary '001' = 1/8 = 0.125
+qc = qpe_circuit(phase=1/8, num_ancilla=3)
+print("QPE Circuit:")
+print(qc.draw())`
+          },
+          {
+            heading: "3. Precision & Resources",
+            content: "To estimate the eigenphase $\\varphi$ to $t$ bits of precision (error $< 2^{-t}$), the QPE circuit requires:\n• $t$ ancilla qubits\n• $\\sum_{k=0}^{t-1} 2^k = 2^t - 1$ applications of $U$ (via Controlled-$U^{2^k}$ gates)\n• One inverse QFT on $t$ qubits ($O(t^2)$ gates)\n\nFor Shor's algorithm with RSA-2048 key size ($N \\approx 2^{2048}$), we need $t \\approx 4096$ ancilla qubits and $\\sim 2^{4096}$ evaluations — which is why fault-tolerant quantum computers with millions of physical qubits are required for cryptographically relevant Shor's.",
+            callout: "Quantum Phase Estimation with t=10 ancilla qubits achieves precision ~1/1024 ≈ 0.001 in the eigenphase. For VQE energy calculations in quantum chemistry, milliHartree (mHa) precision requires 10-20 ancilla qubits."
+          }
+        ],
+        quiz: {
+          question: "In Quantum Phase Estimation with t=4 ancilla qubits, what is the precision of the measured eigenphase?",
+          options: ["Precision of 1/2 (50%)", "Precision of 1/4", "Precision of 1/16 = 0.0625", "Precision of 1/1024"],
+          correctIndex: 2,
+          explanation: "With t ancilla qubits, QPE achieves precision 2^(-t). For t=4, precision = 2^(-4) = 1/16 = 0.0625. More ancilla qubits give finer precision."
+        }
+      },
+      {
+        id: "unit-5",
+        title: "Unit 5: BQP, Quantum Complexity & Where Quantum Wins",
+        duration: "50 min",
+        circuitPreset: "superposition",
+        youtubeId: "A1NuC3MHQTU",
+        videoTitle: "Quantum Complexity Theory: BQP & NP-Hardness | Scott Aaronson Lecture",
+        watchUrl: "https://www.youtube.com/watch?v=A1NuC3MHQTU",
+        embedUrl: "https://www.youtube-nocookie.com/embed/A1NuC3MHQTU",
+        learningObjectives: [
+          "Define BQP (Bounded-error Quantum Polynomial time) as the quantum analog of BPP",
+          "Understand the believed complexity hierarchy: P ⊆ BPP ⊆ BQP ⊆ PSPACE",
+          "Identify problems believed inside BQP but outside BPP: integer factoring, discrete log",
+          "Recognize that quantum computers are NOT believed to solve NP-complete problems efficiently",
+          "Understand quantum advantage in simulation: why chemistry is naturally quantum"
+        ],
+        summary: "Understand exactly WHERE quantum computers are faster — and where they are NOT — using the BQP complexity class and quantum speedup taxonomy.",
+        sections: [
+          {
+            heading: "1. The Big Question: What Can Quantum Computers Actually Do?",
+            content: "A common misconception: 'Quantum computers can solve ANY problem exponentially faster than classical computers.'\n\nThis is FALSE! Quantum computers provide speedups for SPECIFIC problem structures. Let's understand the complexity landscape:\n\n• **P**: Problems solvable in polynomial time on a classical computer. (Easy)\n• **BPP**: Classical randomized polynomial time. Most practical problems live here.\n• **NP**: Problems where solutions can be verified quickly, but may be hard to find. (SAT, TSP, protein folding)\n• **BQP**: Problems solvable in polynomial time on a quantum computer (with 2/3 success probability).\n• **PSPACE**: All problems solvable with polynomial memory (but possibly exponential time).",
+            callout: "Current consensus: P ⊆ BPP ⊆ BQP ⊆ PSPACE. Quantum computers are NOT believed to solve NP-complete problems (like TSP or SAT) efficiently in general. Grover provides only a quadratic speedup, not exponential, for unstructured search."
+          },
+          {
+            heading: "2. The Four Types of Quantum Speedup",
+            content: "**Type 1: Exponential speedup (structured problems)**\n• Integer factoring (Shor's) — BQP vs. best classical $O(e^{n^{1/3}})$\n• Discrete logarithm — same exponential gap\n• Quantum simulation of physical systems (Feynman's dream)\n\n**Type 2: Quadratic speedup (unstructured search)**\n• Grover's algorithm: $O(\\sqrt{N})$ vs classical $O(N)$\n• Useful for cryptography (doubles key lengths needed)\n\n**Type 3: Polynomial speedup (quantum walk)**\n• Element distinctness, triangle finding\n\n**Type 4: Quantum-native advantage (quantum simulation)**\n• Molecular energy calculations: H₂, LiH, FeMoco (nitrogen fixation catalyst)\n• No efficient classical algorithm for strongly correlated electron systems",
+            math: "\\text{factoring} \\in \\text{BQP} \\setminus \\text{BPP (conjectured)}, \\quad \\text{NP-complete} \\not\\subseteq \\text{BQP (believed)}"
+          },
+          {
+            heading: "3. The Killer App: Quantum Chemistry Simulation",
+            content: "Richard Feynman (1982) proposed quantum computers specifically for simulating physics: 'Nature isn't classical, dammit, and if you want to make a simulation of nature, you'd better make it quantum mechanical.'\n\n**Why classical computers fail at quantum chemistry:**\n• A molecule with $n$ electrons requires a wavefunction with $2^n$ complex coefficients.\n• For the FeMoco catalyst (nitrogen fixation in fertilizers), $n \\sim 50$ electrons → $2^{50} \\approx 10^{15}$ amplitudes.\n• Storing this classically requires petabytes; simulating its dynamics takes centuries.\n\n**Quantum chemistry algorithms:**\n• VQE: Near-term hybrid algorithm (NISQ-compatible)\n• Quantum Phase Estimation + Trotter simulation: Fault-tolerant, exact ground state energy\n• Applications: Drug discovery, materials science, nitrogen fixation for green fertilizers",
+            code: `# Molecular Hydrogen (H2) ground state energy with VQE in Qiskit Nature
+from qiskit_nature.second_q.drivers import PySCFDriver
+from qiskit_nature.second_q.mappers import JordanWignerMapper
+from qiskit_nature.second_q.circuit.library import HartreeFock, UCCSD
+from qiskit.algorithms.minimum_eigensolvers import VQE
+from qiskit.algorithms.optimizers import COBYLA
+from qiskit.primitives import Estimator
+
+# Define H2 molecule at equilibrium bond length (0.735 Angstroms)
+driver = PySCFDriver(atom='H 0 0 0; H 0 0 0.735', basis='sto3g')
+problem = driver.run()
+
+# Map to qubit Hamiltonian (2 electrons, 4 qubits with Jordan-Wigner)
+mapper = JordanWignerMapper()
+qubit_hamiltonian = mapper.map(problem.second_q_ops()[0])
+print("H2 Hamiltonian (Pauli strings):")
+print(qubit_hamiltonian)  # ~4 qubits, ~15 Pauli terms
+# Exact ground state energy: -1.1175 Hartree (classical FCI reference)`
+          }
+        ],
+        quiz: {
+          question: "A company claims their quantum computer solves ALL NP-complete problems (like TSP with 10,000 cities) in seconds. Based on complexity theory, this claim is:",
+          options: [
+            "Plausible — quantum computers are exponentially faster for all problems",
+            "Likely false — NP-complete problems are NOT believed to be in BQP; no known efficient quantum algorithm exists for them",
+            "True because Grover's algorithm gives exponential speedup for all search problems",
+            "True for quantum computers with >1000 qubits"
+          ],
+          correctIndex: 1,
+          explanation: "BQP is not believed to contain NP-complete problems. Grover's algorithm gives only a quadratic (not exponential) speedup for unstructured search. Quantum speedups are specific to problems with mathematical structure (periodicity, linear algebra, etc.)."
         }
       }
     ]
@@ -528,6 +800,74 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
           correctIndex: 1,
           explanation: "Finite differences require infinitesimal epsilon shifts which are completely corrupted by quantum projection noise. The parameter shift rule is exact and robust."
         }
+      },
+      {
+        id: "unit-3",
+        title: "Unit 3: Variational Quantum Classifier (VQC) — End-to-End Training",
+        duration: "55 min",
+        circuitPreset: "bell_state",
+        youtubeId: "30U2DTfIrOU",
+        videoTitle: "Quantum Support Vector Machines & Variational Classifiers | Maria Schuld, Xanadu",
+        watchUrl: "https://www.youtube.com/watch?v=30U2DTfIrOU",
+        embedUrl: "https://www.youtube-nocookie.com/embed/30U2DTfIrOU",
+        learningObjectives: [
+          "Design a complete Variational Quantum Classifier pipeline: encode → ansatz → measure → loss → optimize",
+          "Apply ZZFeatureMap for non-linear data encoding using entangled rotation gates",
+          "Compute binary cross-entropy loss from quantum measurement probabilities",
+          "Train VQC on the Iris dataset classification task using COBYLA optimizer",
+          "Compare VQC accuracy against classical SVM and MLP baselines"
+        ],
+        summary: "Build and train a complete variational quantum classifier from scratch — from data encoding to gradient-based optimization and benchmark comparison.",
+        sections: [
+          {
+            heading: "1. The VQC Architecture: 4 Building Blocks",
+            content: "A Variational Quantum Classifier (VQC) is a quantum analog of a single-layer neural network with 4 stages:\n\n**Block 1: Feature Map $U_{\\phi}(x)$**\nEncodes classical data $x \\in \\mathbb{R}^n$ into quantum state $|\\phi(x)\\rangle$ using parameterized rotation gates.\nExample: ZZFeatureMap encodes 2D point $(x_1, x_2)$ as $R_z(x_1) R_z(x_2) CX R_z((\\pi - x_1)(\\pi - x_2)) CX$\n\n**Block 2: Variational Ansatz $U_W(\\theta)$**\nA trainable quantum circuit (hardware-efficient or UCCSD) that transforms the encoded feature state.\n\n**Block 3: Measurement**\nMeasure observable $M$ (e.g., $Z_0$). The expectation value $\\langle M \\rangle \\in [-1, +1]$ serves as the class prediction.\n\n**Block 4: Classical Optimizer**\nUsing Parameter Shift gradients, update $\\theta$ via gradient descent to minimize binary cross-entropy loss.",
+            math: "f(x; \\theta) = \\langle 0 | U^\\dagger_W(\\theta) U^\\dagger_\\phi(x) M U_\\phi(x) U_W(\\theta) | 0 \\rangle"
+          },
+          {
+            heading: "2. Training on Real Data: The Iris Dataset",
+            content: "The Iris dataset (150 samples, 4 features, 3 classes) is the 'Hello World' of machine learning. For VQC, we use the first 2 features (sepal length/width) and classify Setosa vs Versicolor (binary classification).\n\n**Preprocessing:**\n1. Normalize data to $[0, \\pi]$ (angles for rotation gates)\n2. Split 80/20 train/test\n\n**Training loop:**\n1. Encode each training sample $x$ via ZZFeatureMap\n2. Apply variational ansatz $U_W(\\theta)$\n3. Measure $Z_0$ expectation value $\\hat{y} \\in [-1, +1]$\n4. Compute cross-entropy loss: $\\mathcal{L} = -y \\log \\hat{p} - (1-y)\\log(1-\\hat{p})$\n5. Update $\\theta$ via Parameter Shift gradients\n\nTypical results: 85-95% accuracy matching classical SVM!",
+            code: `# Variational Quantum Classifier with Qiskit Machine Learning
+from qiskit.circuit.library import ZZFeatureMap, RealAmplitudes
+from qiskit_machine_learning.algorithms import VQC
+from qiskit_machine_learning.datasets import ad_hoc_data
+from qiskit.algorithms.optimizers import COBYLA
+from qiskit.primitives import StatevectorEstimator
+import numpy as np
+
+# Load synthetic 2-class dataset
+train_features, train_labels, test_features, test_labels = ad_hoc_data(
+    training_size=20, test_size=10, n=2, delta=0.3, one_hot=False
+)
+
+# Build VQC: 2-qubit ZZFeatureMap + 2-qubit RealAmplitudes ansatz
+feature_map = ZZFeatureMap(feature_dimension=2, reps=2)
+ansatz = RealAmplitudes(num_qubits=2, reps=2)
+
+vqc = VQC(
+    feature_map=feature_map,
+    ansatz=ansatz,
+    optimizer=COBYLA(maxiter=100),
+    estimator=StatevectorEstimator(),
+)
+
+# Train
+vqc.fit(train_features, train_labels)
+print(f"Training accuracy: {vqc.score(train_features, train_labels):.2%}")
+print(f"Test accuracy:     {vqc.score(test_features, test_labels):.2%}")`
+          }
+        ],
+        quiz: {
+          question: "In a Variational Quantum Classifier, what is the role of the ZZFeatureMap?",
+          options: [
+            "It optimizes the circuit parameters via gradient descent",
+            "It encodes classical input data x into a quantum state |φ(x)⟩ using parameterized rotation and entangling gates",
+            "It measures the output expectation values and converts them to class labels",
+            "It initializes the ansatz parameters to zero"
+          ],
+          correctIndex: 1,
+          explanation: "The feature map U_φ(x) transforms classical data x into a quantum state using angle encoding (Rx, Ry, Rz gates) and entanglement (CX gates with interaction terms). It is the quantum analog of a classical data preprocessor."
+        }
       }
     ]
   },
@@ -605,6 +945,76 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
           correctIndex: 1,
           explanation: "QAOA begins with all qubits in the equal superposition state |+⟩^⊗n using Hadamard gates."
         }
+      },
+      {
+        id: "unit-3",
+        title: "Unit 3: Ansatz Design — Expressibility vs Trainability",
+        duration: "50 min",
+        circuitPreset: "bell_state",
+        youtubeId: "hnpjC8WQVrQ",
+        videoTitle: "Ansatz Design for VQE: Hardware Efficient vs Chemistry-Inspired Circuits",
+        watchUrl: "https://www.youtube.com/watch?v=hnpjC8WQVrQ",
+        embedUrl: "https://www.youtube-nocookie.com/embed/hnpjC8WQVrQ",
+        learningObjectives: [
+          "Compare hardware-efficient ansatz (HEA) vs chemistry-inspired UCCSD ansatz",
+          "Quantify circuit expressibility: does the ansatz explore the full SU(2^n) unitary space?",
+          "Identify the Barren Plateau problem: vanishing gradients in random deep circuits",
+          "Apply symmetry-preserving ansatz design to reduce parameter space",
+          "Select optimal ansatz based on qubit count, gate fidelity, and target Hamiltonian"
+        ],
+        summary: "Choosing the right ansatz is the most critical engineering decision in VQE — too shallow means inaccurate, too deep means untrainable barren plateaus.",
+        sections: [
+          {
+            heading: "1. Types of Variational Ansätze",
+            content: "The ansatz $U(\\theta)$ defines what area of the Hilbert space VQE can explore. There are three main design paradigms:\n\n**1. Hardware-Efficient Ansatz (HEA):** Uses only native gates (CX, Rz, Rx) optimized for the hardware coupling map. Very shallow, NISQ-friendly. BUT may not have physical symmetries and may need many layers to approximate the true ground state.\n\n**2. UCCSD (Unitary Coupled Cluster Singles and Doubles):** Chemistry-inspired. Systematically includes single and double electron excitations. Guaranteed to approximate the exact ground state — but requires very deep circuits (thousands of CNOT gates for medium molecules).\n\n**3. Adaptive Ansatz (ADAPT-VQE):** Starts empty and greedily adds operators from a predefined pool based on gradient magnitude. Balances circuit depth and accuracy.",
+            callout: "Rule of thumb: Use UCCSD for accuracy benchmarking on simulators. Use HEA on real NISQ hardware. Use ADAPT-VQE when you need both."
+          },
+          {
+            heading: "2. The Barren Plateau Problem",
+            content: "**The most severe problem in variational quantum algorithms.** For a random parameterized circuit with $n$ qubits and $L$ layers, the expected gradient magnitude EXPONENTIALLY DECREASES with system size:\n\n$\\text{Var}\\left[ \\frac{\\partial \\langle H \\rangle}{\\partial \\theta_i} \\right] \\leq \\frac{c}{4^n}$\n\nFor $n = 50$ qubits, gradients are on the order of $\\sim 10^{-30}$ — completely indistinguishable from zero on finite-precision hardware!\n\n**Mitigation strategies:**\n• Layer-by-layer training (start small, add depth)\n• Problem-specific structured ansatz (preserving symmetries)\n• Quantum natural gradient (follow information geometry instead of Euclidean gradient)\n• Avoid global cost functions: use local observables for training",
+            math: "\\text{Var}\\left[\\partial_k \\langle H \\rangle\\right] \\in O\\left(\\frac{1}{4^n}\\right) \\text{ for unstructured random circuits}",
+            code: `# Visualizing Barren Plateaus: gradient variance vs qubit count
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend
+import matplotlib.pyplot as plt
+from qiskit.circuit.library import RealAmplitudes
+from qiskit.quantum_info import Operator
+
+def estimate_gradient_variance(n_qubits: int, n_samples: int = 100) -> float:
+    """Estimate gradient variance via random circuits."""
+    gradients = []
+    for _ in range(n_samples):
+        # Create random parameters
+        qc = RealAmplitudes(n_qubits, reps=2)
+        params = np.random.uniform(0, 2*np.pi, qc.num_parameters)
+        # Shift parameter and estimate gradient (simplified)
+        params_plus = params.copy(); params_plus[0] += np.pi/2
+        params_minus = params.copy(); params_minus[0] -= np.pi/2
+        # In real experiment, evaluate <H> at both points
+        # Here we use random values as placeholder
+        grad = np.random.normal(0, 1.0 / (2**n_qubits))
+        gradients.append(grad)
+    return np.var(gradients)
+
+qubit_counts = [2, 4, 6, 8, 10]
+variances = [estimate_gradient_variance(n) for n in qubit_counts]
+print("Qubit count vs gradient variance (expect exponential decay):")
+for n, v in zip(qubit_counts, variances):
+    print(f"  n={n}: variance ≈ {v:.2e}")`
+          }
+        ],
+        quiz: {
+          question: "What is the Barren Plateau phenomenon in variational quantum algorithms?",
+          options: [
+            "A classical optimization landscape with many local minima",
+            "An exponential vanishing of gradient magnitudes with system size, making training impossible for large random circuits",
+            "A specific plateau in the Colorado mountains used for quantum computing research",
+            "A numerical issue where parameters exceed the range [0, 2π]"
+          ],
+          correctIndex: 1,
+          explanation: "Barren plateaus (McClean et al. 2018) occur when random deep circuits have exponentially small gradients (∝ 4^(-n)). This makes it impossible for classical optimizers to find descent directions for large systems."
+        }
       }
     ]
   },
@@ -653,6 +1063,143 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
           options: ["By copying the state to classical memory", "By measuring multi-qubit parity operators using auxiliary ancilla qubits", "By turning off the refrigerator", "By running the computation backwards"],
           correctIndex: 1,
           explanation: "Ancilla qubits entangle with the data qubits to measure parity (syndromes), collapsing only the error degree of freedom while leaving the encoded logical information undisturbed."
+        }
+      },
+      {
+        id: "unit-2",
+        title: "Unit 2: The 9-Qubit Shor Code — Correcting All Pauli Errors",
+        duration: "55 min",
+        circuitPreset: "ghz_state",
+        youtubeId: "GSsElSQgMbU",
+        videoTitle: "Quantum Error Correction: Shor Code & CSS Codes | Daniel Gottesman",
+        watchUrl: "https://www.youtube.com/watch?v=GSsElSQgMbU",
+        embedUrl: "https://www.youtube-nocookie.com/embed/GSsElSQgMbU",
+        learningObjectives: [
+          "Encode 1 logical qubit into 9 physical qubits using Shor's code",
+          "Apply the Discretization of Errors theorem: continuous errors project to discrete Pauli operators",
+          "Understand CSS (Calderbank-Shor-Steane) code construction from two classical codes",
+          "Distinguish between bit-flip (X) errors, phase-flip (Z) errors, and combined (Y) errors",
+          "Calculate code parameters [n, k, d]: n physical qubits, k logical qubits, distance d"
+        ],
+        summary: "Learn how Shor's 9-qubit code uses two nested error-correcting codes to correct ANY single-qubit Pauli error using redundancy in both bit and phase degrees of freedom.",
+        sections: [
+          {
+            heading: "1. The Key Insight: Discretization of Errors",
+            content: "The fundamental miracle of quantum error correction is the **Discretization of Errors** theorem.\n\nReal quantum errors are CONTINUOUS: a qubit might experience a tiny rotation $R_x(\\epsilon)$ instead of a perfect gate. Classically, this seems impossible to correct — there are infinitely many possible errors.\n\n**The miracle:** Because we measure the syndrome with a projective measurement, the continuous error collapses into one of a DISCRETE set of Pauli operators $\\{I, X, Y, Z\\}$ — each with some probability.\n• $I$ error: No error (most likely)\n• $X$ error: Qubit bit-flipped\n• $Z$ error: Qubit phase-flipped  \n• $Y = iXZ$ error: Both bit AND phase flipped\n\nIf we can correct $X$ errors AND $Z$ errors independently, we automatically correct $Y$ errors too!",
+            callout: "The Discretization of Errors theorem is the reason quantum error correction is possible at all. It reduces an infinite-dimensional continuous error space to just 4 operators: I, X, Y, Z."
+          },
+          {
+            heading: "2. Shor's 9-Qubit Code Architecture",
+            content: "Peter Shor (1995) designed an elegant code by nesting two separate error-correcting codes:\n\n**Outer 3-qubit Phase Code** (protects against Z/phase errors):\n$|0_L\\rangle = \\frac{(|0\\rangle + |1\\rangle)^{\\otimes 3}}{2\\sqrt{2}}, \\quad |1_L\\rangle = \\frac{(|0\\rangle - |1\\rangle)^{\\otimes 3}}{2\\sqrt{2}}$\n\n**Inner 3-qubit Bit-flip Code** (protects each group of 3 against X errors):\n$|0_L\\rangle \\to |000\\rangle, \\quad |1_L\\rangle \\to |111\\rangle$\n\n**Combined 9-qubit Shor encoding:**\n$|0_L\\rangle_S = \\frac{(|000\\rangle + |111\\rangle)^{\\otimes 3}}{2\\sqrt{2}}$\n$|1_L\\rangle_S = \\frac{(|000\\rangle - |111\\rangle)^{\\otimes 3}}{2\\sqrt{2}}$\n\nThis [9, 1, 3] code corrects any single-qubit Pauli error!",
+            math: "|\\psi_L\\rangle = \\alpha|0_L\\rangle_S + \\beta|1_L\\rangle_S, \\quad [9, 1, 3] \\text{ code}"
+          },
+          {
+            heading: "3. CSS Codes: Systematic Code Construction",
+            content: "Calderbank, Shor, and Steane (CSS, 1996) showed how to systematically build quantum error-correcting codes from TWO classical binary error-correcting codes $C_1$ and $C_2$ where $C_2 \\subset C_1$:\n• X-type stabilizers detect phase errors (generated from $C_2^\\perp$)\n• Z-type stabilizers detect bit-flip errors (generated from $C_1^\\perp$)\n• Logical $\\bar{X}$ and $\\bar{Z}$ operators come from $C_1 / C_2$\n\n**The Steane [[7, 1, 3]] Code** (most famous CSS code):\nEncodes 1 logical qubit in 7 physical qubits, corrects any 1-qubit error, with 6 syndrome measurements.",
+            code: `# 3-Qubit Bit-Flip Code in Qiskit 1.0+
+from qiskit import QuantumCircuit
+from qiskit.quantum_info import Statevector
+
+# Encode logical |psi> = alpha|0> + beta|1>
+# into |psi_L> = alpha|000> + beta|111>
+def encode_bitflip(alpha, beta):
+    qc = QuantumCircuit(3)  # 3 physical + 2 ancilla for syndrome
+    # Prepare the state to protect (|0> for this example)
+    # In practice, alpha|0> + beta|1> is input to qubit 0
+    qc.cx(0, 1)  # Encode: spread to qubits 1 and 2
+    qc.cx(0, 2)
+    return qc
+
+def syndrome_measurement(qc):
+    """Add ancilla qubits for syndrome measurement without destroying code."""
+    # S1 = Z0 Z1: ancilla qubit 3 detects if q0 and q1 differ
+    # S2 = Z1 Z2: ancilla qubit 4 detects if q1 and q2 differ
+    qc.add_register(2)  # Add 2 ancilla measurement qubits
+    qc.cx(0, 3); qc.cx(1, 3)  # Syndrome 1: Z0Z1
+    qc.cx(1, 4); qc.cx(2, 4)  # Syndrome 2: Z1Z2
+    return qc
+
+qc = encode_bitflip(1, 0)
+print("Bit-flip encoding circuit:")
+print(qc.draw())`
+          }
+        ],
+        quiz: {
+          question: "The Shor 9-qubit code is characterized as [9, 1, 3]. What do the numbers 9, 1, and 3 represent?",
+          options: [
+            "9 gates, 1 qubit measured, 3 repetitions",
+            "9 physical qubits used, 1 logical qubit encoded, distance 3 (corrects any 1 physical error)",
+            "9 ancilla qubits, 1 syndrome bit, 3 logical operations",
+            "9 classical bits, 1 quantum channel, distance 3 Hamming code"
+          ],
+          correctIndex: 1,
+          explanation: "The [n, k, d] notation means: n = 9 physical qubits per logical qubit, k = 1 logical qubit encoded, d = 3 code distance (can correct floor((d-1)/2) = 1 arbitrary qubit error)."
+        }
+      },
+      {
+        id: "unit-3",
+        title: "Unit 3: Surface Codes — The Road to Fault-Tolerant Quantum Computing",
+        duration: "60 min",
+        circuitPreset: "ghz_state",
+        youtubeId: "F_Riqjdh2oM",
+        videoTitle: "Surface Codes for Fault-Tolerant Quantum Computation | Austin Fowler & Héctor Bombín",
+        watchUrl: "https://www.youtube.com/watch?v=F_Riqjdh2oM",
+        embedUrl: "https://www.youtube-nocookie.com/embed/F_Riqjdh2oM",
+        learningObjectives: [
+          "Describe the 2D surface code lattice of data and ancilla qubits",
+          "Understand plaquette (face) and vertex (site) stabilizer operators",
+          "Calculate the threshold error rate (~1%) for fault-tolerant operation",
+          "Estimate physical qubit overhead: ~1,000 physical qubits per logical qubit at 0.1% error rate",
+          "Identify why surface codes are the leading candidate for near-term fault-tolerant quantum computing"
+        ],
+        summary: "Master the surface code: the leading blueprint for fault-tolerant quantum computing, using a 2D lattice of qubits with nearest-neighbor interactions only.",
+        sections: [
+          {
+            heading: "1. Why Surface Codes Dominate the Field",
+            content: "Out of dozens of quantum error-correcting codes, the **toric/surface code** (Kitaev 1997, Fowler et al. 2012) has emerged as the leading candidate for near-term fault-tolerant quantum computing. Why?\n• **2D nearest-neighbor connectivity**: Requires only local interactions between adjacent qubits — perfect for superconducting qubit chips (IBM Eagle, Falcon).\n• **High threshold**: Works even with physical error rates up to ~1%. Current IBM hardware achieves ~0.1-0.3% 2-qubit gate error — BELOW the threshold!\n• **Proven scalability**: Google's 'Beyond Classical' paper (2023) demonstrated surface code below threshold for the first time.",
+            callout: "IBM's roadmap: By 2033, IBM plans to build a 100,000-physical-qubit system capable of running fault-tolerant surface-code computation. At 1,000 physical qubits per logical qubit, this gives ~100 logical qubits — enough for small-molecule quantum chemistry."
+          },
+          {
+            heading: "2. The Surface Code Lattice",
+            content: "The distance-d surface code is arranged on a d×d lattice of data qubits, interspersed with ancilla qubits:\n• **Data qubits** (white): Store the encoded logical information\n• **X-ancilla qubits** (blue): Measure vertex stabilizers $S_v = \\prod_{i \\in v} X_i$ (detect Z errors)\n• **Z-ancilla qubits** (red): Measure plaquette stabilizers $S_p = \\prod_{i \\in p} Z_i$ (detect X errors)\n\nEach stabilizer measurement is a syndrome bit: if it returns $-1$, an error occurred nearby. By triangulating the syndrome pattern, a minimum-weight decoder (like Union-Find or MWPM) can identify and correct the most likely error chain.",
+            math: "S_v = \\prod_{i \\in \\partial v} X_i, \\quad S_p = \\prod_{i \\in \\partial p} Z_i, \\quad \\forall v, p"
+          },
+          {
+            heading: "3. Resource Overhead: The Quantum Engineering Challenge",
+            content: "The surface code's power comes at a steep cost in physical qubit overhead.\n\nFor a distance-$d$ code:\n• Physical qubits needed: $2d^2 - 1$ data + ancilla qubits\n• Logical error rate: $p_L \\approx \\left(\\frac{p}{p_{\\text{th}}}\\right)^{\\lceil d/2 \\rceil}$ (exponentially decreasing with $d$)\n• For $d=17$ at physical error rate $p = 0.1\\%$: ~578 physical qubits per logical qubit\n• For Shor's algorithm on RSA-2048: ~4,000 logical qubits → ~4 million physical qubits!\n\nThis is why IBM, Google, and Microsoft are all racing to build systems with millions of high-quality physical qubits.",
+            math: "n_{\\text{physical}} \\approx 2d^2, \\quad p_L \\approx \\left( \\frac{p}{p_{\\text{th}}} \\right)^{\\lfloor d/2 \\rfloor + 1}",
+            code: `# Demonstrating the Surface Code resource overhead calculation
+import numpy as np
+
+def surface_code_resources(distance: int, physical_error_rate: float,
+                            threshold: float = 0.01):
+    """Calculate logical error rate and qubit overhead for surface code."""
+    physical_qubits = 2 * distance**2 - 1
+    if physical_error_rate < threshold:
+        t = (distance + 1) // 2
+        logical_error = (physical_error_rate / threshold) ** t
+    else:
+        logical_error = 0.5  # Above threshold: code fails
+    return physical_qubits, logical_error
+
+# Analyze different code distances
+print(f"{'Distance':>8}  {'Phys. Qubits':>12}  {'Logical Error Rate':>18}")
+for d in [3, 5, 7, 11, 17, 25]:
+    phys, p_l = surface_code_resources(d, physical_error_rate=0.001)
+    print(f"{d:>8}  {phys:>12}  {p_l:>18.2e}")
+# For d=25: 1249 physical qubits, logical error ~10^-16 — suitable for deep circuits`
+          }
+        ],
+        quiz: {
+          question: "A distance-7 surface code has a physical error rate of 0.1% and a threshold of 1%. Approximately how many physical qubits does it use and how does the logical error rate compare to the physical rate?",
+          options: [
+            "7 physical qubits; logical error = physical error",
+            "~97 physical qubits; logical error rate is MUCH smaller than 0.1% (exponentially suppressed)",
+            "~97 physical qubits; logical error rate is LARGER than 0.1% (code fails)",
+            "49 physical qubits; logical error rate = 0.001%"
+          ],
+          correctIndex: 1,
+          explanation: "A distance-7 code uses 2×7²-1 = 97 physical qubits. With p=0.1% < p_th=1%, the logical error rate is exponentially suppressed: p_L ≈ (0.001/0.01)^4 = 10^-8, far below the physical error rate."
         }
       }
     ]

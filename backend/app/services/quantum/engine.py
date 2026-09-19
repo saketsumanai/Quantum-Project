@@ -19,10 +19,11 @@ GATE_MATRICES = {
     "z": np.array([[1.0, 0.0], [0.0, -1.0]], dtype=complex),
     "s": np.array([[1.0, 0.0], [0.0, 1.0j]], dtype=complex),
     "t": np.array([[1.0, 0.0], [0.0, np.exp(1.0j * np.pi / 4.0)]], dtype=complex),
+    "sqrtx": (1.0 / math.sqrt(2.0)) * np.array([[1.0, -1.0j], [-1.0j, 1.0]], dtype=complex),
     "id": np.eye(2, dtype=complex),
 }
 
-def get_rotation_matrix(gate: str, theta: float) -> np.ndarray:
+def get_rotation_matrix(gate: str, theta: float = 0.0, params: List[float] = None) -> np.ndarray:
     half = theta / 2.0
     if gate == "rx":
         return np.array([
@@ -39,6 +40,16 @@ def get_rotation_matrix(gate: str, theta: float) -> np.ndarray:
             [np.exp(-1.0j * half), 0.0],
             [0.0, np.exp(1.0j * half)]
         ], dtype=complex)
+    elif gate in ["u", "u3"]:
+        p = params or []
+        t = p[0] if len(p) > 0 else theta
+        phi = p[1] if len(p) > 1 else 0.0
+        lam = p[2] if len(p) > 2 else 0.0
+        return np.array([
+            [np.cos(t / 2), -np.exp(1.0j * lam) * np.sin(t / 2)],
+            [np.exp(1.0j * phi) * np.sin(t / 2), np.exp(1.0j * (phi + lam)) * np.cos(t / 2)]
+        ], dtype=complex)
+
     return np.eye(2, dtype=complex)
 
 
@@ -78,11 +89,11 @@ class QuantumSimulationEngine:
                 if q >= num_qubits:
                     raise ValueError(f"Qubit index {q} exceeds circuit size {num_qubits}")
 
-                if gate in GATE_MATRICES:
+                if gate in GATE_MATRICES or gate == "sqrtx":
                     U = GATE_MATRICES[gate]
                 else:
                     theta = params[0] if len(params) > 0 else 0.0
-                    U = get_rotation_matrix(gate, theta)
+                    U = get_rotation_matrix(gate, theta, params)
 
                 # Tensordot over axis q
                 state_tensor = np.tensordot(U, state_tensor, axes=([1], [q]))
@@ -212,6 +223,16 @@ class QuantumSimulationEngine:
                 z=round(z, 6)
             ))
         return coords
+
+
+    def compare_statevectors(self, state_a: np.ndarray, state_b: np.ndarray) -> float:
+        """
+        Computes the fidelity (overlap) between two statevectors.
+        F = |<psi_a | psi_b>|^2
+        """
+        overlap = np.vdot(state_a, state_b)
+        return float(np.abs(overlap)**2)
+
 
     def run_simulation(self, circuit: CircuitModel, shots: int = 1024, framework: str = "qiskit") -> SimulationRunResponse:
         t0 = time.perf_counter()

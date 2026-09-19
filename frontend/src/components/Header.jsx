@@ -1,173 +1,217 @@
 import React, { useState } from "react";
-import { Atom, Cpu, BookOpen, Code2, GraduationCap, LogIn, LogOut, Award, ChevronDown } from "lucide-react";
+import { ChevronDown, LogOut, Sun, Moon, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import UserProfileModal from "./UserProfileModal";
 
-export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAuth, backendStatus }) {
-  const { user, signOut, isLoading } = useAuth();
+export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAuth, backendStatus, theme, onToggleTheme }) {
+  const { user, signOut, isLoading, isGuest } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const isDark = theme === 'dark';
+
+  const tabStyle = (id) => ({
+    padding: "6px 12px",
+    fontSize: "0.74rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    borderRadius: "6px",
+    border: "1px solid",
+    background: activeTab === id ? (isDark ? "rgba(255,255,255,0.10)" : "rgba(15,98,254,0.1)") : "transparent",
+    borderColor: activeTab === id ? (isDark ? "rgba(255,255,255,0.22)" : "rgba(15,98,254,0.3)") : "transparent",
+    color: activeTab === id ? (isDark ? "#ffffff" : "#0f62fe") : "var(--text-secondary)",
+    transition: "all 0.15s ease",
+    fontFamily: "var(--font-mono)",
+    letterSpacing: "0.07em",
+    textTransform: "uppercase",
+  });
 
   return (
-    <header className="glass-panel" style={{
-      margin: "16px 24px 0 24px",
-      padding: "14px 24px",
+    <header style={{
+      padding: "12px 28px",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      zIndex: 10,
+      borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+      background: "rgba(8, 8, 10, 0.90)",
+      backdropFilter: "blur(14px)",
+      position: "sticky",
+      top: 0,
+      zIndex: 100,
     }}>
       {/* Brand */}
-      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-        <div style={{
-          width: "42px", height: "42px", borderRadius: "12px",
-          background: "linear-gradient(135deg, rgba(0,240,255,0.2), rgba(168,85,247,0.25))",
-          border: "1px solid var(--border-glow)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "var(--shadow-glow-cyan)",
+      <div
+        onClick={() => setActiveTab("landing")}
+        style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+        title="Go to Quantum Leap Overview"
+      >
+        <span style={{ fontSize: "1.08rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.035em" }}>
+          Quantum Leap
+        </span>
+        <span style={{
+          fontSize: "0.68rem",
+          fontFamily: "var(--font-mono)",
+          color: "var(--text-muted)",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          background: "rgba(255, 255, 255, 0.04)",
+          border: "1px solid var(--border-subtle)",
+          padding: "2px 8px",
+          borderRadius: "9999px",
         }}>
-          <Atom className="animate-spin-slow" size={26} color="#00f0ff" />
-        </div>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <h1 style={{
-              fontSize: "1.3rem", fontWeight: 800,
-              background: "linear-gradient(to right, #00f0ff, #c084fc)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-            }}>
-              Quantum Leap
-            </h1>
-            <span style={{
-              fontSize: "0.65rem", padding: "2px 7px", borderRadius: "20px",
-              background: "rgba(0,240,255,0.12)", border: "1px solid rgba(0,240,255,0.3)",
-              color: "#38bdf8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
-            }}>
-              SIH 2026
-            </span>
-          </div>
-          <p style={{ fontSize: "0.76rem", color: "var(--text-secondary)" }}>
-            AI Quantum Algorithm Studio · Team Gitwolves
-          </p>
-        </div>
+          AI Quantum Studio
+        </span>
       </div>
 
-      {/* Navigation Tabs */}
-      <nav style={{
-        display: "flex", alignItems: "center", gap: "6px",
-        background: "rgba(0,0,0,0.3)", padding: "4px", borderRadius: "10px",
-        border: "1px solid var(--border-subtle)",
-      }}>
-        <button
-          className={`btn ${activeTab === "studio" ? "btn-primary" : "btn-glass"}`}
-          onClick={() => setActiveTab("studio")}
-          style={{ padding: "7px 16px", fontSize: "0.82rem" }}
-        >
-          <Cpu size={15} /> Circuit Studio
-        </button>
-        <button
-          className={`btn ${activeTab === "learning" ? "btn-primary" : "btn-glass"}`}
-          onClick={() => setActiveTab("learning")}
-          style={{ padding: "7px 16px", fontSize: "0.82rem" }}
-        >
-          <GraduationCap size={15} /> Learning
-        </button>
-        <button
-          className={`btn ${activeTab === "curriculum" ? "btn-primary" : "btn-glass"}`}
-          onClick={() => setActiveTab("curriculum")}
-          style={{ padding: "7px 16px", fontSize: "0.82rem" }}
-        >
-          <BookOpen size={15} /> Curriculum
-        </button>
+      {/* Navigation */}
+      <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        {[
+          { id: "landing", label: "Overview" },
+          { id: "chat", label: "AI Tutor" },
+          { id: "studio", label: "Circuit Studio" },
+          { id: "learning", label: "Learning Hub" },
+          { id: "videos", label: "Video Lectures" },
+          { id: "curriculum", label: "Curriculum" },
+          { id: "assessment", label: "Assessments" },
+          { id: "gateway", label: "Gateway Flow" },
+        ].map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}
+            onMouseEnter={e => { if (activeTab !== tab.id) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-surface-elevated)'; }}}
+            onMouseLeave={e => { if (activeTab !== tab.id) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}}
+          >
+            {tab.id === "chat" && <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#10b981', marginRight: 5, verticalAlign: 'middle' }} />}
+            {tab.label}
+          </button>
+        ))}
       </nav>
 
       {/* Right Controls */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        {/* QPU Status */}
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        {/* Backend status */}
         <div style={{
-          display: "flex", alignItems: "center", gap: "7px",
-          padding: "5px 12px",
-          background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)",
-          borderRadius: "20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          fontSize: "0.72rem",
+          fontFamily: "var(--font-mono)",
+          color: "var(--text-muted)",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          padding: "3px 8px",
+          background: "rgba(255, 255, 255, 0.03)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "9999px",
         }}>
-          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981", display: "inline-block" }} />
-          <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#34d399" }}>
-            {backendStatus ? "Virtual QPU Active" : "Connecting…"}
-          </span>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: backendStatus ? "#10b981" : "#eab308", display: "inline-block" }} />
+          <span>{backendStatus ? "QPU Live" : "Connecting"}</span>
         </div>
 
-        <button className="btn btn-glass" onClick={onOpenExport} style={{ padding: "8px 14px", fontSize: "0.82rem" }}>
-          <Code2 size={15} /> Export
+        {/* Theme toggle */}
+        <button onClick={onToggleTheme} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 32, height: 32, borderRadius: "6px",
+            background: "var(--bg-surface-elevated)", border: "1px solid var(--border-subtle)",
+            cursor: "pointer", color: "var(--text-muted)", transition: "all 0.15s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+        >
+          {isDark ? <Sun size={14} /> : <Moon size={14} />}
         </button>
 
-        {/* Auth Controls */}
+        {/* Export */}
+        <button onClick={onOpenExport} style={{
+          padding: "6px 14px",
+          fontSize: "0.76rem",
+          fontWeight: 600,
+          borderRadius: "6px",
+          fontFamily: "var(--font-sans)",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          background: "var(--bg-surface-elevated)",
+          border: "1px solid var(--border-subtle)",
+          color: "var(--text-secondary)",
+          cursor: "pointer",
+          transition: "all 0.15s",
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-default)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+        >
+          Export
+        </button>
+
+        {/* Auth */}
         {isLoading ? (
-          <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "1px solid var(--border-subtle)" }} />
+          <div style={{ width: 28, height: 28, borderRadius: "4px", background: "var(--bg-surface-elevated)" }} />
         ) : user ? (
           <div style={{ position: "relative" }}>
-            <button
-              onClick={() => setShowUserMenu((v) => !v)}
-              style={{
-                display: "flex", alignItems: "center", gap: "8px",
-                background: "rgba(255,255,255,0.05)", border: "1px solid var(--border-subtle)",
-                borderRadius: "24px", padding: "5px 12px 5px 5px",
-                cursor: "pointer", color: "#fff",
-              }}
-            >
-              {user.photo_url ? (
-                <img
-                  src={user.photo_url}
-                  alt={user.display_name}
-                  style={{ width: "28px", height: "28px", borderRadius: "50%", border: "2px solid var(--q-cyan)" }}
-                />
-              ) : (
-                <div style={{
-                  width: "28px", height: "28px", borderRadius: "50%",
-                  background: "linear-gradient(135deg, #00f0ff, #a855f7)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.85rem", fontWeight: 700, color: "#000",
-                }}>
-                  {(user.display_name || user.email || "U")[0].toUpperCase()}
-                </div>
-              )}
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: "0.78rem", fontWeight: 600, lineHeight: 1.2 }}>
-                  {user.display_name?.split(" ")[0] || "Student"}
-                </div>
-                <div style={{ fontSize: "0.66rem", color: "#f59e0b", fontWeight: 700, display: "flex", alignItems: "center", gap: "3px" }}>
-                  <Award size={10} /> {user.total_xp} XP
-                </div>
-              </div>
-              <ChevronDown size={14} color="var(--text-muted)" />
+            <button onClick={() => setShowUserMenu((v) => !v)} style={{
+              display: "flex", alignItems: "center", gap: "7px",
+              background: "transparent", border: "1px solid var(--border-subtle)",
+              borderRadius: "6px", padding: "5px 12px", cursor: "pointer",
+              color: "var(--text-secondary)", fontSize: "0.76rem", fontWeight: 600,
+              fontFamily: "var(--font-sans)", letterSpacing: "0.06em", textTransform: "uppercase",
+              transition: "all 0.15s",
+            }}>
+              <span>{isGuest ? "Guest" : (user.display_name || user.full_name || "Account")}</span>
+              <ChevronDown size={12} />
             </button>
-
-            {/* Dropdown */}
             {showUserMenu && (
-              <div className="glass-panel" style={{
-                position: "absolute", top: "calc(100% + 8px)", right: 0,
-                width: "200px", padding: "8px", zIndex: 50,
+              <div style={{
+                position: "absolute", top: "calc(100% + 6px)", right: 0, width: 180,
+                padding: "6px", zIndex: 50, background: "var(--bg-surface)",
+                border: "1px solid var(--border-default)", borderRadius: "6px",
+                boxShadow: "var(--shadow-lg)",
               }}>
-                <div style={{ padding: "8px 10px 10px", borderBottom: "1px solid var(--border-subtle)", marginBottom: "6px" }}>
-                  <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#fff" }}>{user.display_name}</div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{user.email}</div>
+                <div style={{ padding: "6px 8px", borderBottom: "1px solid var(--border-subtle)", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                    {isGuest ? "Guest Session" : (user.display_name || user.full_name || "User")}
+                  </div>
+                  <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>{user.email || "Offline"}</div>
                 </div>
                 <button
-                  className="btn btn-danger"
-                  style={{ width: "100%", justifyContent: "flex-start", padding: "8px 10px", fontSize: "0.8rem" }}
-                  onClick={() => { signOut(); setShowUserMenu(false); }}
+                  onClick={() => {
+                    setShowProfileModal(true);
+                    setShowUserMenu(false);
+                  }}
+                  style={{
+                    width: "100%", textAlign: "left", padding: "6px 8px", fontSize: "0.76rem",
+                    background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: "6px", borderRadius: "4px",
+                    marginBottom: "2px",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-surface-elevated)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
                 >
-                  <LogOut size={14} /> Sign Out
+                  <User size={12} color="#60a5fa" /> Profile & Progress
+                </button>
+                <button onClick={() => { signOut(); setShowUserMenu(false); }} style={{
+                  width: "100%", textAlign: "left", padding: "6px 8px", fontSize: "0.76rem",
+                  background: "none", border: "none", color: "var(--quantum-rose)", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: "6px", borderRadius: "4px",
+                }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                >
+                  <LogOut size={12} /> {isGuest ? "Exit Guest Mode" : "Sign Out"}
                 </button>
               </div>
             )}
           </div>
         ) : (
-          <button
-            className="btn btn-accent"
-            onClick={onOpenAuth}
-            style={{ padding: "8px 16px", fontSize: "0.82rem" }}
-          >
-            <LogIn size={15} /> Sign In
+          <button onClick={onOpenAuth} style={{
+            padding: "5px 14px", fontSize: "0.78rem", fontWeight: 500, borderRadius: "4px",
+            background: "#0f62fe", border: "1px solid #0f62fe", color: "#fff", cursor: "pointer",
+          }}>
+            Sign In
           </button>
         )}
       </div>
+
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
     </header>
   );
 }
