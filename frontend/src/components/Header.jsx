@@ -1,12 +1,15 @@
 import React from "react";
-import { Cpu, BookOpen, Code2, GraduationCap, Home } from "lucide-react";
+import { Cpu, BookOpen, GraduationCap, Home, LayoutDashboard, UserCheck, LogIn } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
-export default function Header({ activeTab, setActiveTab }) {
+export default function Header({ activeTab, setActiveTab, onOpenAuth }) {
+  const { user } = useAuth();
+
   const getTabStyle = (tabKey) => {
     const isActive = activeTab === tabKey;
     if (!isActive) {
       return {
-        padding: "8px 20px",
+        padding: "8px 18px",
         fontSize: "0.82rem",
         fontWeight: 600,
         letterSpacing: "0.06em",
@@ -23,9 +26,9 @@ export default function Header({ activeTab, setActiveTab }) {
       };
     }
 
-    // Active style: Always Strict Black & Grey Pill across all pages
+    // Active style: Strict Black & Grey Pill with highlighted border
     return {
-      padding: "8px 20px",
+      padding: "8px 18px",
       fontSize: "0.82rem",
       fontWeight: 600,
       letterSpacing: "0.06em",
@@ -47,7 +50,7 @@ export default function Header({ activeTab, setActiveTab }) {
     <header style={{
       margin: "20px auto 0 auto",
       width: "fit-content",
-      maxWidth: "92%",
+      maxWidth: "94%",
       zIndex: 50,
       position: "relative",
     }}>
@@ -56,7 +59,7 @@ export default function Header({ activeTab, setActiveTab }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "6px",
+        gap: "4px",
         background: "rgba(10, 10, 10, 0.88)",
         padding: "6px 10px",
         borderRadius: "9999px",
@@ -68,20 +71,6 @@ export default function Header({ activeTab, setActiveTab }) {
         <button
           onClick={() => setActiveTab("landing")}
           style={getTabStyle("landing")}
-          onMouseEnter={(e) => {
-            if (activeTab !== "landing") {
-              e.currentTarget.style.color = "#ffffff";
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== "landing") {
-              e.currentTarget.style.color = "#94a3b8";
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "transparent";
-            }
-          }}
         >
           <Home size={14} /> Home
         </button>
@@ -89,20 +78,6 @@ export default function Header({ activeTab, setActiveTab }) {
         <button
           onClick={() => setActiveTab("studio")}
           style={getTabStyle("studio")}
-          onMouseEnter={(e) => {
-            if (activeTab !== "studio") {
-              e.currentTarget.style.color = "#ffffff";
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== "studio") {
-              e.currentTarget.style.color = "#94a3b8";
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "transparent";
-            }
-          }}
         >
           <Cpu size={14} /> Circuit Studio
         </button>
@@ -110,20 +85,6 @@ export default function Header({ activeTab, setActiveTab }) {
         <button
           onClick={() => setActiveTab("learning")}
           style={getTabStyle("learning")}
-          onMouseEnter={(e) => {
-            if (activeTab !== "learning") {
-              e.currentTarget.style.color = "#ffffff";
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== "learning") {
-              e.currentTarget.style.color = "#94a3b8";
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "transparent";
-            }
-          }}
         >
           <GraduationCap size={14} /> Learning
         </button>
@@ -131,22 +92,49 @@ export default function Header({ activeTab, setActiveTab }) {
         <button
           onClick={() => setActiveTab("curriculum")}
           style={getTabStyle("curriculum")}
-          onMouseEnter={(e) => {
-            if (activeTab !== "curriculum") {
-              e.currentTarget.style.color = "#ffffff";
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== "curriculum") {
-              e.currentTarget.style.color = "#94a3b8";
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "transparent";
-            }
-          }}
         >
           <BookOpen size={14} /> Curriculum
+        </button>
+
+        <button
+          onClick={() => setActiveTab("dashboard")}
+          style={getTabStyle("dashboard")}
+        >
+          <LayoutDashboard size={14} /> Dashboard
+        </button>
+
+        {/* User Auth Trigger */}
+        <div style={{ width: "1px", height: "18px", background: "rgba(255, 255, 255, 0.15)", margin: "0 4px" }} />
+
+        <button
+          onClick={onOpenAuth}
+          style={{
+            padding: "6px 14px",
+            borderRadius: "9999px",
+            border: "1px solid rgba(56, 189, 248, 0.3)",
+            background: "rgba(56, 189, 248, 0.08)",
+            color: "#38bdf8",
+            fontSize: "0.76rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            transition: "all 0.2s"
+          }}
+          title={user ? `Signed in as ${user.email}` : "Sign In with Google"}
+        >
+          {user ? (
+            <>
+              <UserCheck size={13} />
+              <span>{user.display_name?.split(" ")[0] || "Account"}</span>
+            </>
+          ) : (
+            <>
+              <LogIn size={13} />
+              <span>Sign In</span>
+            </>
+          )}
         </button>
       </nav>
     </header>

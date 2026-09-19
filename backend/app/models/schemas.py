@@ -175,6 +175,46 @@ class AssessmentSubmitResponse(BaseModel):
     explanation: str
     user_mastery: Dict[str, Any]
 
+class DynamicQuizGenerateRequest(BaseModel):
+    topic: Optional[str] = "superposition"
+    lesson_id: Optional[str] = None
+    difficulty: Optional[str] = "beginner"
+    count: Optional[int] = 3
+
+class DynamicQuizQuestion(BaseModel):
+    id: str
+    topic: str
+    question_string: str
+    options_array: List[str]
+    points: int = 50
+    difficulty: str
+    latex_formula: Optional[str] = None
+    valid_index_pointer: Optional[int] = None
+
+class DynamicQuizGenerateResponse(BaseModel):
+    success: bool
+    topic: str
+    questions: List[DynamicQuizQuestion]
+
+class QuizAttemptSummary(BaseModel):
+    id: int
+    quiz_id: str
+    topic: str
+    is_correct: bool
+    points_earned: int
+    attempted_at: str
+
+class DashboardStatsResponse(BaseModel):
+    success: bool
+    total_xp: int
+    user_level: str
+    current_streak_days: int
+    total_quizzes_completed: int
+    accuracy_pct: float
+    topic_mastery: Dict[str, float]
+    recent_attempts: List[QuizAttemptSummary]
+    unlocked_badges_count: int
+
 # --- Curriculum Schemas ---
 class LessonChallenge(BaseModel):
     id: str

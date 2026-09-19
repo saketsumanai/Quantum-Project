@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Play, RotateCcw, Plus, Minus, Info, Download, FileText, FileJson, Cpu, Share2 } from 'lucide-react';
+import { Play, RotateCcw, Plus, Minus, Info, Download, FileText, FileJson, Cpu, Share2, Sparkles, CheckCircle2, AlertTriangle, X, Copy, Check } from 'lucide-react';
 import GateTooltip from './GateTooltip';
 import { InteractiveHoverButton } from './ui/interactive-hover-button';
 
@@ -39,6 +39,10 @@ export default function CircuitCanvas({
   const [hoveredGate, setHoveredGate] = useState(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingJson, setDownloadingJson] = useState(false);
+  const [isDebugOpen, setIsDebugOpen] = useState(false);
+  const [isDebugging, setIsDebugging] = useState(false);
+  const [debugResult, setDebugResult] = useState(null);
+  const [copiedCode, setCopiedCode] = useState(false);
   const hoverTimeoutRef = useRef(null);
 
   const handleGateMouseEnter = (gateId, event) => {
@@ -162,6 +166,44 @@ export default function CircuitCanvas({
     }
   };
 
+  const handleRunDebugger = async () => {
+    setIsDebugging(true);
+    setIsDebugOpen(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuit: { num_qubits: numQubits, instructions: instructions },
+          user_level: 'beginner',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDebugResult(data);
+      }
+    } catch (err) {
+      console.error('AI Circuit Debugger request failed:', err);
+    } finally {
+      setIsDebugging(false);
+    }
+  };
+
+  const handleApplyDebugFix = () => {
+    if (debugResult?.corrected_circuit?.instructions) {
+      onUpdateInstructions(debugResult.corrected_circuit.instructions);
+      setIsDebugOpen(false);
+    }
+  };
+
+  const handleCopyCode = () => {
+    if (debugResult?.qiskit_corrected_code) {
+      navigator.clipboard.writeText(debugResult.qiskit_corrected_code);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  };
+
   return (
     <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Top Toolbar: Qubits count, Presets, Reset, Simulate */}
@@ -237,6 +279,25 @@ export default function CircuitCanvas({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            className="btn btn-glass"
+            onClick={handleRunDebugger}
+            disabled={isDebugging}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              background: 'rgba(56, 189, 248, 0.08)',
+              color: '#38bdf8',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+            }}
+            title="Run AI Circuit Debugger for anti-patterns and noise risks"
+          >
+            <Sparkles size={14} className={isDebugging ? 'spin-icon' : ''} />
+            {isDebugging ? 'Analyzing...' : 'AI Debug'}
+          </button>
           <button className="btn btn-glass" onClick={handleClearAll} title="Clear all gates">
             <RotateCcw size={14} /> Reset
           </button>
@@ -584,6 +645,212 @@ export default function CircuitCanvas({
           );
         })}
       </div>
+
+      {/* AI Circuit Debugger Modal */}
+      {isDebugOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#09090b',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            borderRadius: '10px',
+            width: '100%',
+            maxWidth: '720px',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.2)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '18px 24px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+              background: '#0c0c0e'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Sparkles size={18} color="#38bdf8" />
+                <h3 style={{
+                  fontFamily: "'Times New Roman', Times, serif !important",
+                  fontSize: '1.25rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  margin: 0,
+                  textShadow: '0 0 10px rgba(255, 255, 255, 0.3)'
+                }}>
+                  AI Circuit Diagnostics & Quantum AST Verification
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsDebugOpen(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {isDebugging ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#38bdf8', fontSize: '0.9rem' }}>
+                  Analyzing quantum gate commutation, ancilla leakage, and physical NISQ decoherence risks...
+                </div>
+              ) : debugResult ? (
+                <>
+                  {/* Diagnostic Findings */}
+                  <div style={{
+                    padding: '16px 20px',
+                    borderRadius: '6px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <AlertTriangle size={16} color="#38bdf8" />
+                      <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Diagnostic Analysis
+                      </span>
+                    </div>
+                    <pre style={{
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '0.84rem',
+                      lineHeight: '1.6',
+                      color: '#e2e8f0'
+                    }}>
+                      {debugResult.diagnosis}
+                    </pre>
+                  </div>
+
+                  {/* Suggested Fix Description */}
+                  <div style={{
+                    padding: '16px 20px',
+                    borderRadius: '6px',
+                    background: 'rgba(15, 98, 254, 0.1)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckCircle2 size={16} color="#38bdf8" />
+                      <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Recommended Corrective Actions
+                      </span>
+                    </div>
+                    <pre style={{
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '0.84rem',
+                      lineHeight: '1.6',
+                      color: '#e2e8f0'
+                    }}>
+                      {debugResult.suggested_fix_description}
+                    </pre>
+                  </div>
+
+                  {/* Corrected Qiskit Code Preview */}
+                  {debugResult.qiskit_corrected_code && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 600 }}>
+                          Optimized Qiskit 1.0 Code
+                        </span>
+                        <button
+                          onClick={handleCopyCode}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: copiedCode ? '#34d399' : '#e2e8f0',
+                            borderRadius: '4px',
+                            padding: '3px 10px',
+                            fontSize: '0.72rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+                          {copiedCode ? 'Copied' : 'Copy Code'}
+                        </button>
+                      </div>
+                      <pre style={{
+                        margin: 0,
+                        padding: '12px 16px',
+                        background: '#040405',
+                        border: '1px solid #27272a',
+                        borderRadius: '6px',
+                        fontSize: '0.76rem',
+                        fontFamily: 'var(--font-mono)',
+                        color: '#38bdf8',
+                        overflowX: 'auto',
+                        maxHeight: '140px'
+                      }}>
+                        {debugResult.qiskit_corrected_code}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              padding: '16px 24px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+              background: '#0c0c0e'
+            }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setIsDebugOpen(false)}
+                style={{ fontSize: '0.82rem' }}
+              >
+                Close
+              </button>
+              {debugResult?.corrected_circuit && (
+                <button
+                  className="btn btn-primary"
+                  onClick={handleApplyDebugFix}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem' }}
+                >
+                  <Sparkles size={14} /> Apply Suggested Fix to Canvas
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Interactive High-Contrast Solid-Dark Gate Tooltip with data/books/ Citations */}
       <GateTooltip

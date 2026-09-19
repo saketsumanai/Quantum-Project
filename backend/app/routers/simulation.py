@@ -13,11 +13,14 @@ from backend.app.models.schemas import (
     NoiseSimulationRequest,
     NoiseSimulationResponse,
     ReportGenerateRequest,
+    AICircuitDebugRequest,
+    AICircuitDebugResponse,
 )
 from backend.app.services.quantum.engine import QuantumSimulationEngine
 from backend.app.services.quantum.transpiler import QuantumTranspiler
 from backend.app.services.quantum.noise_engine import QuantumNoiseEngine
 from backend.app.services.quantum.report_generator import QuantumReportGenerator
+from backend.app.services.quantum.debugger import QuantumCircuitDebugger
 
 router = APIRouter(prefix="/simulation", tags=["Quantum Simulation"])
 engine = QuantumSimulationEngine(max_qubits=16)
@@ -156,4 +159,16 @@ async def generate_json_report_endpoint(request: ReportGenerateRequest):
         return bundle
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error_code": "JSON_REPORT_ERROR", "message": str(e)})
+
+
+@router.post("/debug", response_model=AICircuitDebugResponse)
+async def debug_circuit_endpoint(request: AICircuitDebugRequest):
+    try:
+        debug_result = QuantumCircuitDebugger.analyze_and_fix(
+            circuit=request.circuit,
+            user_level=request.user_level or "beginner"
+        )
+        return debug_result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error_code": "DEBUGGER_ERROR", "message": str(e)})
 
