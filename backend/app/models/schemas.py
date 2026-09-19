@@ -18,6 +18,22 @@ class SimulationRunRequest(BaseModel):
     framework: Optional[str] = Field(default="qiskit", description="Execution engine: qiskit | simulator | cirq | pennylane")
     shots: Optional[int] = Field(default=1024, ge=1, le=8192, description="Number of measurement shots")
     circuit: CircuitModel
+    noise_enabled: Optional[bool] = Field(default=False, description="Whether to simulate physical NISQ hardware noise")
+    noise_profile: Optional[str] = Field(default="ibm_eagle", description="ibm_eagle | rigetti_aspen | ionq_forte")
+
+class NoiseSimulationResult(BaseModel):
+    profile: str
+    technology: str
+    execution_time_ms: float
+    fidelity: float
+    fidelity_pct: float
+    purity: float
+    t1_us: float
+    t2_us: float
+    readout_error_pct: float
+    ideal_probabilities: Dict[str, float]
+    noisy_probabilities: Dict[str, float]
+    noisy_counts: Dict[str, int]
 
 class SimulationRunResponse(BaseModel):
     success: bool
@@ -27,7 +43,52 @@ class SimulationRunResponse(BaseModel):
     counts: Dict[str, int]
     probabilities: Dict[str, float]
     qasm_export: str
+    noise_data: Optional[NoiseSimulationResult] = None
     error: Optional[str] = None
+
+class TranspileRequest(BaseModel):
+    circuit: CircuitModel
+    optimization_level: Optional[int] = Field(default=1, ge=0, le=3)
+
+class TranspileResponse(BaseModel):
+    success: bool
+    telemetry: Dict[str, Any]
+    qiskit: str
+    openqasm3: str
+    openqasm2: str
+    cirq: str
+    pennylane: str
+
+class NoiseSimulationRequest(BaseModel):
+    circuit: CircuitModel
+    profile_key: Optional[str] = Field(default="ibm_eagle")
+    custom_params: Optional[Dict[str, float]] = None
+    shots: Optional[int] = Field(default=1024, ge=1, le=8192)
+
+class NoiseSimulationResponse(BaseModel):
+    success: bool
+    profile: str
+    technology: str
+    execution_time_ms: float
+    fidelity: float
+    fidelity_pct: float
+    purity: float
+    t1_us: float
+    t2_us: float
+    readout_error_pct: float
+    shots: int
+    ideal_probabilities: Dict[str, float]
+    noisy_probabilities: Dict[str, float]
+    noisy_counts: Dict[str, int]
+    error: Optional[str] = None
+
+class ReportGenerateRequest(BaseModel):
+    circuit: CircuitModel
+    algorithm_name: Optional[str] = Field(default="Custom Quantum Circuit")
+    author_name: Optional[str] = Field(default="Team Gitwolves")
+    include_noise: Optional[bool] = Field(default=True)
+    noise_profile: Optional[str] = Field(default="ibm_eagle")
+    shots: Optional[int] = Field(default=1024)
 
 class StatevectorRequest(BaseModel):
     circuit: CircuitModel
