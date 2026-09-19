@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ==============================================================================
@@ -6,8 +7,6 @@
    Clean, authentic, data-dense, pedagogical, and professional.
    Supports Dark and Light Themes.
    ============================================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root, [data-theme="dark"] {
   /* ── Overview Page Harmonized Dark Aesthetic ── */
