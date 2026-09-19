@@ -180,13 +180,14 @@ Student Question: {query}
 
 Respond in JSON only."""
 
+    model_name = os.getenv("GROQ_MODEL", "groq/compound-mini")
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_key}"},
                 json={
-                    "model": "llama-3.1-8b-instant",
+                    "model": model_name,
                     "response_format": {"type": "json_object"},
                     "messages": [
                         {"role": "system", "content": system_prompt},
@@ -197,7 +198,14 @@ Respond in JSON only."""
                 },
             )
             if resp.status_code == 200:
-                return json.loads(resp.json()["choices"][0]["message"]["content"])
+                content = resp.json()["choices"][0]["message"]["content"]
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0].strip()
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0].strip()
+                return json.loads(content)
+            else:
+                print(f"[Groq] Status {resp.status_code}: {resp.text}")
     except Exception as e:
         print(f"[Groq] Error: {e}")
     return None
@@ -250,11 +258,9 @@ class AITutorService:
         sources = list({p["source"] for p in passages}) if passages else []
 
         # 2. Try Groq (preferred) then Gemini with retrieved context
-        parsed = None
-        if passages:
-            parsed = await _query_groq_with_context(
-                req.user_query, passages, req.active_circuit_context or {}
-            )
+        parsed = await _query_groq_with_context(
+            req.user_query, passages, req.active_circuit_context or {}
+        )
         if parsed is None:
             parsed = await _query_gemini_with_context(
                 req.user_query, passages, req.active_circuit_context or {}
