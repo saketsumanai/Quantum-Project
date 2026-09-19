@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ==============================================================================
    Quantum Leap Master Design System — SIH 2026
    Aesthetic: IBM Quantum Learning (Carbon) & Coursera Academic Enterprise
@@ -31,6 +33,7 @@
   --text-link: #60a5fa;
 
   /* Quantum Learning (--ql-) Design Tokens */
+  --ql-bg: #08080a;
   --ql-layer-01: #0e0e12;
   --ql-layer-02: #141418;
   --ql-layer-hover: #1c1c24;
@@ -55,7 +58,10 @@
   --bg-card: var(--bg-surface-elevated);
   --border-glow: var(--border-default);
   --border-active: var(--ibm-blue);
+  --q-blue: var(--ibm-blue);
+  --q-blue-hover: var(--ibm-blue-hover);
   --q-cyan: var(--quantum-teal);
+  --q-emerald: var(--quantum-emerald);
   --q-purple: var(--quantum-indigo);
   --font-display: var(--font-sans);
   --font-body: var(--font-sans);
@@ -93,6 +99,7 @@
   --text-link: #2563eb;
 
   /* Quantum Learning (--ql-) Design Tokens */
+  --ql-bg: #f8fafc;
   --ql-layer-01: #ffffff;
   --ql-layer-02: #f8fafc;
   --ql-layer-hover: #f1f5f9;
@@ -117,7 +124,10 @@
   --bg-card: var(--bg-surface-elevated);
   --border-glow: var(--border-default);
   --border-active: var(--ibm-blue);
+  --q-blue: var(--ibm-blue);
+  --q-blue-hover: var(--ibm-blue-hover);
   --q-cyan: var(--quantum-teal);
+  --q-emerald: var(--quantum-emerald);
   --q-purple: var(--quantum-indigo);
   --font-display: var(--font-sans);
   --font-body: var(--font-sans);
@@ -161,11 +171,27 @@ html, body {
   flex-direction: column;
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-subtle);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
 /* ==============================================================================
    Overview-Harmonized Typography Hierarchy & Utility System
    ============================================================================== */
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6, .font-display {
   font-family: var(--font-sans);
   letter-spacing: -0.035em;
   color: var(--text-primary);
@@ -238,43 +264,6 @@ p {
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Custom Clean Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-canvas);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
-
-/* Clean Panels — Harmonized with Overview Page */
-.glass-panel, .overview-card {
-  background: linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.glass-panel:hover, .overview-card:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-}
-
-.glass-panel-glow {
-  background: linear-gradient(135deg, rgba(24, 24, 28, 0.95) 0%, rgba(12, 12, 16, 0.98) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
-  border-radius: 16px;
-  transition: border-color 0.2s ease;
-}
-
 /* Overview-style Primary & Secondary Buttons */
 .btn-overview-primary {
   background: #ffffff !important;
@@ -331,7 +320,94 @@ p {
   color: #ffffff !important;
 }
 
-/* Professional Buttons */
+/* ==============================================================================
+   Spatial UI & Liquid Glass Primitives
+   ============================================================================== */
+
+.glass-panel, .liquid-glass-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%), rgba(10, 10, 10, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15), 0 12px 32px -8px rgba(0, 0, 0, 0.8);
+  border-radius: var(--radius-md);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.liquid-glass-panel:hover, .glass-panel:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: inset 0 1px 2px 0 rgba(255, 255, 255, 0.25), 0 0 20px rgba(15, 98, 254, 0.15), 0 16px 40px -10px rgba(0, 0, 0, 0.9);
+}
+
+.glass-panel-glow {
+  background: linear-gradient(135deg, rgba(15, 98, 254, 0.12) 0%, rgba(15, 15, 15, 0.9) 100%);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.2), 0 0 24px rgba(15, 98, 254, 0.3), 0 16px 40px rgba(0, 0, 0, 0.8);
+  border-radius: var(--radius-md);
+}
+
+.spatial-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%), rgba(14, 14, 14, 0.8);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.spatial-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.75), 0 0 25px rgba(15, 98, 254, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* ==============================================================================
+   Backlit (BKLIT) UI System for Graphs, Visualizers & Metrics
+   ============================================================================== */
+
+.bklit-container {
+  position: relative;
+  background: radial-gradient(circle at 50% 0%, rgba(15, 98, 254, 0.18) 0%, rgba(10, 10, 10, 0.98) 75%), #050505;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: inset 0 0 20px rgba(15, 98, 254, 0.15), 0 0 25px rgba(56, 189, 248, 0.25);
+}
+
+.bklit-text-cyan {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.7), 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.bklit-text-blue {
+  color: #78A9FF;
+  text-shadow: 0 0 10px rgba(120, 169, 255, 0.6);
+}
+
+.bklit-text-white {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+.bklit-bar-glow {
+  background: linear-gradient(90deg, #0F62FE 0%, #38bdf8 100%);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.bklit-metric-card {
+  background: rgba(15, 15, 15, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: inset 0 0 12px rgba(15, 98, 254, 0.15), 0 4px 16px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+}
+
+/* ==============================================================================
+   Buttons (Rectangular Liquid Glass Controls)
+   ============================================================================== */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -343,33 +419,43 @@ p {
   font-family: var(--font-sans);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid transparent;
   outline: none;
+  backdrop-filter: blur(12px);
 }
 
 .btn-primary {
-  background: var(--ibm-blue);
+  background: linear-gradient(135deg, #0F62FE 0%, #0353e9 100%);
   color: #ffffff;
-  border: 1px solid var(--ibm-blue);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 20px rgba(15, 98, 254, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 .btn-primary:hover {
-  background: var(--ibm-blue-hover);
-  border-color: var(--ibm-blue-hover);
+  background: linear-gradient(135deg, #38bdf8 0%, #0F62FE 100%);
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.6);
+  transform: translateY(-1px);
 }
 
 .btn-accent {
-  background: var(--quantum-indigo);
-  color: #ffffff;
+  background: rgba(15, 98, 254, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .btn-accent:hover {
-  opacity: 0.9;
+  background: rgba(15, 98, 254, 0.3);
+  border-color: #38bdf8;
+  transform: translateY(-1px);
 }
 
 .btn-glass {
   background: var(--bg-surface-elevated);
   color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .btn-glass:hover {
   background: var(--bg-surface-hover);
@@ -395,43 +481,51 @@ p {
   height: 36px;
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 0.9rem;
-  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  border-radius: 4px;
   user-select: none;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.18s ease;
   position: relative;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
 .gate-badge:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7);
+  border-color: rgba(56, 189, 248, 0.6);
 }
 
 .gate-h {
-  background: #0284c7;
+  background: linear-gradient(135deg, #0F62FE, #0353e9);
   color: #ffffff;
+  border: 1px solid #38bdf8;
 }
 .gate-pauli {
-  background: #d97706;
+  background: linear-gradient(135deg, #8a3ffc, #6929c4);
   color: #ffffff;
+  border: 1px solid #be95ff;
 }
 .gate-phase {
-  background: #059669;
+  background: linear-gradient(135deg, #0072c3, #00539a);
   color: #ffffff;
+  border: 1px solid #38bdf8;
 }
 .gate-rot {
-  background: #db2777;
+  background: linear-gradient(135deg, #1192e8, #005d9e);
   color: #ffffff;
+  border: 1px solid #82cfff;
 }
 .gate-cnot {
-  background: #7c3aed;
+  background: linear-gradient(135deg, #0043ce, #002d9c);
   color: #ffffff;
+  border: 1px solid #4589ff;
 }
 .gate-measure {
-  background: var(--bg-surface-elevated);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
+  background: linear-gradient(135deg, #da1e28, #b21921);
+  color: #ffffff;
+  border: 1px solid #ff8389;
 }
 
 /* ==============================================================================

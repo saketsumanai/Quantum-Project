@@ -84,14 +84,15 @@ export default function MeasurementView({ simulationResult, statevectorData, sim
                     |{basis}⟩
                   </span>
 
-                  {/* Bar Track */}
+                  {/* Bar Track with LED Backlight */}
                   <div style={{
                     flex: 1,
                     height: '20px',
                     background: 'rgba(255, 255, 255, 0.05)',
                     borderRadius: '6px',
                     overflow: 'hidden',
-                    position: 'relative'
+                    position: 'relative',
+                    boxShadow: 'inset 0 0 8px rgba(0,0,0,0.9)'
                   }}>
                     <div style={{
                       width: barWidth,

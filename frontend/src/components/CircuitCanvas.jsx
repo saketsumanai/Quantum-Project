@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Play, RotateCcw, Plus, Minus } from 'lucide-react';
+import GateTooltip from './GateTooltip';
 
 const GATE_PALETTE = [
   { id: 'h', label: 'H', category: 'superposition', title: 'Hadamard (Superposition)' },
@@ -30,6 +31,37 @@ export default function CircuitCanvas({
   const [rotationAngle, setRotationAngle] = useState(1.5708); // pi/2
   const [cnotControl, setCnotControl] = useState(0);
   const [selectedFramework, setSelectedFramework] = useState('auto');
+  const [hoveredGate, setHoveredGate] = useState(null);
+  const hoverTimeoutRef = useRef(null);
+
+  const handleGateMouseEnter = (gateId, event) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    const rect = event.currentTarget.getBoundingClientRect();
+    setHoveredGate({
+      id: gateId,
+      position: {
+        x: rect.left + rect.width / 2,
+        top: rect.top,
+        bottom: rect.bottom
+      }
+    });
+  };
+
+  const handleGateMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredGate(null);
+    }, 200);
+  };
+
+  const handleTooltipMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+  };
+
+  const handleTooltipMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredGate(null);
+    }, 150);
+  };
 
   // Add gate to target qubit wire
   const handleAddGate = (wireIdx) => {
@@ -74,7 +106,7 @@ export default function CircuitCanvas({
       {/* Top Toolbar: Qubits count, Engine Selector, Presets, Simulation Button */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          {/* Qubit Counter */}
+          {/* Qubit Counter (Scalable up to 16 Qubits) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Qubits:
@@ -95,12 +127,12 @@ export default function CircuitCanvas({
               {numQubits}
             </span>
             <button
-              onClick={() => onUpdateNumQubits(Math.min(5, numQubits + 1))}
-              disabled={numQubits >= 5}
+              onClick={() => onUpdateNumQubits(Math.min(16, numQubits + 1))}
+              disabled={numQubits >= 16}
               style={{
                 width: '28px', height: '28px', padding: 0,
                 background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)',
-                borderRadius: '6px', color: '#fff', cursor: numQubits >= 5 ? 'not-allowed' : 'pointer',
+                borderRadius: '6px', color: '#fff', cursor: numQubits >= 16 ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}
             >
@@ -108,7 +140,7 @@ export default function CircuitCanvas({
             </button>
           </div>
 
-          {/* Engine Selector */}
+          {/* Engine Selector Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Engine:
@@ -117,39 +149,37 @@ export default function CircuitCanvas({
               value={selectedFramework}
               onChange={(e) => setSelectedFramework(e.target.value)}
               style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                color: '#ffffff',
+                background: '#0e0e12',
+                color: '#fff',
                 border: '1px solid rgba(255,255,255,0.14)',
-                borderRadius: '8px',
-                padding: '6px 12px',
+                borderRadius: '6px',
+                padding: '5px 10px',
                 fontSize: '0.78rem',
-                fontFamily: 'var(--font-sans)',
+                fontFamily: 'var(--font-mono)',
                 outline: 'none',
                 cursor: 'pointer'
               }}
             >
-              <option value="auto" style={{ background: '#0e0e12', color: '#fff' }}>Auto (Optimal Engine)</option>
-              <option value="bluequbit" style={{ background: '#0e0e12', color: '#fff' }}>BlueQubit Cloud (GPU / CPU)</option>
-              <option value="ibm_quantum" style={{ background: '#0e0e12', color: '#fff' }}>IBM Quantum (156Q Heron QPU)</option>
-              <option value="qiskit_aer" style={{ background: '#0e0e12', color: '#fff' }}>Qiskit Aer (Local)</option>
-              <option value="pennylane" style={{ background: '#0e0e12', color: '#fff' }}>PennyLane (QML)</option>
-              <option value="cirq" style={{ background: '#0e0e12', color: '#fff' }}>Google Cirq</option>
-              <option value="qbraid" style={{ background: '#0e0e12', color: '#fff' }}>qBraid Transpiler</option>
+              <option value="auto">Auto (Smart Dispatch)</option>
+              <option value="qiskit">Qiskit Aer Simulator</option>
+              <option value="cirq">Google Cirq QVM</option>
+              <option value="pennylane">PennyLane Quantum</option>
+              <option value="qbraid">qBraid Cloud Bridge</option>
             </select>
           </div>
 
-          {/* Algorithm Presets Dropdown */}
+          {/* Preset Circuits Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Preset:
+              Presets:
             </span>
             <select
               style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                color: '#ffffff',
+                background: '#0e0e12',
+                color: '#fff',
                 border: '1px solid rgba(255,255,255,0.14)',
-                borderRadius: '8px',
-                padding: '6px 12px',
+                borderRadius: '6px',
+                padding: '5px 12px',
                 fontSize: '0.78rem',
                 fontFamily: 'var(--font-sans)',
                 outline: 'none',
@@ -160,13 +190,27 @@ export default function CircuitCanvas({
               }}
               defaultValue=""
             >
-              <option value="" disabled style={{ background: '#0e0e12', color: '#fff' }}>Select Algorithm...</option>
-              <option value="bell_state" style={{ background: '#0e0e12', color: '#fff' }}>Bell State (|Φ+⟩)</option>
-              <option value="ghz_state" style={{ background: '#0e0e12', color: '#fff' }}>GHZ State (3-Qubit)</option>
-              <option value="superposition" style={{ background: '#0e0e12', color: '#fff' }}>Superposition (|+⟩)</option>
-              <option value="grover_2qubit" style={{ background: '#0e0e12', color: '#fff' }}>Grover 2-Qubit Search</option>
-              <option value="deutsch_jozsa" style={{ background: '#0e0e12', color: '#fff' }}>Deutsch-Jozsa</option>
-              <option value="quantum_teleportation" style={{ background: '#0e0e12', color: '#fff' }}>Quantum Teleportation</option>
+              <option value="" disabled style={{ background: '#0e0e12', color: '#fff' }}>Load Algorithm...</option>
+              <optgroup label="Foundations" style={{ background: '#0e0e12', color: '#a1a1aa' }}>
+                <option value="superposition" style={{ background: '#0e0e12', color: '#fff' }}>Single Qubit Superposition (|+⟩)</option>
+                <option value="bell_state" style={{ background: '#0e0e12', color: '#fff' }}>Bell State (|Φ+⟩)</option>
+                <option value="ghz_state" style={{ background: '#0e0e12', color: '#fff' }}>GHZ State (3-Qubit)</option>
+                <option value="quantum_teleportation" style={{ background: '#0e0e12', color: '#fff' }}>Quantum Teleportation</option>
+              </optgroup>
+              <optgroup label="Quantum Algorithms" style={{ background: '#0e0e12', color: '#a1a1aa' }}>
+                <option value="deutsch_jozsa" style={{ background: '#0e0e12', color: '#fff' }}>Deutsch-Jozsa Algorithm</option>
+                <option value="grover_2qubit" style={{ background: '#0e0e12', color: '#fff' }}>Grover 2-Qubit Search</option>
+                <option value="qft" style={{ background: '#0e0e12', color: '#fff' }}>Quantum Fourier Transform (QFT)</option>
+                <option value="shor_15" style={{ background: '#0e0e12', color: '#fff' }}>Shor Factorization (N=15)</option>
+              </optgroup>
+              <optgroup label="Variational & QML" style={{ background: '#0e0e12', color: '#a1a1aa' }}>
+                <option value="vqe_h2" style={{ background: '#0e0e12', color: '#fff' }}>VQE Molecular H2 Ansatz</option>
+                <option value="qml_kernel" style={{ background: '#0e0e12', color: '#fff' }}>QML Parameterized Feature Map</option>
+              </optgroup>
+              <optgroup label="Fault Tolerance & QEC" style={{ background: '#0e0e12', color: '#a1a1aa' }}>
+                <option value="qec_bitflip" style={{ background: '#0e0e12', color: '#fff' }}>3-Qubit Bit-Flip Code</option>
+                <option value="surface_code" style={{ background: '#0e0e12', color: '#fff' }}>Rotated Surface Code Plaquette</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -176,6 +220,19 @@ export default function CircuitCanvas({
           <button
             onClick={handleClearAll}
             className="btn-overview-secondary"
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#d4d4d8',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
             <RotateCcw size={12} /> Reset
           </button>
@@ -183,13 +240,27 @@ export default function CircuitCanvas({
             onClick={() => onRunSimulation(selectedFramework)}
             disabled={isSimulating}
             className="btn-overview-primary"
+            style={{
+              padding: '6px 16px',
+              borderRadius: '8px',
+              background: '#ffffff',
+              border: 'none',
+              color: '#000000',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: isSimulating ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 14px rgba(255, 255, 255, 0.2)'
+            }}
           >
             <Play size={13} fill="#000000" /> {isSimulating ? 'Simulating…' : 'Simulate Circuit'}
           </button>
         </div>
       </div>
 
-      {/* Gate Palette Bar */}
+      {/* Gate Palette Bar with Interactive Hover Tooltips */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -207,13 +278,15 @@ export default function CircuitCanvas({
           <button
             key={g.id}
             onClick={() => setSelectedGate(g.id)}
+            onMouseEnter={(e) => handleGateMouseEnter(g.id, e)}
+            onMouseLeave={handleGateMouseLeave}
             title={g.title}
             style={{
               width: '34px',
               height: '34px',
-              borderRadius: '4px',
+              borderRadius: '6px',
               fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: '0.82rem',
               display: 'flex',
               alignItems: 'center',
@@ -225,7 +298,7 @@ export default function CircuitCanvas({
                 ['x', 'y', 'z'].includes(g.id) ? '#b45309' :
                 ['s', 't'].includes(g.id) ? '#047857' :
                 ['rx', 'ry', 'rz'].includes(g.id) ? '#be185d' :
-                ['cx', 'cz', 'swap'].includes(g.id) ? '#6d28d9' : '#374151',
+                ['cx', 'cz', 'swap'].includes(g.id) ? '#6d28d9' : '#27272a',
               color: '#ffffff',
               transform: selectedGate === g.id ? 'scale(1.05)' : 'scale(1)',
               transition: 'all 0.1s ease',
@@ -248,7 +321,7 @@ export default function CircuitCanvas({
               onChange={(e) => setRotationAngle(e.target.value)}
               style={{ width: '80px', cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: '#f43f5e' }}>
+            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: '#ffffff' }}>
               {parseFloat(rotationAngle).toFixed(2)}
             </span>
           </div>
@@ -292,7 +365,7 @@ export default function CircuitCanvas({
       }}>
         {Array.from({ length: numQubits }).map((_, wireIdx) => {
           return (
-            <div key={wireIdx} style={{ display: 'flex', alignItems: 'center', position: 'relative', minHeight: '42px' }}>
+            <div key={wireIdx} style={{ display: 'flex', alignItems: 'center', position: 'relative', minHeight: '44px' }}>
               {/* Qubit Wire Label */}
               <div style={{
                 width: '60px',
@@ -318,23 +391,24 @@ export default function CircuitCanvas({
                 alignItems: 'center',
                 padding: '0 10px'
               }}>
-                {/* Gate Drop Slot Trigger on Wire (Clean, no neon border) */}
+                {/* Gate Drop Slot Trigger on Wire */}
                 <button
                   onClick={() => handleAddGate(wireIdx)}
                   style={{
                     position: 'absolute',
                     right: '10px',
-                    padding: '3px 8px',
+                    padding: '4px 10px',
                     borderRadius: '4px',
                     background: 'rgba(255, 255, 255, 0.05)',
                     border: '1px dashed rgba(255, 255, 255, 0.25)',
                     color: '#d1d5db',
                     fontSize: '0.72rem',
-                    fontWeight: 500,
+                    fontWeight: 600,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '4px',
+                    backdropFilter: 'blur(8px)',
                   }}
                   title={`Place ${selectedGate.toUpperCase()} on q[${wireIdx}]`}
                 >
@@ -357,11 +431,13 @@ export default function CircuitCanvas({
                       <div
                         key={instIdx}
                         onClick={() => handleRemoveInstruction(instIdx)}
+                        onMouseEnter={(e) => handleGateMouseEnter(inst.gate, e)}
+                        onMouseLeave={handleGateMouseLeave}
                         title="Click to remove gate"
                         style={{
                           width: '38px',
                           height: '38px',
-                          borderRadius: '4px',
+                          borderRadius: '6px',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
@@ -396,6 +472,15 @@ export default function CircuitCanvas({
           );
         })}
       </div>
+
+      {/* Interactive Solid-Dark Gate Tooltip with Literature Citations */}
+      <GateTooltip
+        gateId={hoveredGate?.id}
+        position={hoveredGate?.position}
+        onClose={() => setHoveredGate(null)}
+        onMouseEnter={handleTooltipMouseEnter}
+        onMouseLeave={handleTooltipMouseLeave}
+      />
     </div>
   );
 }

@@ -25,9 +25,15 @@ import json
 import logging
 import os
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
+
+# Enforce PyTorch backend for sentence-transformers to avoid Keras 3 / TensorFlow conflicts
+os.environ["USE_TF"] = "0"
+os.environ["USE_TORCH"] = "1"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 logger = logging.getLogger(__name__)
 
@@ -52,14 +58,12 @@ class TextChunk:
 
 class RecursiveTextChunker:
     """
-    Splits long texts into overlapping chunks of `chunk_size` tokens
-    with `overlap` tokens of context carried forward.
-
-    Strategy mirrors LangChain RecursiveCharacterTextSplitter but is
-    dependency-free, operating on whitespace-tokenized word counts.
+    Splits long texts into overlapping chunks hierarchically (paragraphs -> sentences -> words)
+    sized for SentenceTransformer('all-MiniLM-L6-v2') 256-token context window.
+    Default: 150 target words (~240 tokens), 25 words overlap.
     """
 
-    def __init__(self, chunk_size: int = 500, overlap: int = 50) -> None:
+    def __init__(self, chunk_size: int = 150, overlap: int = 25) -> None:
         if chunk_size <= 0:
             raise ValueError("chunk_size must be positive")
         if overlap < 0 or overlap >= chunk_size:
@@ -68,29 +72,90 @@ class RecursiveTextChunker:
         self.overlap = overlap
 
     def split(self, text: str, base_id: str = "chunk") -> list[TextChunk]:
-        """Split text into overlapping word-based chunks."""
-        words = text.split()
-        if not words:
+        """Split text into overlapping semantic chunks."""
+        if not text or not text.strip():
             return []
 
+        # NFKC normalize and clean whitespace
+        text = unicodedata.normalize("NFKC", text)
+        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        units: list[str] = []
+
+        for p in paragraphs:
+            p_words = p.split()
+            if len(p_words) <= self.chunk_size:
+                units.append(p)
+            else:
+                sentences = re.split(r"(?<=[.!?])\s+", p)
+                curr_sent_block: list[str] = []
+                curr_count = 0
+                for s in sentences:
+                    s_words = s.split()
+                    if not s_words:
+                        continue
+                    if curr_count + len(s_words) > self.chunk_size and curr_sent_block:
+                        units.append(" ".join(curr_sent_block))
+                        curr_sent_block = [s]
+                        curr_count = len(s_words)
+                    else:
+                        curr_sent_block.append(s)
+                        curr_count += len(s_words)
+                if curr_sent_block:
+                    units.append(" ".join(curr_sent_block))
+
         chunks: list[TextChunk] = []
-        start = 0
+        current_words: list[str] = []
         idx = 0
 
-        while start < len(words):
-            end = min(start + self.chunk_size, len(words))
-            chunk_text = " ".join(words[start:end])
+        for unit in units:
+            u_words = unit.split()
+            if not u_words:
+                continue
+
+            if len(u_words) > self.chunk_size:
+                start = 0
+                while start < len(u_words):
+                    end = min(start + self.chunk_size, len(u_words))
+                    sub_text = " ".join(u_words[start:end])
+                    if len(sub_text.split()) >= 25:
+                        chunks.append(
+                            TextChunk(
+                                chunk_id=f"{base_id}_chunk{idx:04d}",
+                                text=sub_text,
+                                metadata={"chunk_index": idx},
+                            )
+                        )
+                        idx += 1
+                    start += self.chunk_size - self.overlap
+                continue
+
+            if len(current_words) + len(u_words) <= self.chunk_size:
+                current_words.extend(u_words)
+            else:
+                if len(current_words) >= 25:
+                    chunks.append(
+                        TextChunk(
+                            chunk_id=f"{base_id}_chunk{idx:04d}",
+                            text=" ".join(current_words),
+                            metadata={"chunk_index": idx},
+                        )
+                    )
+                    idx += 1
+                overlap_prefix = (
+                    current_words[-self.overlap :]
+                    if len(current_words) > self.overlap
+                    else current_words
+                )
+                current_words = overlap_prefix + u_words
+
+        if len(current_words) >= 25:
             chunks.append(
                 TextChunk(
                     chunk_id=f"{base_id}_chunk{idx:04d}",
-                    text=chunk_text,
-                    metadata={"start_word": start, "end_word": end},
+                    text=" ".join(current_words),
+                    metadata={"chunk_index": idx},
                 )
             )
-            idx += 1
-            if end == len(words):
-                break
-            start = end - self.overlap
 
         return chunks
 
@@ -271,10 +336,10 @@ class QuantumVectorStore:
     producing 384-dimensional dense vectors.
     """
 
-    COLLECTION_NAME = "quantum_knowledge"
+    COLLECTION_NAME = "quantum_books"
     EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-    def __init__(self, persist_directory: str = "backend/data/vector_store") -> None:
+    def __init__(self, persist_directory: str = "data/vector_store/quantum_books") -> None:
         self.persist_directory = persist_directory
         self._client = None
         self._collection = None
@@ -419,9 +484,9 @@ class QuantumKnowledgeIndexer:
 
     def __init__(
         self,
-        persist_directory: str = "backend/data/vector_store",
-        chunk_size: int = 500,
-        overlap: int = 50,
+        persist_directory: str = "data/vector_store/quantum_books",
+        chunk_size: int = 150,
+        overlap: int = 25,
     ) -> None:
         chunker = RecursiveTextChunker(chunk_size=chunk_size, overlap=overlap)
         self._curriculum_loader = CurriculumLoader(chunker=chunker)

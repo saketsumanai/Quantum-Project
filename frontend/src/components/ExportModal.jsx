@@ -166,8 +166,8 @@ export default function ExportModal({ isOpen, onClose, circuit, qasmExport }) {
           {frameworks.find((f) => f.id === activeLang)?.desc}
         </div>
 
-        {/* Code View */}
-        <div style={{
+        {/* Code View (BKLIT Container) */}
+        <div className="bklit-container" style={{
           position: 'relative',
           background: '#080c14',
           border: '1px solid rgba(255,255,255,0.08)',

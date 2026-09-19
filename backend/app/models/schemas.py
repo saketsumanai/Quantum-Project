@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union
 from pydantic import BaseModel, Field
 
 # --- Circuit Representation ---
@@ -60,14 +60,23 @@ class QuizModel(BaseModel):
     options_array: List[str]
     valid_index_pointer: int
 
+class RAGMetricsModel(BaseModel):
+    retrieval_similarity_score: float = Field(default=0.88, description="Cosine similarity score of top retrieved passage")
+    retrieval_latency_ms: float = Field(default=35.0, description="ChromaDB vector search time in ms")
+    llm_generation_ms: float = Field(default=450.0, description="LLM round trip latency in ms")
+    total_latency_ms: float = Field(default=485.0, description="Total processing time in ms")
+    retrieved_chunks_count: int = Field(default=3, description="Number of textbook passages retrieved")
+    groundedness_confidence_score: float = Field(default=0.94, description="Overlap ratio between retrieved source and LLM response")
+    tokens_consumed: int = Field(default=620, description="Total prompt and completion tokens")
+
 class AITutorQueryRequest(BaseModel):
     user_query: str
     active_circuit_context: Optional[Dict[str, Any]] = None
-    current_topic: Optional[str] = None
     conversation_history: Optional[List[Dict[str, str]]] = None
     language: Optional[str] = "en"  # "en" | "hi" | "hinglish" | "ta" | "te" | "bn" | "mr" | "gu" | "kn" | "ml" | "pa" | "or"
     model: Optional[str] = "auto"
     generate_diagram: Optional[bool] = False
+    user_level: Optional[str] = Field(default="beginner", description="beginner | intermediate | advanced")
 
 class AITutorQueryResponse(BaseModel):
     success: bool
@@ -80,6 +89,22 @@ class AITutorQueryResponse(BaseModel):
     sources: Optional[List[str]] = None
     diagram: Optional[Dict[str, Any]] = None
     model_used: Optional[str] = None
+    rag_metrics: Optional[RAGMetricsModel] = None
+    reasoning_process: Optional[Union[str, Dict[str, Any], List[Any]]] = Field(
+        default=None, description="Step-by-step chain-of-thought quantum reasoning and theorem verification"
+    )
+
+class AICircuitDebugRequest(BaseModel):
+    circuit: CircuitModel
+    error_message: Optional[str] = None
+    user_level: Optional[str] = "beginner"
+
+class AICircuitDebugResponse(BaseModel):
+    success: bool
+    diagnosis: str
+    suggested_fix_description: str
+    corrected_circuit: Optional[CircuitModel] = None
+    qiskit_corrected_code: Optional[str] = None
 
 # --- Assessment & Test Center Schemas ---
 class AssessmentSubmitRequest(BaseModel):
@@ -191,7 +216,6 @@ class CurriculumModule(BaseModel):
     description: str
     lessons: List[CurriculumLesson]
 
-
 # --- Circuit Grader Schemas ---
 class CircuitVerifyRequest(BaseModel):
     circuit: CircuitModel
@@ -204,3 +228,37 @@ class CircuitVerifyResponse(BaseModel):
     similarity_score: float
     diff_metrics: Dict[str, float]
     feedback: str
+
+# --- Progress & Library Schemas ---
+class LessonCompletionRequest(BaseModel):
+    lesson_id: str
+    module_id: str
+    score_delta: Optional[int] = 50
+
+class DiracBadge(BaseModel):
+    id: str
+    title: str
+    symbol: str
+    latex_verification: str
+    description: str
+    unlocked: bool
+    unlocked_at: Optional[str] = None
+
+class UserProgressResponse(BaseModel):
+    success: bool
+    total_xp: int
+    completed_lessons: List[str]
+    badges: List[DiracBadge]
+    overall_mastery_pct: float
+
+class BookEntry(BaseModel):
+    id: int
+    title: str
+    author: str
+    category: str
+    year: Optional[int] = None
+    reference: Optional[str] = None
+    url: Optional[str] = None
+    key_concepts: List[str] = []
+    training_vector_summary: Optional[str] = None
+

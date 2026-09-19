@@ -111,6 +111,13 @@ class QuantumSimulationEngine:
                 c, t = qubits[0], qubits[1]
                 state_tensor = self._apply_cz(state_tensor, c, t, num_qubits)
 
+            elif gate in ["cp", "crz", "cu1"]:
+                if len(qubits) < 2:
+                    continue
+                c, t = qubits[0], qubits[1]
+                theta = params[0] if len(params) > 0 else (math.pi / 2.0)
+                state_tensor = self._apply_cp(state_tensor, c, t, theta, num_qubits)
+
             elif gate == "swap":
                 if len(qubits) < 2:
                     continue
@@ -156,6 +163,13 @@ class QuantumSimulationEngine:
         slices[c] = 1
         slices[t] = 1
         state[tuple(slices)] *= -1.0
+        return state
+
+    def _apply_cp(self, state: np.ndarray, c: int, t: int, theta: float, num_qubits: int) -> np.ndarray:
+        slices = [slice(None)] * num_qubits
+        slices[c] = 1
+        slices[t] = 1
+        state[tuple(slices)] *= np.exp(1.0j * theta)
         return state
 
     def _apply_toffoli(self, state: np.ndarray, c1: int, c2: int, t: int, num_qubits: int) -> np.ndarray:

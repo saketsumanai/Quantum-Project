@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import LandingPage from "./components/LandingPage";
 import Header from "./components/Header";
+import LandingPage from "./components/LandingPage";
 import CircuitCanvas from "./components/CircuitCanvas";
 import BlochSphere from "./components/BlochSphere";
 import MeasurementView from "./components/MeasurementView";
@@ -94,21 +94,24 @@ function QuantumLeapApp() {
 
   useEffect(() => { executeSimulation(); }, []); // eslint-disable-line
 
-  const handleLoadPreset = async (presetKey) => {
+  const handleLoadPreset = async (presetTarget) => {
     try {
-      const preset = await fetch(`${API}/curriculum/presets/${presetKey}`).then((r) => r.json());
-      setNumQubits(preset.num_qubits);
-      setInstructions(preset.instructions);
-      executeSimulation(preset.instructions, preset.num_qubits);
+      let preset = presetTarget;
+      if (typeof presetTarget === "string") {
+        preset = await fetch(`${API}/curriculum/presets/${presetTarget}`).then((r) => r.json());
+      }
+      if (preset && preset.num_qubits && preset.instructions) {
+        setNumQubits(preset.num_qubits);
+        setInstructions(preset.instructions);
+        executeSimulation(preset.instructions, preset.num_qubits);
+      }
     } catch (err) {
       console.error("Preset load error:", err);
     }
   };
 
   const handleLoadCircuitFromCurriculum = (presetCircuit) => {
-    setNumQubits(presetCircuit.num_qubits);
-    setInstructions(presetCircuit.instructions);
-    executeSimulation(presetCircuit.instructions, presetCircuit.num_qubits);
+    handleLoadPreset(presetCircuit);
   };
 
   return (
@@ -223,7 +226,7 @@ function QuantumLeapApp() {
 
           {/* Right Column */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ height: "100%", minHeight: "560px" }}>
+            <div style={{ height: "100%", minHeight: "580px" }}>
               <BlochSphere
                 blochCoordinates={statevectorData?.bloch_coordinates || []}
                 selectedQubit={selectedQubit}
@@ -250,7 +253,7 @@ function QuantumLeapApp() {
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
-      {/* Global Floating Quantum Chatbot Drawer (Accessible on ALL pages) */}
+      {/* Global Floating Quantum AI Tutor Drawer (Accessible on ALL pages) */}
       <AITutorChat
         circuitContext={{ num_qubits: numQubits, gates_applied: instructions.map((i) => i.gate) }}
         activeTopic="entanglement"

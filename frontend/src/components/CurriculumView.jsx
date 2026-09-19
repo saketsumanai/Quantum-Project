@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlayCircle, ArrowRight } from 'lucide-react';
+import { PlayCircle, ArrowRight, BookOpen, Award, HelpCircle } from 'lucide-react';
 
 export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }) {
   const [modules, setModules] = useState([]);
@@ -160,7 +160,7 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
                 }}>
                   {activeLesson.difficulty} · {activeLesson.duration_min} Minutes
                 </span>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 500, color: '#ffffff', letterSpacing: '-0.03em', margin: 0, textTransform: 'uppercase' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#ffffff', letterSpacing: '-0.03em', margin: 0, textTransform: 'uppercase' }}>
                   {activeLesson.title}
                 </h2>
               </div>
@@ -169,6 +169,20 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
                 <button
                   onClick={handleOpenInStudio}
                   className="btn-overview-primary"
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    background: '#ffffff',
+                    border: 'none',
+                    color: '#000000',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(255, 255, 255, 0.2)'
+                  }}
                 >
                   <PlayCircle size={14} /> Open in Circuit Studio <ArrowRight size={12} />
                 </button>
@@ -200,7 +214,7 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
                   <span style={{ fontSize: '0.72rem', color: '#a1a1aa', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>
                     Concept Check
                   </span>
-                  <h4 style={{ fontSize: '1.02rem', fontWeight: 500, color: '#ffffff', marginTop: '4px' }}>
+                  <h4 style={{ fontSize: '1.02rem', fontWeight: 600, color: '#ffffff', marginTop: '4px' }}>
                     {activeLesson.quiz.question_string}
                   </h4>
                 </div>
@@ -234,6 +248,17 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
                       onClick={handleSubmitQuiz}
                       disabled={selectedQuizAnswer === null}
                       className="btn-overview-primary"
+                      style={{
+                        padding: '8px 18px',
+                        borderRadius: '8px',
+                        background: '#ffffff',
+                        border: 'none',
+                        color: '#000000',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: selectedQuizAnswer === null ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 4px 14px rgba(255, 255, 255, 0.2)'
+                      }}
                     >
                       Submit Verification
                     </button>

@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -11,6 +12,11 @@ if _root_env.exists():
     load_dotenv(dotenv_path=_root_env, override=True)
 else:
     load_dotenv(override=True)
+load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"))
+
+# Ensure UTF-8 output encoding on Windows terminals to prevent CP1252 charmap crashes
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,9 +44,9 @@ def _init_firebase():
             else:
                 # Attempt application default credentials (Cloud Run / App Engine)
                 firebase_admin.initialize_app()
-                print("[Firebase] ✅ Initialized with application default credentials.")
+                print("[Firebase] Initialized with application default credentials.")
     except Exception as e:
-        print(f"[Firebase] ⚠️  Init skipped (auth will be unavailable): {e}")
+        print(f"[Firebase] Init skipped (auth will be unavailable): {e}")
 
 
 # ─── SQLAlchemy DB Init ───────────────────────────────────────────────────────
