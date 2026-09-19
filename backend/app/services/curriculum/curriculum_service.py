@@ -86,6 +86,123 @@ PRESET_CIRCUITS: Dict[str, CircuitModel] = {
             CircuitInstruction(gate="h", qubits=[0]),
             CircuitInstruction(gate="measure", qubits=[0], clbits=[0])
         ]
+    ),
+    "qft": CircuitModel(
+        num_qubits=3,
+        num_clbits=3,
+        instructions=[
+            CircuitInstruction(gate="h", qubits=[0]),
+            CircuitInstruction(gate="cp", qubits=[1, 0], params=[1.57079632679]),
+            CircuitInstruction(gate="cp", qubits=[2, 0], params=[0.78539816339]),
+            CircuitInstruction(gate="h", qubits=[1]),
+            CircuitInstruction(gate="cp", qubits=[2, 1], params=[1.57079632679]),
+            CircuitInstruction(gate="h", qubits=[2]),
+            CircuitInstruction(gate="swap", qubits=[0, 2]),
+            CircuitInstruction(gate="measure", qubits=[0], clbits=[0]),
+            CircuitInstruction(gate="measure", qubits=[1], clbits=[1]),
+            CircuitInstruction(gate="measure", qubits=[2], clbits=[2])
+        ]
+    ),
+    "shor_15": CircuitModel(
+        num_qubits=4,
+        num_clbits=2,
+        instructions=[
+            # Counting register in superposition
+            CircuitInstruction(gate="h", qubits=[0]),
+            CircuitInstruction(gate="h", qubits=[1]),
+            # Work register initialized to |1>
+            CircuitInstruction(gate="x", qubits=[2]),
+            # Controlled modular multiplication: 7^x mod 15
+            CircuitInstruction(gate="cx", qubits=[0, 2]),
+            CircuitInstruction(gate="cx", qubits=[0, 3]),
+            CircuitInstruction(gate="cx", qubits=[1, 3]),
+            # Inverse QFT on counting register
+            CircuitInstruction(gate="h", qubits=[1]),
+            CircuitInstruction(gate="cp", qubits=[0, 1], params=[-1.57079632679]),
+            CircuitInstruction(gate="h", qubits=[0]),
+            CircuitInstruction(gate="swap", qubits=[0, 1]),
+            CircuitInstruction(gate="measure", qubits=[0], clbits=[0]),
+            CircuitInstruction(gate="measure", qubits=[1], clbits=[1])
+        ]
+    ),
+    "vqe_h2": CircuitModel(
+        num_qubits=2,
+        num_clbits=2,
+        instructions=[
+            # Hartree-Fock initial state
+            CircuitInstruction(gate="x", qubits=[0]),
+            # Variational ansatz (Ry rotations and entangler)
+            CircuitInstruction(gate="ry", qubits=[0], params=[0.785398]),
+            CircuitInstruction(gate="ry", qubits=[1], params=[0.392699]),
+            CircuitInstruction(gate="cx", qubits=[0, 1]),
+            CircuitInstruction(gate="rz", qubits=[0], params=[1.570796]),
+            CircuitInstruction(gate="ry", qubits=[1], params=[0.785398]),
+            CircuitInstruction(gate="measure", qubits=[0], clbits=[0]),
+            CircuitInstruction(gate="measure", qubits=[1], clbits=[1])
+        ]
+    ),
+    "qml_kernel": CircuitModel(
+        num_qubits=2,
+        num_clbits=2,
+        instructions=[
+            # Feature map layer
+            CircuitInstruction(gate="h", qubits=[0]),
+            CircuitInstruction(gate="h", qubits=[1]),
+            CircuitInstruction(gate="rz", qubits=[0], params=[1.2]),
+            CircuitInstruction(gate="rz", qubits=[1], params=[2.4]),
+            # ZZ-entanglement kernel
+            CircuitInstruction(gate="cx", qubits=[0, 1]),
+            CircuitInstruction(gate="rz", qubits=[1], params=[1.570796]),
+            CircuitInstruction(gate="cx", qubits=[0, 1]),
+            # Variational classification layer
+            CircuitInstruction(gate="ry", qubits=[0], params=[0.8]),
+            CircuitInstruction(gate="ry", qubits=[1], params=[1.6]),
+            CircuitInstruction(gate="measure", qubits=[0], clbits=[0]),
+            CircuitInstruction(gate="measure", qubits=[1], clbits=[1])
+        ]
+    ),
+    "qec_bitflip": CircuitModel(
+        num_qubits=3,
+        num_clbits=3,
+        instructions=[
+            # Encode arbitrary logical state |psi> = Rx(pi/2)|0>
+            CircuitInstruction(gate="rx", qubits=[0], params=[1.570796]),
+            CircuitInstruction(gate="cx", qubits=[0, 1]),
+            CircuitInstruction(gate="cx", qubits=[0, 2]),
+            # Simulated bit-flip error on qubit 1
+            CircuitInstruction(gate="x", qubits=[1]),
+            # Syndrome extraction & recovery
+            CircuitInstruction(gate="cx", qubits=[0, 1]),
+            CircuitInstruction(gate="cx", qubits=[0, 2]),
+            CircuitInstruction(gate="ccx", qubits=[1, 2, 0]),
+            CircuitInstruction(gate="measure", qubits=[0], clbits=[0]),
+            CircuitInstruction(gate="measure", qubits=[1], clbits=[1]),
+            CircuitInstruction(gate="measure", qubits=[2], clbits=[2])
+        ]
+    ),
+    "surface_code": CircuitModel(
+        num_qubits=5,
+        num_clbits=5,
+        instructions=[
+            # Data qubits 0, 1, 2, 3 and ancilla qubit 4
+            CircuitInstruction(gate="h", qubits=[0]),
+            CircuitInstruction(gate="h", qubits=[2]),
+            # Z-stabilizer plaquette check (Z0 Z1 Z2 Z3 on ancilla 4)
+            CircuitInstruction(gate="cx", qubits=[0, 4]),
+            CircuitInstruction(gate="cx", qubits=[1, 4]),
+            CircuitInstruction(gate="cx", qubits=[2, 4]),
+            CircuitInstruction(gate="cx", qubits=[3, 4]),
+            # X-stabilizer check
+            CircuitInstruction(gate="h", qubits=[4]),
+            CircuitInstruction(gate="cz", qubits=[4, 0]),
+            CircuitInstruction(gate="cz", qubits=[4, 1]),
+            CircuitInstruction(gate="h", qubits=[4]),
+            CircuitInstruction(gate="measure", qubits=[0], clbits=[0]),
+            CircuitInstruction(gate="measure", qubits=[1], clbits=[1]),
+            CircuitInstruction(gate="measure", qubits=[2], clbits=[2]),
+            CircuitInstruction(gate="measure", qubits=[3], clbits=[3]),
+            CircuitInstruction(gate="measure", qubits=[4], clbits=[4])
+        ]
     )
 }
 

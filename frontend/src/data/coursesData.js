@@ -325,7 +325,7 @@ print("Target |11> probability:", sv.probabilities_dict())`
         id: "unit-3",
         title: "Unit 3: Quantum Fourier Transform & Shor's Factoring Algorithm",
         duration: "60 min",
-        circuitPreset: "grover_2qubit",
+        circuitPreset: "qft",
         youtubeId: "4nT0BTUxhJY",
         videoTitle: "Phase Estimation and Factoring | Lesson 07 with John Watrous",
         watchUrl: "https://www.youtube.com/watch?v=4nT0BTUxhJY",
@@ -465,7 +465,7 @@ print("Counts:", result[0].data.meas.get_counts())`
         id: "unit-1",
         title: "Unit 1: Quantum Feature Maps & High-Dimensional Hilbert Spaces",
         duration: "40 min",
-        circuitPreset: "superposition",
+        circuitPreset: "qml_kernel",
         youtubeId: "Tk9LOL9--Y4",
         videoTitle: "Quantum Machine Learning & Feature Spaces | Qiskit Lecture Series",
         watchUrl: "https://www.youtube.com/watch?v=Tk9LOL9--Y4",
@@ -495,7 +495,7 @@ print("Counts:", result[0].data.meas.get_counts())`
         id: "unit-2",
         title: "Unit 2: Parameterized Circuits & The Parameter Shift Rule",
         duration: "45 min",
-        circuitPreset: "bell_state",
+        circuitPreset: "qml_kernel",
         youtubeId: "30U2DTfIrOU",
         videoTitle: "Parameterized Circuits & Analytical Gradients | Qiskit Masterclass",
         watchUrl: "https://www.youtube.com/watch?v=30U2DTfIrOU",
@@ -552,7 +552,7 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
         id: "unit-1",
         title: "Unit 1: The Variational Principle & VQE",
         duration: "40 min",
-        circuitPreset: "bell_state",
+        circuitPreset: "vqe_h2",
         youtubeId: "4gpPHWCoWPs",
         videoTitle: "Variational Quantum Eigensolver (VQE) for Chemistry Simulation",
         watchUrl: "https://www.youtube.com/watch?v=4gpPHWCoWPs",
@@ -581,7 +581,7 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
         id: "unit-2",
         title: "Unit 2: QAOA for Combinatorial Optimization",
         duration: "40 min",
-        circuitPreset: "bell_state",
+        circuitPreset: "vqe_h2",
         youtubeId: "hnpjC8WQVrQ",
         videoTitle: "Quantum Approximate Optimization Algorithm (QAOA) on Real Hardware",
         watchUrl: "https://www.youtube.com/watch?v=hnpjC8WQVrQ",
@@ -629,7 +629,7 @@ def compute_quantum_gradient(eval_circuit_fn, theta):
         id: "unit-1",
         title: "Unit 1: Quantum Redundancy & Syndrome Extraction",
         duration: "45 min",
-        circuitPreset: "ghz_state",
+        circuitPreset: "qec_bitflip",
         youtubeId: "GSsElSQgMbU",
         videoTitle: "Foundations of Quantum Error Correction & Stabilizers with Daniel Gottesman",
         watchUrl: "https://www.youtube.com/watch?v=GSsElSQgMbU",
@@ -859,7 +859,7 @@ print(qc.draw())`
     icon: "",
     description: "Transform discrete quantum amplitudes to frequency domain in O(n^2) gates.",
     equation: "QFT |j⟩ = 1/√N ∑_{k=0}^{N-1} e^(2πi jk/N) |k⟩",
-    circuitPreset: "grover_2qubit",
+    circuitPreset: "qft",
     fullContent: `### Quantum Fourier Transform Circuit
 The QFT maps computational basis states into phase-encoded Fourier basis states:
 
@@ -881,7 +881,7 @@ print(qft_circuit.decompose().draw())`
     icon: "",
     description: "Factor large integers N = p*q exponentially faster than any classical algorithm in polynomial time.",
     equation: "a^r ≡ 1 mod N  ⟹  gcd(a^(r/2) ± 1, N)",
-    circuitPreset: "grover_2qubit",
+    circuitPreset: "shor_15",
     fullContent: `### Breaking RSA with Quantum Order Finding
 Peter Shor (1994) discovered that the hardness of integer factorization can be reduced to the problem of finding the period r of the modular exponential function:
 
@@ -905,7 +905,7 @@ print(f"Factors of {N}: {factor1} and {factor2}")`
     icon: "",
     description: "Hybrid quantum-classical optimization for finding ground state energies of molecules.",
     equation: "E0 ≤ ⟨ψ(θ)| H |ψ(θ)⟩",
-    circuitPreset: "bell_state",
+    circuitPreset: "vqe_h2",
     fullContent: `### Hybrid Quantum-Classical Loop
 In quantum chemistry, computing the ground state energy of a molecular Hamiltonian H = ∑ c_i P_i (where P_i are Pauli strings) is classically intractable for large molecules due to the exponential Hilbert space.
 
@@ -925,7 +925,7 @@ print(ansatz.draw())`
     icon: "",
     description: "Quantum Approximate Optimization Algorithm for solving Max-Cut and combinatorial graphs.",
     equation: "max_{γ, β} ⟨ψ(γ, β)| H_C |ψ(γ, β)⟩",
-    circuitPreset: "bell_state",
+    circuitPreset: "vqe_h2",
     fullContent: `### Quantum Approximate Optimization (Farhi et al., 2014)
 QAOA maps NP-hard combinatorial optimization problems onto finding the ground state of an Ising spin glass Hamiltonian:
 
@@ -944,7 +944,7 @@ print("QAOA parameters:", ansatz.parameters)`
     icon: "",
     description: "Efficient group-theoretic description of quantum error-correcting codes using Pauli stabilizers.",
     equation: "S |ψ⟩ = +|ψ⟩,   ∀ S ∈ S",
-    circuitPreset: "ghz_state",
+    circuitPreset: "qec_bitflip",
     fullContent: `### Gottesman-Knill Theorem & Stabilizer Codes
 A stabilizer code on n qubits is defined as the common +1 eigenspace of an abelian subgroup S ⊂ G_n of the n-qubit Pauli group that does not contain -I:
 
