@@ -409,7 +409,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("ql_token");
   };
 
-<<<<<<< HEAD
   // ─── Progress Tracking Functions ─────────────────────────────────────────────
 
   /**
