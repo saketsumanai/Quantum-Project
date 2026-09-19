@@ -450,8 +450,48 @@ class MultiFrameworkQuantumEngine:
             "    print(f'qBraid transpile: {err}')",
         ]
 
+        # 5. IBM Quantum Platform / Runtime Heron QPU execution code
+        ibm_lines = [
+            "import os",
+            "from qiskit import QuantumCircuit, transpile",
+            "from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler",
+            "",
+            f"qc = QuantumCircuit.from_qasm_str('''{qasm}''')",
+            "# Authenticate with IBM Quantum Platform API",
+            "service = QiskitRuntimeService(",
+            "    channel='ibm_cloud',",
+            "    token=os.getenv('IBM_QUANTUM_API_KEY', 'YOUR_IBM_API_KEY'),",
+            "    instance=os.getenv('IBM_QUANTUM_CRN', 'YOUR_CRN')",
+            ")",
+            "# Target live 156-qubit Heron QPU (ibm_fez / ibm_marrakesh)",
+            "backend = service.backend('ibm_fez')",
+            "transpiled_qc = transpile(qc, backend=backend, optimization_level=3)",
+            "sampler = Sampler(backend=backend)",
+            "job = sampler.run([transpiled_qc], shots=1024)",
+            "print(f'IBM Quantum Job ID: {job.job_id()}')",
+            "result = job.result()",
+            "print('Heron QPU Counts:', result[0].data.c.get_counts())",
+        ]
+
+        # 6. BlueQubit Cloud GPU / MPS simulation code
+        bluequbit_lines = [
+            "import os",
+            "import bluequbit",
+            "from qiskit import QuantumCircuit",
+            "",
+            f"qc = QuantumCircuit.from_qasm_str('''{qasm}''')",
+            "# Authenticate with BlueQubit Cloud API",
+            "bq_client = bluequbit.init(os.getenv('BLUEQUBIT_API_KEY', 'YOUR_BLUEQUBIT_KEY'))",
+            "# Execute on GPU-accelerated cloud or tensor network",
+            "job = bq_client.run(qc, device='gpu', shots=1024)",
+            "counts = job.get_counts()",
+            "print('BlueQubit Cloud GPU Counts:', counts)",
+        ]
+
         return {
             "qiskit": "\n".join(qiskit_lines),
+            "ibm_quantum": "\n".join(ibm_lines),
+            "bluequbit": "\n".join(bluequbit_lines),
             "pennylane": "\n".join(pennylane_lines),
             "cirq": "\n".join(cirq_lines),
             "qbraid": "\n".join(qbraid_lines),

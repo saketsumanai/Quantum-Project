@@ -76,6 +76,7 @@ class AITutorQueryRequest(BaseModel):
     language: Optional[str] = "en"  # "en" | "hi" | "hinglish" | "ta" | "te" | "bn" | "mr" | "gu" | "kn" | "ml" | "pa" | "or"
     model: Optional[str] = "auto"
     generate_diagram: Optional[bool] = False
+    current_topic: Optional[str] = ""
     user_level: Optional[str] = Field(default="beginner", description="beginner | intermediate | advanced")
 
 class AITutorQueryResponse(BaseModel):

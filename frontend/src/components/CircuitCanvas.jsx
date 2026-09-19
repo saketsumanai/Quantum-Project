@@ -161,6 +161,8 @@ export default function CircuitCanvas({
               }}
             >
               <option value="auto">Auto (Smart Dispatch)</option>
+              <option value="ibm_quantum">IBM Quantum (156Q Heron QPU)</option>
+              <option value="bluequbit">BlueQubit Cloud (GPU/MPS)</option>
               <option value="qiskit">Qiskit Aer Simulator</option>
               <option value="cirq">Google Cirq QVM</option>
               <option value="pennylane">PennyLane Quantum</option>

@@ -881,7 +881,7 @@ class AITutorService:
         # 2. Try Custom Fine-Tuned Llama, then Groq, then Gemini
         t_llm_start = time.perf_counter()
         parsed = None
-        course_unit_ctx = req.current_topic or ""
+        course_unit_ctx = getattr(req, "current_topic", "") or ""
         req_model = getattr(req, "model", "auto") or "auto"
         req_diagram = bool(getattr(req, "generate_diagram", False))
 
@@ -1006,7 +1006,7 @@ class AITutorService:
         # 3. Fallback: domain knowledge bank with 3-tier difficulty
         domain_key = "superposition"
         for key in DOMAIN_FALLBACK:
-            if key in query_lower or key in (req.current_topic or "").lower():
+            if key in query_lower or key in (getattr(req, "current_topic", "") or "").lower():
                 domain_key = key
                 break
 

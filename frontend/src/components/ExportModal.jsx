@@ -38,6 +38,8 @@ export default function ExportModal({ isOpen, onClose, circuit, qasmExport }) {
   if (!isOpen) return null;
 
   const frameworks = [
+    { id: 'ibm_quantum', label: 'IBM Quantum (Heron QPU)', desc: 'IBM Cloud Qiskit Runtime for 156-qubit Heron architecture' },
+    { id: 'bluequbit', label: 'BlueQubit Cloud (GPU)', desc: 'BlueQubit Cloud GPU-accelerated tensor network / MPS' },
     { id: 'qiskit', label: 'Qiskit 1.0+ (Aer)', desc: 'IBM Quantum SDK & Aer noise simulation' },
     { id: 'pennylane', label: 'PennyLane (QNode)', desc: 'Differentiable circuits & parameter-shift rule' },
     { id: 'cirq', label: 'Google Cirq', desc: 'Google Quantum AI Sycamore grid layout' },
