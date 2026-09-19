@@ -108,9 +108,30 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("ql_token");
   };
 
+  const authFetch = useCallback(async (endpointOrUrl, options = {}) => {
+    const url = endpointOrUrl.startsWith("http")
+      ? endpointOrUrl
+      : `${API_BASE}${endpointOrUrl.startsWith("/") ? "" : "/"}${endpointOrUrl}`;
+    const headers = { ...(options.headers || {}) };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    return fetch(url, { ...options, headers });
+  }, [token]);
+
   return (
     <AuthContext.Provider
-      value={{ user, token, firebaseUser, isLoading, authError, signInWithGoogle, signOut }}
+      value={{
+        user,
+        token,
+        firebaseUser,
+        isLoading,
+        authError,
+        signInWithGoogle,
+        signOut,
+        authFetch,
+        refetchProfile: () => token && fetchProfile(token),
+      }}
     >
       {children}
     </AuthContext.Provider>

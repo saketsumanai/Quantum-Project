@@ -10,6 +10,7 @@ import CurriculumView from "./components/CurriculumView";
 import LearningHub from "./components/LearningHub";
 import ExportModal from "./components/ExportModal";
 import AuthModal from "./components/AuthModal";
+import StudentDashboard from "./components/StudentDashboard";
 import GatewayFlow from "./components/ui/gateway-flow";
 
 const API = "http://localhost:8000/api/v1";
@@ -163,6 +164,11 @@ function QuantumLeapApp() {
             <GatewayFlow style={{ width: "100%", height: "100%", minHeight: "680px" }} />
           </div>
         </main>
+      ) : activeTab === "dashboard" ? (
+        <StudentDashboard
+          onNavigateToStudio={() => setActiveTab("studio")}
+          onNavigateToCurriculum={() => setActiveTab("curriculum")}
+        />
       ) : (
         <CurriculumView
           onLoadCircuitPreset={handleLoadCircuitFromCurriculum}
