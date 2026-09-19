@@ -30,7 +30,8 @@
   --q-amber: #f59e0b;
 
   /* Typography */
-  --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: 'Times New Roman', Times, serif;
+  --font-display: 'Times New Roman', Times, serif;
   --font-body: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
@@ -50,6 +51,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  font-family: var(--font-body);
 }
 
 html, body {
@@ -58,7 +60,7 @@ html, body {
   background-color: #000000;
   background-image: radial-gradient(circle at 50% 0%, rgba(15, 98, 254, 0.08) 0%, transparent 60%);
   color: var(--text-primary);
-  font-family: var(--font-body);
+  font-family: var(--font-body) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -69,6 +71,7 @@ html, body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: var(--font-body);
 }
 
 /* Custom Scrollbar */
@@ -87,15 +90,17 @@ html, body {
   background: rgba(56, 189, 248, 0.6);
 }
 
-/* Typography Utilities */
-h1, h2, h3, h4, .font-display {
-  font-family: var(--font-display);
+/* Typography Utilities - Times New Roman Highlighted Headings */
+h1, h2, h3, h4, h5, h6, .font-display, .font-heading, .font-serif {
+  font-family: 'Times New Roman', Times, serif !important;
   letter-spacing: -0.01em;
-  font-weight: 600;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.35);
 }
 
-.font-mono {
-  font-family: var(--font-mono);
+.font-mono, code, pre, .font-code {
+  font-family: var(--font-mono) !important;
 }
 
 /* ==============================================================================

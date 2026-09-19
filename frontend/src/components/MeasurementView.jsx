@@ -1,88 +1,173 @@
 import React from 'react';
-import { BarChart3, Binary, Clock, Gauge } from 'lucide-react';
+import { BarChart3, Binary, Clock, Gauge, Cpu, CheckCircle2, AlertTriangle } from 'lucide-react';
 
-export default function MeasurementView({ simulationResult, statevectorData }) {
+export default function MeasurementView({ simulationResult, statevectorData, noiseEnabled, noiseProfile }) {
   const counts = simulationResult?.counts || {};
   const probs = simulationResult?.probabilities || {};
   const shots = simulationResult?.shots || 1024;
   const executionTime = simulationResult?.execution_time_ms || 0;
   const statevector = statevectorData?.statevector || [];
+  const noiseData = simulationResult?.noise_data;
 
   const maxProb = Math.max(...Object.values(probs), 0.01);
+
+  // Combine all basis states from ideal and noisy
+  const allBasisStates = Array.from(new Set([
+    ...Object.keys(probs),
+    ...(noiseData ? Object.keys(noiseData.noisy_probabilities || {}) : [])
+  ])).sort();
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
       {/* 1. Measurement Histogram (BKLIT Engine) */}
-      <div className="liquid-glass-panel bklit-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderRadius: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="liquid-glass-panel bklit-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <BarChart3 size={18} className="bklit-text-cyan" />
-            <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#f8fafc', textShadow: '0 0 10px rgba(255,255,255,0.4)' }}>
-              Measurement Distribution
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc', textShadow: '0 0 14px rgba(255,255,255,0.35)' }}>
+              {noiseData ? 'NISQ vs Ideal Distribution' : 'Measurement Distribution'}
             </h3>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.75rem' }}>
-            <span className="bklit-metric-card" style={{ padding: '3px 8px', borderRadius: '4px', color: '#ffffff', fontWeight: 600 }}>
-              <Clock size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> {executionTime}ms
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
+            <span className="bklit-metric-card" style={{ padding: '2px 8px', borderRadius: '4px', color: '#ffffff', fontWeight: 600 }}>
+              <Clock size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} /> {executionTime}ms
             </span>
-            <span className="bklit-metric-card" style={{ padding: '3px 8px', borderRadius: '4px', color: '#a1a1aa', fontWeight: 600 }}>
-              <Gauge size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> {shots} shots
+            <span className="bklit-metric-card" style={{ padding: '2px 8px', borderRadius: '4px', color: '#a1a1aa', fontWeight: 600 }}>
+              <Gauge size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} /> {shots} shots
             </span>
           </div>
         </div>
 
-        {/* Dynamic Backlit Animated Bars */}
+        {/* Hardware Noise Impact Banner if active */}
+        {noiseData && (
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid #38bdf8',
+            borderRadius: '6px',
+            padding: '8px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.74rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Cpu size={14} color="#38bdf8" />
+              <span style={{ fontWeight: 600, color: '#f8fafc' }}>{noiseData.profile}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span>
+                Fidelity: <b style={{ color: noiseData.fidelity_pct > 90 ? '#34d399' : '#f59e0b' }}>{noiseData.fidelity_pct}%</b>
+              </span>
+              <span>
+                Purity: <b style={{ color: '#38bdf8' }}>{noiseData.purity}</b>
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Legend for Dual Bars */}
+        {noiseData && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.72rem', color: '#a1a1aa' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ width: '10px', height: '10px', background: '#38bdf8', borderRadius: '2px' }} />
+              <span>Ideal Statevector</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ width: '10px', height: '10px', background: '#f59e0b', borderRadius: '2px' }} />
+              <span>NISQ Hardware (Decohered)</span>
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Animated Bars */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, justifyContent: 'center' }}>
-          {Object.keys(probs).length === 0 ? (
+          {allBasisStates.length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.84rem', padding: '30px 0' }}>
               Run simulation to view projective measurement distribution.
             </div>
           ) : (
-            Object.entries(probs).map(([basis, p]) => {
-              const count = counts[basis] || 0;
-              const percent = (p * 100).toFixed(1);
-              const barWidth = `${(p / maxProb) * 100}%`;
+            allBasisStates.map((basis) => {
+              const idealP = probs[basis] || 0;
+              const noisyP = noiseData ? (noiseData.noisy_probabilities[basis] || 0) : null;
+              const count = counts[basis] || (noiseData?.noisy_counts?.[basis] || 0);
+
+              const idealPercent = (idealP * 100).toFixed(1);
+              const noisyPercent = noisyP !== null ? (noisyP * 100).toFixed(1) : null;
+
+              const idealBarWidth = `${(idealP / maxProb) * 100}%`;
+              const noisyBarWidth = noisyP !== null ? `${(noisyP / maxProb) * 100}%` : null;
 
               return (
-                <div key={basis} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {/* Basis State Label */}
-                  <span style={{
-                    width: '45px',
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    color: '#ffffff',
-                    textShadow: '0 0 10px rgba(255, 255, 255, 0.6)'
-                  }}>
-                    |{basis}⟩
-                  </span>
+                <div key={basis} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {/* Basis State Label */}
+                    <span style={{
+                      width: '45px',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      fontSize: '0.88rem',
+                      color: '#ffffff',
+                      textShadow: '0 0 10px rgba(255, 255, 255, 0.6)'
+                    }}>
+                      |{basis}⟩
+                    </span>
 
-                  {/* Bar Track with LED Backlight */}
-                  <div style={{
-                    flex: 1,
-                    height: '26px',
-                    background: 'rgba(10, 10, 10, 0.9)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '4px',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    boxShadow: 'inset 0 0 8px rgba(0,0,0,0.9)'
-                  }}>
-                    <div
-                      className="bklit-bar-glow"
-                      style={{
-                        width: barWidth,
-                        height: '100%',
+                    {/* Bar Track */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      {/* Ideal Bar */}
+                      <div style={{
+                        height: noiseData ? '14px' : '24px',
+                        background: 'rgba(10, 10, 10, 0.9)',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
                         borderRadius: '3px',
-                        transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }}
-                    />
-                  </div>
+                        overflow: 'hidden',
+                        position: 'relative',
+                      }}>
+                        <div
+                          style={{
+                            width: idealBarWidth,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #0284c7, #38bdf8)',
+                            borderRadius: '2px',
+                            transition: 'width 0.4s ease',
+                          }}
+                        />
+                      </div>
 
-                  {/* Value */}
-                  <div style={{ width: '85px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}>
-                    <span style={{ color: '#fff', fontWeight: 700, textShadow: '0 0 8px rgba(255,255,255,0.6)' }}>{percent}%</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginLeft: '4px' }}>({count})</span>
+                      {/* Noisy Bar (if active) */}
+                      {noiseData && (
+                        <div style={{
+                          height: '14px',
+                          background: 'rgba(10, 10, 10, 0.9)',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          borderRadius: '3px',
+                          overflow: 'hidden',
+                          position: 'relative',
+                        }}>
+                          <div
+                            style={{
+                              width: noisyBarWidth,
+                              height: '100%',
+                              background: 'linear-gradient(90deg, #d97706, #f59e0b)',
+                              borderRadius: '2px',
+                              transition: 'width 0.4s ease',
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Percentage Values */}
+                    <div style={{ width: '90px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>
+                      <div style={{ color: '#38bdf8', fontWeight: 600 }}>
+                        {idealPercent}%
+                      </div>
+                      {noiseData && (
+                        <div style={{ color: '#f59e0b', fontSize: '0.7rem' }}>
+                          {noisyPercent}%
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -95,10 +180,12 @@ export default function MeasurementView({ simulationResult, statevectorData }) {
       <div className="liquid-glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', borderRadius: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Binary size={18} className="bklit-text-cyan" />
-          <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#f8fafc' }}>Pure Statevector (|ψ⟩)</h3>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc', textShadow: '0 0 14px rgba(255,255,255,0.35)' }}>
+            Pure Statevector (|ψ⟩)
+          </h3>
         </div>
 
-        <div style={{ overflowY: 'auto', maxHeight: '220px' }}>
+        <div style={{ overflowY: 'auto', maxHeight: '250px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-muted)', textAlign: 'left' }}>

@@ -1,22 +1,22 @@
 import React, { useState, useRef } from 'react';
-import { Play, RotateCcw, Plus, Minus, Layers, Zap, Settings, Trash2, BookOpen } from 'lucide-react';
+import { Play, RotateCcw, Plus, Minus, Info, Download, FileText, FileJson, Cpu, Share2 } from 'lucide-react';
 import GateTooltip from './GateTooltip';
 import { InteractiveHoverButton } from './ui/interactive-hover-button';
 
 const GATE_PALETTE = [
-  { id: 'h', label: 'H', category: 'superposition', title: 'Hadamard (Superposition)' },
-  { id: 'x', label: 'X', category: 'pauli', title: 'Pauli-X (Bit Flip)' },
-  { id: 'y', label: 'Y', category: 'pauli', title: 'Pauli-Y' },
-  { id: 'z', label: 'Z', category: 'pauli', title: 'Pauli-Z (Phase Flip)' },
-  { id: 's', label: 'S', category: 'phase', title: 'Phase Gate (S)' },
-  { id: 't', label: 'T', category: 'phase', title: 'T Gate (pi/4)' },
-  { id: 'rx', label: 'Rx', category: 'rot', title: 'Rotation X(theta)' },
-  { id: 'ry', label: 'Ry', category: 'rot', title: 'Rotation Y(theta)' },
-  { id: 'rz', label: 'Rz', category: 'rot', title: 'Rotation Z(theta)' },
-  { id: 'cx', label: 'CX', category: 'cnot', title: 'Controlled-NOT (CNOT)' },
-  { id: 'cz', label: 'CZ', category: 'cnot', title: 'Controlled-Z' },
-  { id: 'swap', label: 'SWAP', category: 'cnot', title: 'SWAP Qubits' },
-  { id: 'measure', label: 'M', category: 'measure', title: 'Measurement' }
+  { id: 'h', label: 'H', desc: 'Hadamard: Creates equal superposition' },
+  { id: 'x', label: 'X', desc: 'Pauli-X: Quantum NOT gate (bit flip)' },
+  { id: 'y', label: 'Y', desc: 'Pauli-Y: Bit + phase flip' },
+  { id: 'z', label: 'Z', desc: 'Pauli-Z: Phase flip gate' },
+  { id: 's', label: 'S', desc: 'S Gate: Phase rotation by π/2' },
+  { id: 't', label: 'T', desc: 'T Gate: Phase rotation by π/4 (non-Clifford)' },
+  { id: 'rx', label: 'Rx(θ)', desc: 'Rotation around X-axis by angle θ' },
+  { id: 'ry', label: 'Ry(θ)', desc: 'Rotation around Y-axis by angle θ' },
+  { id: 'rz', label: 'Rz(θ)', desc: 'Rotation around Z-axis by angle θ' },
+  { id: 'cx', label: 'CNOT', desc: 'Controlled-NOT: Entangles two qubits' },
+  { id: 'cz', label: 'CZ', desc: 'Controlled-Z: Controlled phase flip' },
+  { id: 'swap', label: 'SWAP', desc: 'SWAP: Exchanges quantum states' },
+  { id: 'measure', label: 'M', desc: 'Measurement: Projects qubit into classical bit' }
 ];
 
 export default function CircuitCanvas({
@@ -26,12 +26,19 @@ export default function CircuitCanvas({
   onUpdateInstructions,
   onRunSimulation,
   isSimulating = false,
-  onLoadPreset
+  onLoadPreset,
+  noiseEnabled = false,
+  onToggleNoise,
+  noiseProfile = 'ibm_eagle',
+  onSelectNoiseProfile,
+  onOpenExport,
 }) {
   const [selectedGate, setSelectedGate] = useState('h');
   const [rotationAngle, setRotationAngle] = useState(1.5708); // pi/2
   const [cnotControl, setCnotControl] = useState(0);
   const [hoveredGate, setHoveredGate] = useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingJson, setDownloadingJson] = useState(false);
   const hoverTimeoutRef = useRef(null);
 
   const handleGateMouseEnter = (gateId, event) => {
@@ -92,9 +99,72 @@ export default function CircuitCanvas({
     onUpdateInstructions([]);
   };
 
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/report/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuit: { num_qubits: numQubits, instructions: instructions },
+          algorithm_name: 'Quantum Algorithm Experiment',
+          author_name: 'Team Gitwolves',
+          include_noise: noiseEnabled,
+          noise_profile: noiseProfile,
+          shots: 1024,
+        }),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Quantum_Lab_Report_${Date.now()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('PDF report failed:', err);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadJson = async () => {
+    setDownloadingJson(true);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/report/json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuit: { num_qubits: numQubits, instructions: instructions },
+          algorithm_name: 'Quantum Algorithm Experiment',
+          author_name: 'Team Gitwolves',
+          include_noise: noiseEnabled,
+          noise_profile: noiseProfile,
+          shots: 1024,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Quantum_Lab_Report_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('JSON report failed:', err);
+    } finally {
+      setDownloadingJson(false);
+    }
+  };
+
   return (
-    <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Top Toolbar: Qubits count, Presets, Simulation Button */}
+    <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Top Toolbar: Qubits count, Presets, Reset, Simulate */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -140,12 +210,12 @@ export default function CircuitCanvas({
               }}
               defaultValue=""
             >
-              <option value="" disabled>Load Algorithm...</option>
-              <optgroup label="Foundations">
-                <option value="superposition">Single Qubit Superposition</option>
-                <option value="bell_state">Bell State (|Phi+&gt;)</option>
-                <option value="ghz_state">GHZ State (3-Qubit)</option>
-                <option value="quantum_teleportation">Quantum Teleportation</option>
+              <option value="" disabled>Load Algorithm Track...</option>
+              <optgroup label="Foundations & Entanglement">
+                <option value="superposition">1-Qubit Superposition (H)</option>
+                <option value="bell_state">Bell State (|Φ+⟩ EPR Pair)</option>
+                <option value="ghz_state">3-Qubit GHZ Entangled State</option>
+                <option value="quantum_teleportation">Quantum State Teleportation</option>
               </optgroup>
               <optgroup label="Quantum Algorithms">
                 <option value="deutsch_jozsa">Deutsch-Jozsa Algorithm</option>
@@ -176,6 +246,132 @@ export default function CircuitCanvas({
             disabled={isSimulating}
             className="w-36 h-9 py-1 px-3 text-xs bg-zinc-900 border-zinc-700 text-white hover:border-zinc-500"
           />
+        </div>
+      </div>
+
+      {/* NISQ Hardware Noise & Export Toolbar Row */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '10px',
+        padding: '8px 12px',
+        background: '#0c0c0e',
+        border: '1px solid #27272a',
+        borderRadius: '6px',
+      }}>
+        {/* Left: Hardware Noise Toggle & Profile */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={onToggleNoise}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              border: noiseEnabled ? '1px solid #38bdf8' : '1px solid #27272a',
+              background: noiseEnabled ? '#18181b' : 'transparent',
+              color: noiseEnabled ? '#38bdf8' : '#71717a',
+              fontSize: '0.76rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <Cpu size={13} />
+            NISQ Hardware Noise: {noiseEnabled ? 'ON' : 'OFF'}
+          </button>
+
+          {noiseEnabled && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <select
+                value={noiseProfile}
+                onChange={(e) => onSelectNoiseProfile && onSelectNoiseProfile(e.target.value)}
+                style={{
+                  background: '#18181b',
+                  color: '#ffffff',
+                  border: '1px solid #38bdf8',
+                  borderRadius: '4px',
+                  padding: '3px 8px',
+                  fontSize: '0.74rem',
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="ibm_eagle">IBM Eagle 127Q (Superconducting)</option>
+                <option value="rigetti_aspen">Rigetti Aspen-M3</option>
+                <option value="ionq_forte">IonQ Forte (Trapped Ion)</option>
+              </select>
+              <span style={{ fontSize: '0.7rem', color: '#a1a1aa' }}>
+                {noiseProfile === 'ibm_eagle' && 'T1: 120µs | T2: 90µs | Readout Err: 1.8%'}
+                {noiseProfile === 'rigetti_aspen' && 'T1: 30µs | T2: 25µs | Readout Err: 4.2%'}
+                {noiseProfile === 'ionq_forte' && 'T1: 10ms | T2: 1ms | Readout Err: 0.3%'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Export Code & Download Reports */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {onOpenExport && (
+            <button
+              onClick={onOpenExport}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                border: '1px solid #27272a',
+                background: '#18181b',
+                color: '#ffffff',
+                fontSize: '0.74rem',
+                cursor: 'pointer',
+              }}
+            >
+              <Share2 size={12} />
+              Export Code
+            </button>
+          )}
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              border: '1px solid #27272a',
+              background: '#18181b',
+              color: '#38bdf8',
+              fontSize: '0.74rem',
+              cursor: 'pointer',
+            }}
+          >
+            <FileText size={12} />
+            {downloadingPdf ? 'Generating...' : 'Report (PDF)'}
+          </button>
+          <button
+            onClick={handleDownloadJson}
+            disabled={downloadingJson}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              border: '1px solid #27272a',
+              background: '#18181b',
+              color: '#a1a1aa',
+              fontSize: '0.74rem',
+              cursor: 'pointer',
+            }}
+          >
+            <FileJson size={12} />
+            {downloadingJson ? 'Bundling...' : 'Report (JSON)'}
+          </button>
         </div>
       </div>
 

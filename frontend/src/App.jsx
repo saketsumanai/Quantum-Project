@@ -28,6 +28,8 @@ function QuantumLeapApp() {
   const [backendStatus, setBackendStatus] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [noiseEnabled, setNoiseEnabled] = useState(false);
+  const [noiseProfile, setNoiseProfile] = useState("ibm_eagle");
 
   // Check backend health
   useEffect(() => {
@@ -37,7 +39,7 @@ function QuantumLeapApp() {
       .catch(() => setBackendStatus(false));
   }, []);
 
-  const executeSimulation = async (insts, qubits) => {
+  const executeSimulation = async (insts, qubits, withNoise = noiseEnabled, profile = noiseProfile) => {
     setIsSimulating(true);
     const circ = { num_qubits: qubits ?? numQubits, instructions: insts ?? instructions };
     try {
@@ -45,7 +47,12 @@ function QuantumLeapApp() {
         fetch(`${API}/simulation/run`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ shots: 1024, circuit: circ }),
+          body: JSON.stringify({
+            shots: 1024,
+            circuit: circ,
+            noise_enabled: withNoise,
+            noise_profile: profile,
+          }),
         }).then((r) => r.json()),
         fetch(`${API}/simulation/statevector`, {
           method: "POST",
@@ -62,7 +69,7 @@ function QuantumLeapApp() {
     }
   };
 
-  useEffect(() => { executeSimulation(); }, []); // eslint-disable-line
+  useEffect(() => { executeSimulation(); }, [noiseEnabled, noiseProfile]); // eslint-disable-line
 
   const handleLoadPreset = async (presetTarget) => {
     try {
@@ -125,8 +132,18 @@ function QuantumLeapApp() {
               onRunSimulation={() => executeSimulation()}
               isSimulating={isSimulating}
               onLoadPreset={handleLoadPreset}
+              noiseEnabled={noiseEnabled}
+              onToggleNoise={() => setNoiseEnabled((prev) => !prev)}
+              noiseProfile={noiseProfile}
+              onSelectNoiseProfile={setNoiseProfile}
+              onOpenExport={() => setIsExportOpen(true)}
             />
-            <MeasurementView simulationResult={simulationResult} statevectorData={statevectorData} />
+            <MeasurementView
+              simulationResult={simulationResult}
+              statevectorData={statevectorData}
+              noiseEnabled={noiseEnabled}
+              noiseProfile={noiseProfile}
+            />
           </div>
 
           {/* Right Column */}
