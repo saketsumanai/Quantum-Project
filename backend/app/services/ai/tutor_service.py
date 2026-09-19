@@ -20,6 +20,11 @@ from dotenv import load_dotenv
 load_dotenv()
 load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.env")))
 
+# Enforce PyTorch backend for sentence-transformers to avoid Keras 3 / TensorFlow conflicts
+os.environ["USE_TF"] = "0"
+os.environ["USE_TORCH"] = "1"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
 from backend.app.models.schemas import (
     AITutorQueryRequest,
     AITutorQueryResponse,
@@ -459,6 +464,11 @@ class ChromaSearcher:
                     "text": doc,
                     "source": meta.get("source", "Quantum Reference Corpus"),
                     "doc_name": meta.get("doc_name", ""),
+                    "title": meta.get("title", meta.get("doc_name", "")),
+                    "author": meta.get("author", ""),
+                    "category": meta.get("category", ""),
+                    "page_number": meta.get("page_number", 0),
+                    "chunk_type": meta.get("chunk_type", "textbook"),
                     "score": round(max(0.0, 1.0 - dist), 4),
                 })
             return hits
@@ -486,10 +496,18 @@ async def _query_groq_with_context(
 
     ctx_block = ""
     if context_passages:
-        ctx_block = "\n\n".join([
-            f"[Source: {p['source']}]\n{p['text'][:800]}"
-            for p in context_passages[:4]
-        ])
+        ctx_lines = []
+        for p in context_passages[:4]:
+            source_parts = []
+            title = p.get("title") or p.get("source", "Quantum Corpus")
+            source_parts.append(title)
+            if p.get("author"):
+                source_parts.append(f"by {p['author']}")
+            if p.get("page_number") and int(p.get("page_number", 0)) > 0:
+                source_parts.append(f"Page {p['page_number']}")
+            citation_tag = " | ".join(source_parts)
+            ctx_lines.append(f"[{citation_tag}]\n{p['text']}")
+        ctx_block = "\n\n".join(ctx_lines)
 
     level_instructions = {
         "beginner": (

@@ -1,5 +1,83 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { COURSES_DETAILED_CONTENT, DETAILED_MODULES } from "../data/coursesData";
+import TextbookReaderModal from "./TextbookReaderModal";
+import MathBlock from "./MathBlock";
+
+// ─── Dirac Quantum Competency Badges Catalog ──────────────────────────────────
+const DIRAC_BADGES_CATALOG = [
+  {
+    id: "superposition_apprentice",
+    title: "Superposition Apprentice",
+    symbol: "|0⟩ → |+⟩",
+    formula: "\\langle\\psi|\\psi\\rangle = |\\alpha|^2 + |\\beta|^2 = 1.00",
+    desc: "Single-qubit statevectors and Hadamard basis transformations",
+    preset: "superposition",
+    requiredUnit: "unit-1"
+  },
+  {
+    id: "epr_pioneer",
+    title: "Entanglement Pioneer",
+    symbol: "|Φ⁺⟩",
+    formula: "|\\Phi^+\\rangle = \\frac{1}{\\sqrt{2}}(|00\\rangle + |11\\rangle)",
+    desc: "Maximally entangled Bell pairs and non-local correlations",
+    preset: "bell_state",
+    requiredUnit: "unit-3"
+  },
+  {
+    id: "oracle_seeker",
+    title: "Quantum Oracle Seeker",
+    symbol: "G_oracle",
+    formula: "G = (2|s\\rangle\\langle s| - I) R_\\omega",
+    desc: "Grover amplitude amplification achieving quadratic speedup",
+    preset: "grover_2qubit",
+    requiredUnit: "grover-mod"
+  },
+  {
+    id: "fourier_analyst",
+    title: "Fourier Phase Analyst",
+    symbol: "QFT",
+    formula: "|j\\rangle \\mapsto \\frac{1}{\\sqrt{N}} \\sum_{k=0}^{N-1} e^{2\\pi i j k / N}|k\\rangle",
+    desc: "Discrete quantum amplitude to relative phase frequency mapping",
+    preset: "qft",
+    requiredUnit: "qft-mod"
+  },
+  {
+    id: "shor_cryptanalyst",
+    title: "Shor Factorization Analyst",
+    symbol: "aʳ ≡ 1",
+    formula: "a^r \\equiv 1 \\pmod N \\implies \\gcd(a^{r/2} \\pm 1, N)",
+    desc: "Polynomial-time order finding for modular exponential period",
+    preset: "shor_15",
+    requiredUnit: "shor-mod"
+  },
+  {
+    id: "variational_solver",
+    title: "Variational Eigensolver",
+    symbol: "⟨H⟩_θ",
+    formula: "\\langle\\psi(\\theta)| H |\\psi(\\theta)\\rangle \\ge E_0",
+    desc: "Molecular Hamiltonian simulation via hybrid optimization",
+    preset: "vqe_h2",
+    requiredUnit: "vqe-mod"
+  },
+  {
+    id: "stabilizer_guardian",
+    title: "Stabilizer Guardian",
+    symbol: "S|ψ⟩ = +|ψ⟩",
+    formula: "S_i |\\psi_L\\rangle = +1 |\\psi_L\\rangle, \\quad \\forall S_i \\in \\mathcal{S}",
+    desc: "Quantum state protection via syndrome parity measurements",
+    preset: "qec_bitflip",
+    requiredUnit: "qec-mod"
+  },
+  {
+    id: "fault_tolerant_architect",
+    title: "Fault-Tolerant Architect",
+    symbol: "d = 3 Surface",
+    formula: "H_X, H_Z \\text{ Plaquettes} \\implies P_L < 10^{-6}",
+    desc: "Topological error suppression on 2D rotated surface codes",
+    preset: "surface_code",
+    requiredUnit: "surface-codes"
+  }
+];
 
 // ─── Course Catalog & Paths ──────────────────────────────────────────────────
 
@@ -384,12 +462,20 @@ function ModuleDetailModal({ module, onClose, onOpenStudio }) {
 
 // ─── Comprehensive Course Viewer (Full Lesson Study Hall) ───────────────────────
 
-function CourseViewer({ course, onBack, onOpenStudio }) {
+function CourseViewer({ course, onBack, onOpenStudio, onOpenTextbook, onCompleteLesson, completedLessonIds }) {
   const courseDetails = COURSES_DETAILED_CONTENT[course.id] || COURSES_DETAILED_CONTENT["basics-qi"];
   const units = courseDetails.units || [];
 
   const [activeUnitIdx, setActiveUnitIdx] = useState(0);
-  const [completedUnits, setCompletedUnits] = useState(new Set([0]));
+  const [completedUnits, setCompletedUnits] = useState(() => {
+    const initial = new Set([0]);
+    if (completedLessonIds) {
+      units.forEach((u, i) => {
+        if (completedLessonIds.has(u.id)) initial.add(i);
+      });
+    }
+    return initial;
+  });
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizSubmitted, setQuizSubmitted] = useState({});
   const [copiedIndex, setCopiedIndex] = useState(null);
@@ -397,10 +483,17 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
   const activeUnit = units[activeUnitIdx] || units[0];
 
   const handleToggleComplete = (idx) => {
+    const unit = units[idx];
     setCompletedUnits(prev => {
       const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
+      if (next.has(idx)) {
+        next.delete(idx);
+      } else {
+        next.add(idx);
+        if (onCompleteLesson && unit) {
+          onCompleteLesson(unit.id, course.id, 50);
+        }
+      }
       return next;
     });
   };
@@ -421,6 +514,9 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
     // Automatically mark unit complete if answered correctly
     if (quizAnswers[unitId] === activeUnit.quiz?.correctIndex) {
       setCompletedUnits(prev => new Set(prev).add(activeUnitIdx));
+      if (onCompleteLesson) {
+        onCompleteLesson(unitId, course.id, 50);
+      }
     }
   };
 
@@ -781,12 +877,25 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
               Run the code for {activeUnit.title} in the virtual QPU
             </div>
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            {onOpenTextbook && (
+              <button
+                onClick={() => onOpenTextbook(activeUnit.title)}
+                style={{
+                  padding: "12px 20px", background: "#18181b", border: "1px solid #27272a",
+                  color: "#ffffff", fontWeight: 600, fontSize: "0.88rem", cursor: "pointer",
+                  borderRadius: "4px"
+                }}
+              >
+                Read Textbook Excerpt
+              </button>
+            )}
             <button
               onClick={() => onOpenStudio(activeUnit.circuitPreset || "superposition")}
               style={{
                 padding: "12px 24px", background: "#0F62FE", border: "none",
-                color: "#fff", fontWeight: 600, fontSize: "0.88rem", cursor: "pointer"
+                color: "#fff", fontWeight: 600, fontSize: "0.88rem", cursor: "pointer",
+                borderRadius: "4px"
               }}
             >
               Open in Circuit Studio →
@@ -826,8 +935,21 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
         {/* ── Textbook Citations ── */}
         {courseDetails.citations && (
           <div style={{ marginTop: "16px", padding: "16px 20px", background: "var(--ql-layer-02)", border: "1px solid var(--ql-border)" }}>
-            <div style={{ fontSize: "0.72rem", color: "var(--ql-text-helper)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
-              Textbook References (Indexed in ChromaDB RAG Corpus)
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
+              <div style={{ fontSize: "0.72rem", color: "var(--ql-text-helper)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Textbook References (Indexed in ChromaDB RAG Corpus)
+              </div>
+              {onOpenTextbook && (
+                <button
+                  onClick={() => onOpenTextbook(courseDetails.courseLabel || "")}
+                  style={{
+                    background: "none", border: "none", color: "#78A9FF", fontSize: "0.78rem",
+                    fontWeight: 600, cursor: "pointer", padding: 0
+                  }}
+                >
+                  Browse 76-Book Library →
+                </button>
+              )}
             </div>
             <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.82rem", color: "var(--ql-text-secondary)", lineHeight: 1.7 }}>
               {courseDetails.citations.map((cite, cIdx) => (
@@ -844,11 +966,78 @@ function CourseViewer({ course, onBack, onOpenStudio }) {
 // ─── Main Learning Hub Component ──────────────────────────────────────────────
 
 export default function LearningHub({ onSwitchToStudio }) {
-  const [activeTab, setActiveTab] = useState("home"); // home | courses | modules
+  const [activeTab, setActiveTab] = useState("home"); // home | courses | modules | library
   const [activePathFilter, setActivePathFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCourse, setActiveCourse] = useState(null);
   const [activeModuleModal, setActiveModuleModal] = useState(null);
+
+  // Gamified Dirac Mastery State
+  const [userXp, setUserXp] = useState(() => {
+    const saved = localStorage.getItem("ql_user_xp");
+    return saved ? parseInt(saved, 10) : 150;
+  });
+  const [completedLessons, setCompletedLessons] = useState(() => {
+    try {
+      const saved = localStorage.getItem("ql_completed_lessons");
+      return saved ? new Set(JSON.parse(saved)) : new Set(["unit-1", "lesson_1_1"]);
+    } catch {
+      return new Set(["unit-1", "lesson_1_1"]);
+    }
+  });
+
+  // Textbook Reader Modal State
+  const [isTextbookOpen, setIsTextbookOpen] = useState(false);
+  const [textbookSearch, setTextbookSearch] = useState("");
+  const [textbookCategory, setTextbookCategory] = useState("");
+
+  // Sync progress on mount from backend
+  useEffect(() => {
+    fetch("http://localhost:8000/api/v1/curriculum/progress")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.success) {
+          if (data.total_xp) {
+            setUserXp(data.total_xp);
+            localStorage.setItem("ql_user_xp", data.total_xp.toString());
+          }
+          if (Array.isArray(data.completed_lessons) && data.completed_lessons.length > 0) {
+            setCompletedLessons(prev => {
+              const combined = new Set([...prev, ...data.completed_lessons]);
+              localStorage.setItem("ql_completed_lessons", JSON.stringify(Array.from(combined)));
+              return combined;
+            });
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleCompleteLesson = (lessonId, moduleId, scoreDelta = 50) => {
+    setCompletedLessons(prev => {
+      const next = new Set(prev);
+      next.add(lessonId);
+      localStorage.setItem("ql_completed_lessons", JSON.stringify(Array.from(next)));
+      return next;
+    });
+    setUserXp(prev => {
+      const next = prev + scoreDelta;
+      localStorage.setItem("ql_user_xp", next.toString());
+      return next;
+    });
+
+    fetch("http://localhost:8000/api/v1/curriculum/progress/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lesson_id: lessonId, module_id: moduleId || "course", score_delta: scoreDelta })
+    }).catch(() => {});
+  };
+
+  const handleOpenTextbook = (topic = "", category = "") => {
+    setTextbookSearch(topic);
+    setTextbookCategory(category);
+    setIsTextbookOpen(true);
+  };
 
   const handleEnroll = (course) => setActiveCourse(course);
   const handlePathSelect = (path) => {
@@ -873,6 +1062,16 @@ export default function LearningHub({ onSwitchToStudio }) {
           course={activeCourse}
           onBack={() => setActiveCourse(null)}
           onOpenStudio={onSwitchToStudio}
+          onOpenTextbook={handleOpenTextbook}
+          onCompleteLesson={handleCompleteLesson}
+          completedLessonIds={completedLessons}
+        />
+        <TextbookReaderModal
+          isOpen={isTextbookOpen}
+          onClose={() => setIsTextbookOpen(false)}
+          initialSearch={textbookSearch}
+          initialCategory={textbookCategory}
+          onOpenStudio={onSwitchToStudio}
         />
       </div>
     );
@@ -889,13 +1088,28 @@ export default function LearningHub({ onSwitchToStudio }) {
         />
       )}
 
+      {/* Textbook Reader Modal */}
+      <TextbookReaderModal
+        isOpen={isTextbookOpen}
+        onClose={() => setIsTextbookOpen(false)}
+        initialSearch={textbookSearch}
+        initialCategory={textbookCategory}
+        onOpenStudio={onSwitchToStudio}
+      />
+
       {/* ── Inner Navigation Bar ── */}
       <div style={{ borderBottom: "1px solid var(--ql-border)", background: "var(--ql-layer-01)" }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", gap: "0" }}>
-          {["home", "courses", "modules"].map(tab => (
+          {["home", "courses", "modules", "library"].map(tab => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                if (tab === "library") {
+                  setIsTextbookOpen(true);
+                } else {
+                  setActiveTab(tab);
+                }
+              }}
               style={{
                 padding: "16px 20px",
                 background: "none", border: "none",
@@ -905,7 +1119,7 @@ export default function LearningHub({ onSwitchToStudio }) {
                 cursor: "pointer", transition: "all 0.15s ease", textTransform: "capitalize",
               }}
             >
-              {tab === "home" ? "Learning" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === "home" ? "Learning" : tab === "library" ? "76-Book Library" : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -972,6 +1186,107 @@ export default function LearningHub({ onSwitchToStudio }) {
                   <text x="80" y="32" fill="#c6c6c6" fontSize="12" fontFamily="IBM Plex Mono, monospace" opacity="0.7">|ψ⟩ = α|0⟩ + β|1⟩</text>
                   <text x="240" y="170" fill="#78A9FF" fontSize="11" fontFamily="IBM Plex Mono, monospace" opacity="0.7">7,323 chunks indexed from 76 books</text>
                 </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Dirac Quantum Mastery & Badges Shelf */}
+          <div style={{ background: "#09090b", borderBottom: "1px solid #27272a", padding: "36px 32px" }}>
+            <div style={{ maxWidth: "1400px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+                <div>
+                  <div style={{ fontSize: "0.72rem", color: "#a1a1aa", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+                    Gamified Dirac Verification Protocol
+                  </div>
+                  <h2 style={{ fontSize: "1.6rem", fontWeight: 600, color: "#ffffff", margin: "4px 0 0 0", fontFamily: "'Poppins', sans-serif" }}>
+                    Dirac Mathematical Mastery Badges
+                  </h2>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{
+                    padding: "8px 16px", background: "#18181b", border: "1px solid #27272a", borderRadius: "4px",
+                    display: "flex", alignItems: "center", gap: "8px"
+                  }}>
+                    <span style={{ fontSize: "0.74rem", color: "#a1a1aa", textTransform: "uppercase", fontFamily: "'JetBrains Mono', monospace" }}>
+                      Score
+                    </span>
+                    <span style={{ fontSize: "1.1rem", fontWeight: 700, color: "#ffffff", fontFamily: "'JetBrains Mono', monospace" }}>
+                      {userXp} XP
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setIsTextbookOpen(true)}
+                    style={{
+                      padding: "8px 18px", background: "#ffffff", color: "#000000", border: "none",
+                      borderRadius: "4px", fontWeight: 600, fontSize: "0.82rem", cursor: "pointer",
+                      fontFamily: "'Poppins', sans-serif"
+                    }}
+                  >
+                    Open 76-Book Library
+                  </button>
+                </div>
+              </div>
+
+              {/* Badges Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+                {DIRAC_BADGES_CATALOG.map((badge) => {
+                  const isUnlocked = completedLessons.has(badge.requiredUnit) || (userXp >= 150 && badge.id === "superposition_apprentice");
+                  return (
+                    <div
+                      key={badge.id}
+                      style={{
+                        background: isUnlocked ? "#18181b" : "#0f0f11",
+                        border: `1px solid ${isUnlocked ? "#3f3f46" : "#27272a"}`,
+                        borderRadius: "6px", padding: "18px 20px",
+                        display: "flex", flexDirection: "column", gap: "10px",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: "0.86rem", fontWeight: 600, color: isUnlocked ? "#ffffff" : "#a1a1aa", fontFamily: "'Poppins', sans-serif" }}>
+                          {badge.title}
+                        </span>
+                        <span style={{
+                          fontSize: "0.68rem", fontWeight: 700, padding: "2px 8px", borderRadius: "3px",
+                          background: isUnlocked ? "#27272a" : "#18181b",
+                          color: isUnlocked ? "#ffffff" : "#71717a",
+                          border: `1px solid ${isUnlocked ? "#52525b" : "#27272a"}`,
+                          fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase"
+                        }}>
+                          {isUnlocked ? "Verified" : "Locked"}
+                        </span>
+                      </div>
+
+                      <div style={{
+                        background: "#000000", border: "1px solid #27272a", borderRadius: "4px",
+                        padding: "8px 12px", overflowX: "auto"
+                      }}>
+                        <MathBlock math={badge.formula} inline={false} />
+                      </div>
+
+                      <p style={{ fontSize: "0.78rem", color: "#a1a1aa", margin: 0, lineHeight: 1.5 }}>
+                        {badge.desc}
+                      </p>
+
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", paddingTop: "8px", borderTop: "1px solid #27272a" }}>
+                        <span style={{ fontSize: "0.7rem", color: isUnlocked ? "#e4e4e7" : "#71717a", fontFamily: "'JetBrains Mono', monospace" }}>
+                          {isUnlocked ? "Proof: Normalized" : "Pending completion"}
+                        </span>
+                        <button
+                          onClick={() => onSwitchToStudio(badge.preset)}
+                          style={{
+                            background: "transparent", border: "none", color: "#ffffff",
+                            fontSize: "0.76rem", fontWeight: 600, cursor: "pointer", padding: 0
+                          }}
+                        >
+                          Simulate in Studio →
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

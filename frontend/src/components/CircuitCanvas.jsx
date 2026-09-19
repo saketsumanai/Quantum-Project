@@ -141,12 +141,26 @@ export default function CircuitCanvas({
               defaultValue=""
             >
               <option value="" disabled>Load Algorithm...</option>
-              <option value="bell_state">Bell State (|Phi+&gt;)</option>
-              <option value="ghz_state">GHZ State (3-Qubit)</option>
-              <option value="superposition">Single Qubit Superposition</option>
-              <option value="grover_2qubit">Grover 2-Qubit Search</option>
-              <option value="deutsch_jozsa">Deutsch-Jozsa Algorithm</option>
-              <option value="quantum_teleportation">Quantum Teleportation</option>
+              <optgroup label="Foundations">
+                <option value="superposition">Single Qubit Superposition</option>
+                <option value="bell_state">Bell State (|Phi+&gt;)</option>
+                <option value="ghz_state">GHZ State (3-Qubit)</option>
+                <option value="quantum_teleportation">Quantum Teleportation</option>
+              </optgroup>
+              <optgroup label="Quantum Algorithms">
+                <option value="deutsch_jozsa">Deutsch-Jozsa Algorithm</option>
+                <option value="grover_2qubit">Grover 2-Qubit Search</option>
+                <option value="qft">Quantum Fourier Transform (QFT)</option>
+                <option value="shor_15">Shor Factorization (N=15)</option>
+              </optgroup>
+              <optgroup label="Variational & QML">
+                <option value="vqe_h2">VQE Molecular H2 Ansatz</option>
+                <option value="qml_kernel">QML Parameterized Feature Map</option>
+              </optgroup>
+              <optgroup label="Fault Tolerance & QEC">
+                <option value="qec_bitflip">3-Qubit Bit-Flip Code</option>
+                <option value="surface_code">Rotated Surface Code Plaquette</option>
+              </optgroup>
             </select>
           </div>
         </div>

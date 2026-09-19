@@ -64,21 +64,24 @@ function QuantumLeapApp() {
 
   useEffect(() => { executeSimulation(); }, []); // eslint-disable-line
 
-  const handleLoadPreset = async (presetKey) => {
+  const handleLoadPreset = async (presetTarget) => {
     try {
-      const preset = await fetch(`${API}/curriculum/presets/${presetKey}`).then((r) => r.json());
-      setNumQubits(preset.num_qubits);
-      setInstructions(preset.instructions);
-      executeSimulation(preset.instructions, preset.num_qubits);
+      let preset = presetTarget;
+      if (typeof presetTarget === "string") {
+        preset = await fetch(`${API}/curriculum/presets/${presetTarget}`).then((r) => r.json());
+      }
+      if (preset && preset.num_qubits && preset.instructions) {
+        setNumQubits(preset.num_qubits);
+        setInstructions(preset.instructions);
+        executeSimulation(preset.instructions, preset.num_qubits);
+      }
     } catch (err) {
       console.error("Preset load error:", err);
     }
   };
 
   const handleLoadCircuitFromCurriculum = (presetCircuit) => {
-    setNumQubits(presetCircuit.num_qubits);
-    setInstructions(presetCircuit.instructions);
-    executeSimulation(presetCircuit.instructions, presetCircuit.num_qubits);
+    handleLoadPreset(presetCircuit);
   };
 
   return (

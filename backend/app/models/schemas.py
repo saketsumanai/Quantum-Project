@@ -143,3 +143,36 @@ class CurriculumModule(BaseModel):
     icon: str
     description: str
     lessons: List[CurriculumLesson]
+
+# --- Progress & Library Schemas ---
+class LessonCompletionRequest(BaseModel):
+    lesson_id: str
+    module_id: str
+    score_delta: Optional[int] = 50
+
+class DiracBadge(BaseModel):
+    id: str
+    title: str
+    symbol: str
+    latex_verification: str
+    description: str
+    unlocked: bool
+    unlocked_at: Optional[str] = None
+
+class UserProgressResponse(BaseModel):
+    success: bool
+    total_xp: int
+    completed_lessons: List[str]
+    badges: List[DiracBadge]
+    overall_mastery_pct: float
+
+class BookEntry(BaseModel):
+    id: int
+    title: str
+    author: str
+    category: str
+    year: Optional[int] = None
+    reference: Optional[str] = None
+    url: Optional[str] = None
+    key_concepts: List[str] = []
+    training_vector_summary: Optional[str] = None
