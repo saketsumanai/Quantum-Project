@@ -47,7 +47,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
   const [dubVolume, setDubVolume] = useState(1.0);
   const [showApiModal, setShowApiModal] = useState(false);
   const [showFullScript, setShowFullScript] = useState(false);
-  const [sarvamKey, setSarvamKey] = useState(() => localStorage.getItem("ql_sarvam_key") || "sk_xk71dv2q_mLRlXVxj0Yc37Limec9NQOIS");
+  const [sarvamKey, setSarvamKey] = useState(() => localStorage.getItem("ql_sarvam_key") || import.meta.env.VITE_SARVAM_API_KEY || "");
   const [elevenLabsKey, setElevenLabsKey] = useState(() => localStorage.getItem("ql_elevenlabs_key") || "");
   const [saveKeySuccess, setSaveKeySuccess] = useState(false);
   const activeAudioRef = React.useRef(null);

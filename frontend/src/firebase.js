@@ -27,13 +27,13 @@ import {
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDv6Lak1Ourt6-peOUyx39e3mPFAXMRvL8",
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "quantumleap-4a8d6.firebaseapp.com",
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID || "quantumleap-4a8d6",
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "quantumleap-4a8d6.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "250509811415",
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID || "1:250509811415:web:75d31baf413f202e139a92",
-  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-Q0L5TJZM6X",
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
 };
 
 // Prevent "duplicate app" error during Vite HMR hot reloads

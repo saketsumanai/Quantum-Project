@@ -11,14 +11,14 @@ import time
 import requests
 from typing import Dict, Any, Optional, List
 
-IBM_INSTANCE_CRN = "crn:v1:bluemix:public:quantum-computing:us-east:a/59113981b98048e88547611e31a1d6de:a71cfdd8-2c74-4a0f-a5e2-0470e5e59a85::"
+IBM_INSTANCE_CRN = os.getenv("IBM_QUANTUM_CRN", "")
 IBM_BASE_URL = "https://us-east.quantum-computing.cloud.ibm.com"
 
 class BlueQubitProvider:
     """Manages BlueQubit Cloud quantum simulations."""
     
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("BLUEQUBIT_API_KEY", "7BBjVFW7Iw72W3UcEdDThy98sYZXqOoK")
+        self.api_key = api_key or os.getenv("BLUEQUBIT_API_KEY", "")
         self._client = None
         self._is_available = False
         self._init_client()
@@ -80,7 +80,7 @@ class IBMQuantumProvider:
     """Manages IBM Quantum Cloud authentication and QPU access."""
 
     def __init__(self, api_key: Optional[str] = None, crn: Optional[str] = None):
-        self.api_key = api_key or os.getenv("IBM_QUANTUM_API_KEY") or os.getenv("IBM_QUANTUM_TOKEN", "Wgswae5-Wg0qQDLKsS_rAatbcUn7h91X5LgL1jIxDAVo")
+        self.api_key = api_key or os.getenv("IBM_QUANTUM_API_KEY") or os.getenv("IBM_QUANTUM_TOKEN", "")
         self.crn = crn or os.getenv("IBM_QUANTUM_CRN", IBM_INSTANCE_CRN)
         self._access_token: Optional[str] = None
         self._token_expiry: float = 0.0
