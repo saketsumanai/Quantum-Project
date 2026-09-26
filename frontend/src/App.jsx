@@ -104,7 +104,11 @@ function QuantumLeapApp() {
     }
   };
 
-  useEffect(() => { executeSimulation(); }, [noiseEnabled, noiseProfile]); // eslint-disable-line
+  useEffect(() => { 
+    if (activeTab === "studio" || !simulationResult) {
+      executeSimulation();
+    }
+  }, [activeTab, noiseEnabled, noiseProfile]); // eslint-disable-line
 
   const handleLoadPreset = async (presetTarget) => {
     try {

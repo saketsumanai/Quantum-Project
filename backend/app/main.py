@@ -75,6 +75,23 @@ def _init_db():
     print("[Database] ✅ SQLite tables created / verified.")
 
 
+from contextlib import asynccontextmanager
+import threading
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Pre-warm ChromaDB & SentenceTransformer in background thread
+    def _warmup_rag():
+        try:
+            from backend.app.services.ai.tutor_service import _chroma_searcher
+            _chroma_searcher.search("quantum superposition", top_k=1)
+            print("[RAG] 🚀 ChromaDB & SentenceTransformer pre-warmed for ultra-fast queries.")
+        except Exception as e:
+            print(f"[RAG] Warmup notice: {e}")
+
+    threading.Thread(target=_warmup_rag, daemon=True).start()
+    yield
+
 # ─── App Factory ─────────────────────────────────────────────────────────────
 _init_firebase()
 _init_db()
@@ -85,6 +102,7 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────

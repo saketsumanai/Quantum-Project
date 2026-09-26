@@ -49,6 +49,10 @@ fi
 echo "🗄️  SQLite database will initialize on backend startup..."
 
 # ─── 5. Start Backend ─────────────────────────────────────────────────────────
+# Clean up any lingering processes on ports 8000 & 5173 to ensure fresh, instant boot
+lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+lsof -ti :5173 | xargs kill -9 2>/dev/null || true
+
 echo "⚡ Starting FastAPI backend on http://localhost:8000..."
 PYTHONPATH=. ./.venv/bin/uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
@@ -58,6 +62,8 @@ cleanup() {
     echo "🛑 Shutting down Quantum Leap services..."
     kill -9 $BACKEND_PID 2>/dev/null || true
     kill -9 $FRONTEND_PID 2>/dev/null || true
+    lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+    lsof -ti :5173 | xargs kill -9 2>/dev/null || true
     exit 0
 }
 trap cleanup SIGINT SIGTERM EXIT

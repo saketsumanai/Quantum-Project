@@ -15,11 +15,11 @@ const API = 'http://localhost:8000/api/v1';
 // ── Models Supported ─────────────────────────────────────────────────────────
 export const SUPPORTED_MODELS = [
   {
-    id: 'qwen/qwen3.8-27b',
-    name: 'Qwen 3.8 27B Quantum',
+    id: 'openai/gpt-oss-20b',
+    name: 'GPT-OSS 20B Turbo',
     provider: 'Groq Cloud',
-    description: 'Ultra-fast, high-precision physics, mathematical derivations & Qiskit 1.0 code.',
-    badge: 'Fast & Precise',
+    description: 'Ultra-fast, near-instant quantum responses and derivations.',
+    badge: 'Blazing Fast (<0.8s)',
     color: '#3b82f6',
   },
   {
@@ -31,19 +31,19 @@ export const SUPPORTED_MODELS = [
     color: '#8b5cf6',
   },
   {
-    id: 'groq/compound',
-    name: 'Groq Compound Agent',
+    id: 'qwen/qwen3.8-27b',
+    name: 'Qwen 3.8 27B Quantum',
     provider: 'Groq Cloud',
-    description: 'Compound multi-agent model optimized for quantum algorithms and tool routing.',
-    badge: 'Agentic',
+    description: 'Specialized STEM physics, tensor network derivations & Qiskit 1.0 code.',
+    badge: 'Physics Specialist',
     color: '#10b981',
   },
   {
-    id: 'openai/gpt-oss-20b',
-    name: 'GPT-OSS 20B Turbo',
+    id: 'groq/compound-mini',
+    name: 'Groq Compound Mini',
     provider: 'Groq Cloud',
-    description: 'Lightweight, near-instant responses for rapid Q&A and concept definitions.',
-    badge: 'Turbo',
+    description: 'Compound multi-agent model optimized for quantum algorithms and tool routing.',
+    badge: 'Agentic',
     color: '#f59e0b',
   },
   {

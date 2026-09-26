@@ -186,18 +186,18 @@ Difficulty: {request.difficulty}
 
 Return ONLY valid JSON array:
 [{{"id":"q1","question":"...","options":["A","B","C","D"],"correct_index":0,"explanation":"...","topic":"...","formula":"optional LaTeX"}}]"""
-            async with httpx.AsyncClient(timeout=20.0) as client:
+            async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {groq_key}"},
                     json={
-                        "model": "llama-3.3-70b-versatile",
+                        "model": "openai/gpt-oss-20b",
                         "response_format": {"type": "json_object"},
                         "messages": [
                             {"role": "system", "content": "You are an expert quantum computing professor. Generate quiz questions as valid JSON only."},
                             {"role": "user", "content": prompt}
                         ],
-                        "temperature": 0.3, "max_tokens": 2000
+                        "temperature": 0.3, "max_tokens": 1500
                     }
                 )
                 if resp.status_code == 200:

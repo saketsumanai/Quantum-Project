@@ -668,10 +668,9 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
     messages.append({"role": "user", "content": current_prompt})
 
     candidate_models = [
-        "qwen/qwen3.8-27b",
-        "openai/gpt-oss-120b",
-        "groq/compound",
         "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+        "qwen/qwen3.8-27b",
         "groq/compound-mini",
     ]
     if preferred_model and preferred_model != "auto" and preferred_model in candidate_models:
@@ -680,7 +679,9 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
 
     for model_name in candidate_models:
         try:
-            async with httpx.AsyncClient(timeout=18.0) as client:
+            # Dynamic token budget: Qwen preview has 1000 OTPM cap; GPT-OSS models have large limits
+            token_budget = 900 if "qwen" in model_name else 1500
+            async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {groq_key}"},
@@ -689,7 +690,7 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
                         "response_format": {"type": "json_object"},
                         "messages": messages,
                         "temperature": 0.25,
-                        "max_tokens": 1800,
+                        "max_tokens": token_budget,
                     },
                 )
                 if resp.status_code == 200:
@@ -702,9 +703,10 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
                     display_name = (
                         model_name
                         .replace("openai/gpt-oss-120b", "GPT-OSS 120B (Groq)")
+                        .replace("groq/compound-mini", "Groq Compound Mini")
                         .replace("groq/compound", "Groq Compound")
                         .replace("qwen/qwen3.8-27b", "Qwen 3.8 27B")
-                        .replace("openai/gpt-oss-20b", "GPT-OSS 20B")
+                        .replace("openai/gpt-oss-20b", "GPT-OSS 20B Turbo")
                     )
                     res["_active_model"] = display_name
                     res["_rag_active"] = len(context_passages) > 0

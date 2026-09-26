@@ -628,10 +628,10 @@ async def generate_ai_quiz_endpoint(request: AIQuizGenerateRequest):
     load_dotenv(override=False)
     groq_key = (os.getenv("GROQ_API_KEY") or "").strip()
     candidate_models = [
-        "qwen/qwen3.8-27b",       # Qwen 27B: ultra-fast (<1s) and superior STEM math reasoning
-        "groq/compound",          # Groq compound model (~0.9s)
-        "openai/gpt-oss-120b",    # 120B model
-        "openai/gpt-oss-20b",     # Fast fallback
+        "openai/gpt-oss-20b",     # Fast generation (<0.9s)
+        "openai/gpt-oss-120b",    # 120B high-reasoning model
+        "qwen/qwen3.8-27b",       # Qwen 27B
+        "groq/compound-mini",     # Fast compound fallback
     ]
     models_to_try = list(dict.fromkeys(m for m in candidate_models if m))
 
@@ -682,6 +682,7 @@ Generate {count} {diff} multiple-choice questions specifically testing the mater
         for model_name in models_to_try:
             try:
                 async with httpx.AsyncClient(timeout=15.0) as client:
+                    token_budget = 900 if "qwen" in model_name else 1600
                     resp = await client.post(
                         "https://api.groq.com/openai/v1/chat/completions",
                         headers={
@@ -696,7 +697,7 @@ Generate {count} {diff} multiple-choice questions specifically testing the mater
                                 {"role": "user", "content": user_prompt},
                             ],
                             "temperature": 0.2,
-                            "max_tokens": 1800,
+                            "max_tokens": token_budget,
                         },
                     )
                     if resp.status_code == 200:
