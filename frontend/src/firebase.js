@@ -27,35 +27,45 @@ import {
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID || "",
-  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDv6Lak1Ourt6-peOUyx39e3mPFAXMRvL8",
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "quantumleap-4a8d6.firebaseapp.com",
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID || "quantumleap-4a8d6",
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "quantumleap-4a8d6.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "250509811415",
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID || "1:250509811415:web:75d31baf413f202e139a92",
+  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-Q0L5TJZM6X",
 };
 
 // Prevent "duplicate app" error during Vite HMR hot reloads
-export const app = getApps().length === 0
-  ? initializeApp(firebaseConfig)
-  : getApp();
+let appInstance = null;
+let authInstance = null;
+let googleProviderInstance = null;
+let dbInstance = null;
 
-// Auth instance
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: "select_account" });
+try {
+  appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  authInstance = getAuth(appInstance);
+  googleProviderInstance = new GoogleAuthProvider();
+  googleProviderInstance.setCustomParameters({ prompt: "select_account" });
+  dbInstance = getFirestore(appInstance);
+} catch (err) {
+  console.warn("[Firebase] Initialization warning (falling back to offline/local fallback mode):", err);
+}
 
-// Cloud Firestore Database instance
-export const db = getFirestore(app);
+export const app = appInstance;
+export const auth = authInstance;
+export const googleProvider = googleProviderInstance;
+export const db = dbInstance;
 
 // Analytics — only initialize in supported browser environments
 export let analytics = null;
-isSupported().then((supported) => {
-  if (supported) {
-    analytics = getAnalytics(app);
-  }
-}).catch(() => {});
+if (app) {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  }).catch(() => {});
+}
 
 // ─── Authentication Functions ─────────────────────────────────────────────────
 

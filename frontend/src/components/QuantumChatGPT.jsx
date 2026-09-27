@@ -1,23 +1,27 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Send, Plus, Trash2, Copy, Check, ChevronDown, ChevronUp, Upload, BookOpen, X,
   Sun, Moon, Cpu, Zap, Globe, AlertTriangle, Sparkles, Volume2, VolumeX, Edit2,
-  Search, PanelLeftClose, PanelLeft, ArrowUpRight, ShieldCheck, Play, User, Terminal,
-  Layers, Lightbulb, Compass, Award, ExternalLink, HelpCircle
+  Search, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, ArrowUpRight,
+  ShieldCheck, Play, User, Terminal, Layers, Lightbulb, Compass, Award, ExternalLink, HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import MathRenderer, { LatexBlock } from './MathRenderer';
 import QuantumVisualizer from './QuantumVisualizer';
-import { INDIAN_LANGUAGES } from '../data/videoLecturesData';
+import QuantumFlashcards from './QuantumFlashcards';
+import CitationProjector from './CitationProjector';
+import QuantumStudio from './QuantumStudio';
+import { resolveCitationsForQuery, QUANTUM_TEXTBOOK_EXCERPTS } from '../data/quantumCitationsData';
+import { INDIAN_LANGUAGES, VIDEO_LECTURES } from '../data/videoLecturesData';
 
 const API = 'http://localhost:8000/api/v1';
 
 // ── Models Supported ─────────────────────────────────────────────────────────
-export const SUPPORTED_MODELS = [
+const SUPPORTED_MODELS = [
   {
     id: 'openai/gpt-oss-20b',
     name: 'GPT-OSS 20B Turbo',
-    provider: 'Groq Cloud',
+    provider: 'Neural Cluster',
     description: 'Ultra-fast, near-instant quantum responses and derivations.',
     badge: 'Blazing Fast (<0.8s)',
     color: '#3b82f6',
@@ -25,7 +29,7 @@ export const SUPPORTED_MODELS = [
   {
     id: 'openai/gpt-oss-120b',
     name: 'GPT-OSS 120B Reasoner',
-    provider: 'Groq Cloud',
+    provider: 'Neural Cluster',
     description: '120 Billion parameter deep chain-of-thought model for complex multi-step proofs.',
     badge: 'Deep Reasoning',
     color: '#8b5cf6',
@@ -33,15 +37,15 @@ export const SUPPORTED_MODELS = [
   {
     id: 'qwen/qwen3.8-27b',
     name: 'Qwen 3.8 27B Quantum',
-    provider: 'Groq Cloud',
-    description: 'Specialized STEM physics, tensor network derivations & Qiskit 1.0 code.',
+    provider: 'Neural Cluster',
+    description: 'Specialized STEM physics, tensor network derivations & executable quantum code.',
     badge: 'Physics Specialist',
     color: '#10b981',
   },
   {
     id: 'groq/compound-mini',
-    name: 'Groq Compound Mini',
-    provider: 'Groq Cloud',
+    name: 'Quantum Compound Reasoner',
+    provider: 'Neural Cluster',
     description: 'Compound multi-agent model optimized for quantum algorithms and tool routing.',
     badge: 'Agentic',
     color: '#f59e0b',
@@ -57,7 +61,7 @@ export const SUPPORTED_MODELS = [
 ];
 
 // ── Project Categories ────────────────────────────────────────────────────────
-export const PROJECT_CATEGORIES = [
+const PROJECT_CATEGORIES = [
   { id: 'all', name: 'All Chats', icon: Compass },
   { id: 'algorithms', name: 'Quantum Algorithms', icon: Zap },
   { id: 'circuits', name: 'Circuit Design & Qiskit', icon: Terminal },
@@ -67,7 +71,7 @@ export const PROJECT_CATEGORIES = [
 ];
 
 // ── Multilingual Starters ────────────────────────────────────────────────────
-export const MULTILINGUAL_STARTERS = {
+const MULTILINGUAL_STARTERS = {
   en: [
     { title: "Superposition with Analogy & Circuit", query: "Explain quantum superposition with an intuitive analogy, Qiskit 1.0+ code, and generate a circuit diagram" },
     { title: "Bell State & Entanglement Proof", query: "What are Bell states? Explain quantum entanglement, mathematical formulation, and draw the Bell state circuit" },
@@ -140,11 +144,11 @@ function CodeBlock({ code, language = 'python', onOpenInStudio }) {
   };
 
   return (
-    <div style={{ margin: '14px 0', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#0b0f19' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 14px', background: '#111827', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ margin: '14px 0', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)', background: '#09090d' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: '#121218', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Terminal size={12} color="#38bdf8" />
-          <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace" }}>{language}</span>
+          <Terminal size={13} color="#ffffff" />
+          <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontFamily: "'JetBrains Mono', monospace" }}>{language}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {onOpenInStudio && code.includes('QuantumCircuit') && (
@@ -154,17 +158,18 @@ function CodeBlock({ code, language = 'python', onOpenInStudio }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                background: 'rgba(59, 130, 246, 0.15)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                color: '#60a5fa',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.20)',
+                color: '#ffffff',
                 cursor: 'pointer',
-                fontSize: '0.7rem',
-                padding: '3px 8px',
+                fontSize: '0.72rem',
+                padding: '4px 9px',
                 borderRadius: 4,
-                fontWeight: 500,
+                fontWeight: 600,
+                fontFamily: "'Poppins', sans-serif",
               }}
             >
-              <ArrowUpRight size={11} /> Open in Studio
+              <ArrowUpRight size={12} /> Open in Studio
             </button>
           )}
           <button
@@ -176,17 +181,17 @@ function CodeBlock({ code, language = 'python', onOpenInStudio }) {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: '#94a3b8',
-              fontSize: '0.72rem',
+              color: '#a1a1aa',
+              fontSize: '0.74rem',
               padding: '2px 6px',
               borderRadius: 4,
             }}
           >
-            {copied ? <><Check size={12} color="#10b981" />Copied</> : <><Copy size={12} />Copy</>}
+            {copied ? <><Check size={12} color="#ffffff" />Copied</> : <><Copy size={12} />Copy</>}
           </button>
         </div>
       </div>
-      <pre style={{ padding: '14px 16px', margin: 0, overflowX: 'auto', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.80rem', lineHeight: 1.65, color: '#e2e8f0', background: '#0a0f1d' }}>
+      <pre style={{ padding: '16px 18px', margin: 0, overflowX: 'auto', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.86rem', lineHeight: 1.7, color: '#f4f4f5', background: '#09090d' }}>
         <code>{code}</code>
       </pre>
     </div>
@@ -203,26 +208,38 @@ function InlineQuiz({ quiz }) {
 
   return (
     <div style={{
-      background: 'linear-gradient(180deg, rgba(30, 58, 138, 0.12), rgba(15, 23, 42, 0.3))',
-      border: '1px solid rgba(59, 130, 246, 0.25)',
+      background: '#0d0d12',
+      border: '1px solid rgba(255, 255, 255, 0.14)',
       borderRadius: 10,
-      padding: 16,
-      margin: '16px 0',
+      padding: 18,
+      margin: '18px 0',
+      fontFamily: "'Poppins', sans-serif",
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 700, color: '#60a5fa', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-        <HelpCircle size={13} /> Conceptual Quick Check
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        fontSize: '0.85rem',
+        fontWeight: 800,
+        color: '#ffffff',
+        marginBottom: 10,
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+        fontFamily: "'Times New Roman', Times, serif",
+      }}>
+        <HelpCircle size={15} color="#ffffff" /> Conceptual Quick Check
       </div>
-      <div style={{ fontSize: '0.88rem', fontWeight: 500, marginBottom: 12, color: 'var(--text-primary)', lineHeight: 1.5 }}>
+      <div style={{ fontSize: '0.98rem', fontWeight: 500, marginBottom: 14, color: '#f4f4f5', lineHeight: 1.6 }}>
         <MathRenderer content={quiz.question_string} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {(quiz.options_array || []).map((opt, i) => {
-          let bg = 'rgba(255,255,255,0.03)', border = '1px solid rgba(255,255,255,0.08)', color = 'var(--text-secondary)';
+          let bg = 'rgba(255,255,255,0.03)', border = '1px solid rgba(255,255,255,0.10)', color = '#d4d4d8';
           if (revealed) {
             if (i === correct) { bg = 'rgba(16,185,129,0.15)'; border = '1px solid #10b981'; color = '#10b981'; }
             else if (i === sel) { bg = 'rgba(244,63,94,0.15)'; border = '1px solid #f43f5e'; color = '#f87171'; }
           } else if (i === sel) {
-            bg = 'rgba(59,130,246,0.18)'; border = '1px solid #3b82f6'; color = '#93c5fd';
+            bg = 'rgba(255,255,255,0.12)'; border = '1px solid #ffffff'; color = '#ffffff';
           }
           return (
             <button
@@ -232,16 +249,16 @@ function InlineQuiz({ quiz }) {
                 textAlign: 'left',
                 background: bg,
                 border,
-                borderRadius: 6,
-                padding: '9px 12px',
+                borderRadius: 7,
+                padding: '10px 14px',
                 cursor: revealed ? 'default' : 'pointer',
                 color,
-                fontSize: '0.84rem',
+                fontSize: '0.92rem',
                 transition: 'all 0.15s ease',
-                fontFamily: 'var(--font-sans)',
+                fontFamily: "'Poppins', sans-serif",
               }}
             >
-              <b style={{ marginRight: 8, fontFamily: "'JetBrains Mono', monospace" }}>{String.fromCharCode(65 + i)}.</b>
+              <b style={{ marginRight: 8, fontFamily: "'JetBrains Mono', monospace", color: '#ffffff' }}>{String.fromCharCode(65 + i)}.</b>
               <MathRenderer content={opt} style={{ display: 'inline' }} />
             </button>
           );
@@ -251,25 +268,26 @@ function InlineQuiz({ quiz }) {
         <button
           onClick={() => setRevealed(true)}
           style={{
-            marginTop: 12,
-            padding: '7px 16px',
-            background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-            color: '#fff',
+            marginTop: 14,
+            padding: '8px 18px',
+            background: '#ffffff',
+            color: '#000000',
             border: 'none',
             borderRadius: 6,
             cursor: 'pointer',
-            fontSize: '0.8rem',
-            fontWeight: 600,
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            fontFamily: "'Poppins', sans-serif",
           }}
         >
           Check Answer
         </button>
       )}
       {revealed && (
-        <div style={{ marginTop: 12, fontSize: '0.84rem', color: isRight ? '#10b981' : '#f87171', fontWeight: 600 }}>
-          {isRight ? '✓ Correct! Excellent conceptual grasp.' : `✗ Incorrect — Correct Answer is ${String.fromCharCode(65 + correct)}`}
+        <div style={{ marginTop: 14, fontSize: '0.92rem', color: isRight ? '#10b981' : '#f87171', fontWeight: 600 }}>
+          {isRight ? 'Correct! Excellent conceptual grasp.' : `Incorrect — Correct Answer is ${String.fromCharCode(65 + correct)}`}
           {quiz.explanation && (
-            <div style={{ marginTop: 6, color: '#94a3b8', fontWeight: 400, fontSize: '0.8rem', lineHeight: 1.5 }}>
+            <div style={{ marginTop: 6, color: '#a1a1aa', fontWeight: 400, fontSize: '0.88rem', lineHeight: 1.6 }}>
               <MathRenderer content={quiz.explanation} />
             </div>
           )}
@@ -279,9 +297,55 @@ function InlineQuiz({ quiz }) {
   );
 }
 
-// ── Text-to-Speech Audio Player ────────────────────────────────────────────────
-function AudioReader({ text }) {
+// ── Text-to-Speech Audio Player with Multilingual Voice Mapping ────────────
+const BCP47_LANGUAGE_MAP = {
+  hi: 'hi-IN',
+  hinglish: 'hi-IN',
+  ta: 'ta-IN',
+  te: 'te-IN',
+  bn: 'bn-IN',
+  mr: 'mr-IN',
+  kn: 'kn-IN',
+  ml: 'ml-IN',
+  gu: 'gu-IN',
+  pa: 'pa-IN',
+  en: 'en-US',
+};
+
+const LANG_LABEL_MAP = {
+  hi: 'हिंदी',
+  hinglish: 'Hinglish',
+  ta: 'தமிழ்',
+  te: 'తెలుగు',
+  bn: 'বাংলা',
+  mr: 'मराठी',
+  kn: 'ಕನ್ನಡ',
+  ml: 'മലയാളം',
+  gu: 'ગુજરાતી',
+  pa: 'ਪੰਜਾਬੀ',
+  en: 'English',
+};
+
+function AudioReader({ text, language = 'en' }) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState([]);
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    const updateVoices = () => {
+      try {
+        const v = window.speechSynthesis.getVoices() || [];
+        setAvailableVoices(v);
+      } catch (_) {}
+    };
+    updateVoices();
+    window.speechSynthesis.onvoiceschanged = updateVoices;
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
 
   const togglePlay = () => {
     if (!('speechSynthesis' in window)) return;
@@ -290,40 +354,331 @@ function AudioReader({ text }) {
       setIsPlaying(false);
     } else {
       window.speechSynthesis.cancel();
-      const clean = text.replace(/<[^>]*>/g, '').replace(/[\$\*\#]/g, '').slice(0, 1000);
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.rate = 1.0;
+
+      // Clean prose for high-quality natural reading across English and Indic scripts
+      let clean = text
+        .replace(/```[\s\S]*?```/g, ' ') // Strip code blocks
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\\\[[\s\S]*?\\\]/g, ' ') // Display math
+        .replace(/\\\([\s\S]*?\\\)/g, ' ') // Inline math
+        .replace(/[\$\*\#\_\~\[\]]/g, ' ') // Markdown symbols
+        .replace(/\\psi/gi, 'psi')
+        .replace(/\\phi/gi, 'phi')
+        .replace(/\\theta/gi, 'theta')
+        .replace(/\|0\\rangle/gi, 'ket zero')
+        .replace(/\|1\\rangle/gi, 'ket one')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!clean) return;
+
+      const utterance = new SpeechSynthesisUtterance(clean.slice(0, 1600));
+      const targetTag = BCP47_LANGUAGE_MAP[language] || 'en-US';
+      const langPrefix = targetTag.split('-')[0].toLowerCase();
+      utterance.lang = targetTag;
+
+      // Find matching voice from system synthesizer
+      const voices = availableVoices.length > 0 ? availableVoices : (window.speechSynthesis.getVoices() || []);
+      const match = voices.find(v => {
+        const vLang = (v.lang || '').replace('_', '-').toLowerCase();
+        return vLang === targetTag.toLowerCase() || vLang.startsWith(langPrefix);
+      });
+
+      if (match) {
+        utterance.voice = match;
+      }
+
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
       utterance.onend = () => setIsPlaying(false);
       utterance.onerror = () => setIsPlaying(false);
+
       window.speechSynthesis.speak(utterance);
       setIsPlaying(true);
     }
   };
 
+  const label = LANG_LABEL_MAP[language] || 'Audio';
+
   return (
     <button
       onClick={togglePlay}
-      title={isPlaying ? 'Stop Voice' : 'Listen with Voice'}
+      title={isPlaying ? `Stop ${label} Voice` : `Listen with voice in ${label}`}
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '4px',
-        background: isPlaying ? 'rgba(59, 130, 246, 0.2)' : 'none',
-        border: '1px solid rgba(255,255,255,0.08)',
+        gap: '5px',
+        background: isPlaying ? 'rgba(52, 211, 153, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+        border: isPlaying ? '1px solid #34d399' : '1px solid rgba(255, 255, 255, 0.12)',
         borderRadius: '5px',
         padding: '3px 8px',
         cursor: 'pointer',
-        color: isPlaying ? '#60a5fa' : '#94a3b8',
+        color: isPlaying ? '#34d399' : '#d4d4d8',
         fontSize: '0.72rem',
+        fontFamily: "'Poppins', sans-serif",
+        fontWeight: 600,
+        transition: 'all 0.15s ease',
       }}
     >
-      {isPlaying ? <><VolumeX size={12} /> Stop</> : <><Volume2 size={12} /> Read</>}
+      {isPlaying ? <><VolumeX size={12} color="#34d399" /> Stop Voice</> : <><Volume2 size={12} /> Read ({label})</>}
     </button>
   );
 }
 
+// ── Resolves Curated Video Lectures in Our Database Matching Topic & Language ───
+function resolveLecturesForQuery(query = '', language = 'all', limit = 2) {
+  const q = (query || '').toLowerCase();
+
+  const TOPIC_KEYWORD_MAP = {
+    foundations: ['qubit', 'basis', 'bloch', 'state', 'amplitude', 'dirac', 'bra', 'ket'],
+    superposition: ['superposition', 'entanglement', 'bell', 'epr', 'teleportation', 'schrodinger', 'cat'],
+    gates: ['gate', 'hadamard', 'cnot', 'pauli', 'unitary', 'circuit', 'rotation', 'swap', 'toffoli', 'cx'],
+    algorithms: ['grover', 'shor', 'algorithm', 'qft', 'fourier', 'phase estimation', 'oracle', 'deutsch', 'jozsa'],
+    hardware: ['hardware', 'superconducting', 'transmon', 'ion', 'trapped', 'qpu', 'cryogenic', 'coherence', 't1', 't2'],
+    qml: ['vqe', 'chemistry', 'machine learning', 'qml', 'eigensolver', 'ansatz', 'variational', 'molecular'],
+    security: ['cryptography', 'qkd', 'bb84', 'key distribution', 'security', 'e91'],
+  };
+
+  let matchedTopic = null;
+  for (const [topic, words] of Object.entries(TOPIC_KEYWORD_MAP)) {
+    if (words.some(w => q.includes(w))) {
+      matchedTopic = topic;
+      break;
+    }
+  }
+
+  let candidates = VIDEO_LECTURES;
+
+  // Filter by topic if found
+  if (matchedTopic) {
+    const topicFiltered = candidates.filter(v => v.topic === matchedTopic);
+    if (topicFiltered.length > 0) candidates = topicFiltered;
+  }
+
+  // Prioritize selected language
+  const userLang = (language || 'all').toLowerCase();
+  if (userLang !== 'all' && userLang !== 'en') {
+    const langFiltered = candidates.filter(v => v.language === userLang);
+    if (langFiltered.length > 0) {
+      return langFiltered.slice(0, limit);
+    }
+  }
+
+  return candidates.slice(0, limit);
+}
+
+// ── Recommended Lectures Card Component ──────────────────────────────────────
+function RecommendedLecturesBlock({ query, language, onNavigate, onPlayVideo }) {
+  const lectures = useMemo(() => resolveLecturesForQuery(query, language, 2), [query, language]);
+  if (!lectures || lectures.length === 0) return null;
+
+  return (
+    <div style={{
+      marginTop: 16,
+      background: '#111118',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      borderRadius: '12px',
+      padding: '14px 18px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 24,
+            height: 24,
+            borderRadius: 6,
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#f87171',
+          }}>
+            <Play size={12} fill="#f87171" />
+          </div>
+          <span style={{
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            fontFamily: "'Times New Roman', Times, serif",
+            color: '#ffffff',
+            letterSpacing: '0.02em',
+          }}>
+            Curated YouTube Lectures in Our Database
+          </span>
+        </div>
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('videos')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#7dd3fc',
+              fontSize: '0.74rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+              fontWeight: 600,
+              fontFamily: "'Poppins', sans-serif",
+            }}
+          >
+            <span>Explore All in Video Hub</span>
+            <ArrowUpRight size={13} />
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: lectures.length > 1 ? 'repeat(auto-fit, minmax(260px, 1fr))' : '1fr', gap: 12 }}>
+        {lectures.map((lec) => (
+          <div
+            key={lec.id}
+            style={{
+              background: '#161620',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 10,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.40)';
+              e.currentTarget.style.background = '#1a1a26';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.background = '#161620';
+            }}
+          >
+            {/* Video Thumbnail with Duration Badge */}
+            <div style={{ position: 'relative', width: '100%', height: '115px', background: '#09090d', overflow: 'hidden' }}>
+              <img
+                src={lec.thumbnail}
+                alt={lec.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <button
+                  onClick={() => onPlayVideo && onPlayVideo(lec)}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: 'rgba(0, 0, 0, 0.75)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'transform 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1.0)'}
+                  title="Watch Video"
+                >
+                  <Play size={16} fill="#ffffff" />
+                </button>
+              </div>
+              <span style={{
+                position: 'absolute',
+                bottom: 6,
+                right: 8,
+                background: 'rgba(0,0,0,0.85)',
+                borderRadius: 4,
+                padding: '2px 5px',
+                fontSize: '0.68rem',
+                color: '#ffffff',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}>
+                {lec.duration}
+              </span>
+              <span style={{
+                position: 'absolute',
+                top: 6,
+                left: 8,
+                background: 'rgba(56, 189, 248, 0.25)',
+                border: '1px solid rgba(56, 189, 248, 0.45)',
+                borderRadius: 4,
+                padding: '2px 6px',
+                fontSize: '0.66rem',
+                color: '#7dd3fc',
+                fontWeight: 700,
+              }}>
+                {lec.languageLabel}
+              </span>
+            </div>
+
+            {/* Video Meta */}
+            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1, justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.35, marginBottom: 2 }}>
+                  {lec.title}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#a1a1aa' }}>
+                  {lec.instructor} · <span style={{ color: '#d4d4d8' }}>{lec.level}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 4 }}>
+                <button
+                  onClick={() => onPlayVideo && onPlayVideo(lec)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.16)',
+                    borderRadius: 6,
+                    padding: '5px 8px',
+                    color: '#ffffff',
+                    fontSize: '0.74rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Play size={11} fill="#ffffff" /> Watch Inline
+                </button>
+                {onNavigate && (
+                  <button
+                    onClick={() => onNavigate('videos')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      background: 'none',
+                      border: '1px solid rgba(255, 255, 255, 0.10)',
+                      borderRadius: 6,
+                      padding: '5px 8px',
+                      color: '#a1a1aa',
+                      fontSize: '0.74rem',
+                      cursor: 'pointer',
+                    }}
+                    title="Open in Multilingual Video Hub with AI Dubber"
+                  >
+                    <ExternalLink size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Message Bubble ────────────────────────────────────────────────────────────
-function MessageBubble({ msg, onOpenInStudio }) {
+function MessageBubble({ msg, onOpenInStudio, onSelectCitation, onNavigate, onPlayVideo, language }) {
   const isUser = msg.role === 'user';
   const [copied, setCopied] = useState(false);
 
@@ -334,126 +689,132 @@ function MessageBubble({ msg, onOpenInStudio }) {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start', marginBottom: 22, gap: 12 }}>
+    <div style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start', marginBottom: 28, gap: 14, width: '100%' }}>
       {!isUser && (
         <div style={{
-          width: 34,
-          height: 34,
+          width: 38,
+          height: 38,
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+          background: '#ffffff',
+          color: '#000000',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          fontSize: '0.75rem',
-          fontWeight: 800,
-          color: '#fff',
+          fontSize: '0.92rem',
+          fontWeight: 900,
           marginTop: 2,
-          boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
+          boxShadow: '0 4px 16px rgba(255, 255, 255, 0.25)',
+          fontFamily: "'Times New Roman', Times, serif",
         }}>
           Q
         </div>
       )}
 
-      <div style={{ maxWidth: isUser ? '72%' : '88%' }}>
+      <div style={{ maxWidth: isUser ? '80%' : '100%', width: isUser ? 'auto' : '100%' }}>
         {isUser ? (
           <div style={{
-            background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+            background: '#1c1c24',
             color: '#ffffff',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
             borderRadius: '16px 16px 4px 16px',
-            padding: '12px 18px',
-            fontSize: '0.90rem',
-            lineHeight: 1.6,
-            boxShadow: '0 4px 16px rgba(29, 78, 216, 0.25)',
+            padding: '16px 22px',
+            fontSize: '1.08rem',
+            lineHeight: 1.65,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+            fontFamily: "'Poppins', sans-serif",
           }}>
             {msg.content}
           </div>
         ) : (
           <div style={{
-            background: 'var(--bg-surface-elevated, #111827)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: '#0d0d12',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
             borderRadius: '4px 16px 16px 16px',
-            padding: '18px 20px',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+            padding: '24px 30px',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6)',
+            width: '100%',
           }}>
             {/* Assistant Top Toolbar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {msg.model && (
-                  <span style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    border: '1px solid rgba(59, 130, 246, 0.25)',
-                    borderRadius: 4,
-                    padding: '2px 7px',
-                    fontSize: '0.68rem',
-                    color: '#60a5fa',
-                    fontWeight: 600,
-                  }}>
-                    <Cpu size={10} /> {msg.model}
-                  </span>
-                )}
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  background: 'rgba(52, 211, 153, 0.10)',
+                  border: '1px solid rgba(52, 211, 153, 0.28)',
+                  borderRadius: 4,
+                  padding: '3px 8px',
+                  fontSize: '0.74rem',
+                  color: '#6ee7b7',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  fontFamily: "'Poppins', sans-serif",
+                }}>
+                  <ShieldCheck size={13} color="#34d399" /> Verified Quantum Response
+                </span>
                 {msg.ragActive && (
                   <span style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 4,
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    gap: 5,
+                    background: 'rgba(56, 189, 248, 0.08)',
+                    border: '1px solid rgba(56, 189, 248, 0.22)',
                     borderRadius: 4,
-                    padding: '2px 7px',
-                    fontSize: '0.68rem',
-                    color: '#34d399',
-                    fontWeight: 600,
+                    padding: '3px 8px',
+                    fontSize: '0.74rem',
+                    color: '#7dd3fc',
+                    fontWeight: 500,
+                    fontFamily: "'Poppins', sans-serif",
                   }}>
-                    <Zap size={10} /> 18K RAG Passages
+                    <Zap size={11} color="#38bdf8" /> 18K RAG Passages
                   </span>
                 )}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <AudioReader text={msg.content} />
+                <AudioReader text={msg.content} language={msg.language || language} />
                 <button
                   onClick={copyMarkdown}
                   title="Copy full response"
                   style={{
                     background: 'none',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.10)',
                     borderRadius: '5px',
-                    padding: '3px 8px',
+                    padding: '4px 10px',
                     cursor: 'pointer',
-                    color: '#94a3b8',
-                    fontSize: '0.72rem',
+                    color: '#a1a1aa',
+                    fontSize: '0.74rem',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
+                    fontFamily: "'Poppins', sans-serif",
                   }}
                 >
-                  {copied ? <><Check size={11} color="#10b981" /> Copied</> : <><Copy size={11} /> Copy</>}
+                  {copied ? <><Check size={11} color="#ffffff" /> Copied</> : <><Copy size={11} /> Copy</>}
                 </button>
               </div>
             </div>
 
-            {/* Main Explanation Prose */}
-            <div style={{ fontSize: '0.90rem', lineHeight: 1.7, color: 'var(--text-primary, #f3f4f6)' }}>
+            {/* Main Explanation Prose - Prominent Larger Font */}
+            <div style={{ fontSize: '1.18rem', lineHeight: 1.85, color: '#ffffff', fontFamily: "'Poppins', sans-serif" }}>
               <MathRenderer content={msg.content} />
             </div>
 
             {/* Mathematical LaTeX Formula */}
             {msg.latex && msg.latex.length > 3 && (
               <div style={{
-                background: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                borderLeft: '4px solid #3b82f6',
+                background: 'rgba(99, 102, 241, 0.04)',
+                border: '1px solid rgba(129, 140, 248, 0.20)',
+                borderLeft: '4px solid #818cf8',
                 borderRadius: '0 8px 8px 0',
-                padding: '12px 16px',
-                margin: '14px 0',
+                padding: '16px 22px',
+                margin: '18px 0',
                 overflowX: 'auto',
               }}>
-                <LatexBlock tex={msg.latex} display={true} />
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontStyle: 'italic', marginTop: 4 }}>
+                <LatexBlock tex={msg.latex} display={true} style={{ fontSize: '1.2rem' }} />
+                <div style={{ fontSize: '0.74rem', color: '#a5b4fc', fontStyle: 'italic', marginTop: 6, fontFamily: "'Poppins', sans-serif" }}>
                   Exact Mathematical Formulation
                 </div>
               </div>
@@ -486,29 +847,41 @@ function MessageBubble({ msg, onOpenInStudio }) {
             {/* Quick Check Socratic Quiz */}
             {msg.quiz && <InlineQuiz quiz={msg.quiz} />}
 
-            {/* Literature Sources Panel */}
+            {/* Literature Sources Panel with Clickable Treatise Projector */}
             {msg.sources && msg.sources.filter(s => !s.startsWith('Model:')).length > 0 && (
-              <SourcesAccordion sources={msg.sources.filter(s => !s.startsWith('Model:'))} />
+              <SourcesAccordion
+                sources={msg.sources.filter(s => !s.startsWith('Model:'))}
+                onSelectCitation={onSelectCitation}
+              />
             )}
+
+            {/* Guided YouTube Lectures from Database */}
+            <RecommendedLecturesBlock
+              query={msg.userQuery || msg.content}
+              language={msg.language || language}
+              onNavigate={onNavigate}
+              onPlayVideo={onPlayVideo}
+            />
           </div>
         )}
       </div>
 
       {isUser && (
         <div style={{
-          width: 34,
-          height: 34,
+          width: 36,
+          height: 36,
           borderRadius: '50%',
           background: 'rgba(255,255,255,0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          color: '#94a3b8',
+          fontSize: '0.82rem',
+          fontWeight: 800,
+          color: '#ffffff',
           marginTop: 2,
-          border: '1px solid rgba(255,255,255,0.1)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          fontFamily: "'Times New Roman', Times, serif",
         }}>
           U
         </div>
@@ -517,34 +890,103 @@ function MessageBubble({ msg, onOpenInStudio }) {
   );
 }
 
-// ── Literature Sources Accordion ──────────────────────────────────────────────
-function SourcesAccordion({ sources }) {
-  const [open, setOpen] = useState(false);
+// ── Literature Sources Accordion with Interactive Treatise Card Projection ───
+function SourcesAccordion({ sources, onSelectCitation }) {
+  const [open, setOpen] = useState(true);
   return (
-    <div style={{ marginTop: 12 }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: '#94a3b8',
-          fontSize: '0.72rem',
-          padding: 0,
-        }}
-      >
-        <BookOpen size={12} color="#60a5fa" />
-        <span>{sources.length} Literature Source{sources.length > 1 ? 's' : ''} (76-Book Library)</span>
-        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-      </button>
+    <div style={{
+      marginTop: 18,
+      background: '#121218',
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      borderRadius: '12px',
+      padding: '14px 18px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: open ? 12 : 0 }}>
+        <button
+          onClick={() => setOpen(!open)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#ffffff',
+            fontSize: '0.84rem',
+            fontWeight: 800,
+            padding: 0,
+            fontFamily: "'Times New Roman', Times, serif",
+            letterSpacing: '0.02em',
+          }}
+        >
+          <BookOpen size={15} color="#6ee7b7" />
+          <span>{sources.length} Authoritative Treatise Source{sources.length > 1 ? 's' : ''} (150-Book Library)</span>
+          {open ? <ChevronUp size={14} color="#a1a1aa" /> : <ChevronDown size={14} color="#a1a1aa" />}
+        </button>
+        <span style={{ fontSize: '0.72rem', color: '#a1a1aa' }}>
+          Click source to project exact treatise excerpt
+        </span>
+      </div>
+
       {open && (
-        <div style={{ marginTop: 6, paddingLeft: 12, borderLeft: '2px solid rgba(59, 130, 246, 0.3)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {sources.map((s, i) => (
-            <div key={i} style={{ fontSize: '0.72rem', color: '#94a3b8', padding: '3px 0' }}>
-              · {s}
+            <div
+              key={i}
+              onClick={() => onSelectCitation && onSelectCitation(s)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                background: '#161620',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(52, 211, 153, 0.38)';
+                e.currentTarget.style.background = '#1a1a26';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.background = '#161620';
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+                <span style={{
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  border: '1px solid rgba(56, 189, 248, 0.28)',
+                  borderRadius: 4,
+                  padding: '2px 7px',
+                  fontSize: '0.70rem',
+                  color: '#7dd3fc',
+                  fontWeight: 700,
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>
+                  p.{i + 1}
+                </span>
+                <span style={{ fontSize: '0.86rem', color: '#ffffff', fontWeight: 500 }}>
+                  {s}
+                </span>
+              </div>
+              <span style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: '0.76rem',
+                color: '#6ee7b7',
+                fontWeight: 600,
+                background: 'rgba(52, 211, 153, 0.12)',
+                border: '1px solid rgba(52, 211, 153, 0.28)',
+                borderRadius: 6,
+                padding: '4px 10px',
+                whiteSpace: 'nowrap',
+              }}>
+                <BookOpen size={12} color="#6ee7b7" /> Read Excerpt
+              </span>
             </div>
           ))}
         </div>
@@ -572,6 +1014,20 @@ export default function QuantumChatGPT({
   const [editingTitle, setEditingTitle] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isStudioOpen, setIsStudioOpen] = useState(true);
+  const [isFlashcardsOpen, setIsFlashcardsOpen] = useState(false);
+  const [activeCitationForModal, setActiveCitationForModal] = useState(null);
+  const [activeVideoForModal, setActiveVideoForModal] = useState(null);
+
+  // Citation click handler — resolves to exact textbook excerpt
+  const handleSelectCitation = useCallback((citationTextOrObj) => {
+    if (citationTextOrObj && typeof citationTextOrObj === 'object') {
+      setActiveCitationForModal(citationTextOrObj);
+    } else {
+      const resolved = resolveCitationsForQuery(String(citationTextOrObj || ''));
+      setActiveCitationForModal(resolved[0] || QUANTUM_TEXTBOOK_EXCERPTS[0]);
+    }
+  }, []);
 
   // Conversation Sessions (per user ID)
   const [sessions, setSessions] = useState(() => {
@@ -740,6 +1196,8 @@ export default function QuantumChatGPT({
           sources: data.sources || [],
           model: data.model_used || (SUPPORTED_MODELS.find(m => m.id === selectedModel)?.name || 'Qwen 3.8 27B'),
           ragActive: !data.is_cached_fallback,
+          language: selectedLanguage,
+          userQuery: text,
         };
 
         setSessions(prev => prev.map(s => s.id === activeId ? {
@@ -755,11 +1213,13 @@ export default function QuantumChatGPT({
       const errorMsg = {
         role: 'assistant',
         id: Date.now() + 1,
-        content: `**Error connecting to AI Tutor**: ${err.message || 'Please check your connection and Groq API key.'}`,
+        content: `**Error connecting to AI Tutor**: ${err.message || 'Please check your connection and neural server status.'}`,
         latex: null,
         code: null,
         sources: ['Gitwolves Fallback Engine'],
         model: 'Failsafe Core',
+        language: selectedLanguage,
+        userQuery: text,
       };
       setSessions(prev => prev.map(s => s.id === activeId ? {
         ...s,
@@ -797,10 +1257,10 @@ export default function QuantumChatGPT({
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: 'calc(100vh - 64px)',
-      background: '#0a0f1d',
-      color: '#f3f4f6',
-      fontFamily: 'var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif)',
+      height: 'calc(100vh - 56px)',
+      background: '#08080a',
+      color: '#ffffff',
+      fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       overflow: 'hidden',
     }}>
       {/* ── Mobile Header ── */}
@@ -809,17 +1269,17 @@ export default function QuantumChatGPT({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '10px 16px',
-        background: '#111827',
+        background: '#0c0c10',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
       }} className="ql-mobile-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            style={{ background: 'none', border: 'none', color: '#f3f4f6', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}
           >
             <PanelLeft size={20} />
           </button>
-          <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f3f4f6' }}>Aura Quantum AI</div>
+          <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#ffffff', fontFamily: "'Times New Roman', Times, serif" }}>Aura Quantum AI</div>
         </div>
         <button
           onClick={() => handleNewChat()}
@@ -827,13 +1287,13 @@ export default function QuantumChatGPT({
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
-            background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-            color: '#fff',
+            background: '#ffffff',
+            color: '#000000',
             border: 'none',
             borderRadius: '6px',
-            padding: '5px 10px',
-            fontSize: '0.78rem',
-            fontWeight: 600,
+            padding: '6px 12px',
+            fontSize: '0.80rem',
+            fontWeight: 700,
           }}
         >
           <Plus size={14} /> New
@@ -845,7 +1305,7 @@ export default function QuantumChatGPT({
         <aside style={{
           width: isSidebarOpen ? '320px' : '0px',
           minWidth: isSidebarOpen ? '320px' : '0px',
-          background: '#0d1326',
+          background: '#0c0c10',
           borderRight: isSidebarOpen ? '1px solid rgba(255,255,255,0.08)' : 'none',
           display: 'flex',
           flexDirection: 'column',
@@ -854,34 +1314,44 @@ export default function QuantumChatGPT({
           zIndex: 30,
         }}>
           {/* Sidebar Header: Logo & New Chat */}
-          <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ padding: '18px 16px 14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{
-                  width: '28px',
-                  height: '28px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                  background: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
+                  color: '#000000',
+                  fontWeight: 900,
+                  fontFamily: "'Times New Roman', Times, serif",
+                  fontSize: '1.15rem',
+                  boxShadow: '0 4px 16px rgba(255, 255, 255, 0.15)',
                 }}>
-                  <Sparkles size={14} color="#fff" />
+                  Q
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                  <div style={{
+                    fontSize: '1.05rem',
+                    fontWeight: 800,
+                    color: '#ffffff',
+                    fontFamily: "'Times New Roman', Times, serif",
+                    letterSpacing: '0.02em',
+                  }}>
                     Aura Quantum AI
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#60a5fa', fontWeight: 600, letterSpacing: '0.04em' }}>
-                    MULTI-MODEL TUTOR
+                  <div style={{ fontSize: '0.66rem', color: '#a1a1aa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Intelligent Tutor
                   </div>
                 </div>
               </div>
               <button
                 onClick={() => setIsSidebarOpen(false)}
                 title="Collapse sidebar"
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 4 }}
+                style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: 4 }}
               >
                 <PanelLeftClose size={18} />
               </button>
@@ -895,77 +1365,93 @@ export default function QuantumChatGPT({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '10px 14px',
-                background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-                color: '#ffffff',
+                padding: '11px 16px',
+                background: '#ffffff',
+                color: '#000000',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.84rem',
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
-                transition: 'transform 0.15s ease',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                boxShadow: '0 4px 14px rgba(255, 255, 255, 0.12)',
+                transition: 'all 0.15s ease',
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e4e4e7'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Plus size={16} />
+                <Plus size={16} strokeWidth={2.5} />
                 <span>New Conversation</span>
               </div>
               <span style={{
-                background: 'rgba(255,255,255,0.2)',
+                background: 'rgba(0,0,0,0.08)',
                 borderRadius: '4px',
                 padding: '2px 6px',
-                fontSize: '0.68rem',
+                fontSize: '0.70rem',
                 fontFamily: "'JetBrains Mono', monospace",
+                fontWeight: 600,
               }}>
                 ⌘K
               </span>
             </button>
           </div>
 
-          {/* Model Selector Card */}
+          {/* Tutor Language Selector Card (Replaces Model Selector & Removes Green Dots) */}
           <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: '0.70rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Active Quantum Model
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{
+                fontSize: '0.74rem',
+                color: '#ffffff',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                fontFamily: "'Times New Roman', Times, serif"
+              }}>
+                Tutor Language
               </span>
-              <span style={{ fontSize: '0.65rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: 3 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} /> Live
+              <span style={{ fontSize: '0.72rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Globe size={13} color="#ffffff" />
+                <span>{INDIAN_LANGUAGES.find(l => l.code === selectedLanguage)?.native || 'English'}</span>
               </span>
             </div>
             <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
               style={{
                 width: '100%',
-                background: '#161f38',
-                color: '#f3f4f6',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
+                background: '#121216',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '6px',
-                padding: '8px 10px',
-                fontSize: '0.80rem',
+                padding: '9px 12px',
+                fontSize: '0.84rem',
                 cursor: 'pointer',
                 outline: 'none',
-                fontFamily: 'inherit',
+                fontFamily: "'Poppins', sans-serif",
               }}
             >
-              {SUPPORTED_MODELS.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.badge})
+              {INDIAN_LANGUAGES.filter(l => l.code !== 'all').map(l => (
+                <option key={l.code} value={l.code} style={{ background: '#121216', color: '#ffffff' }}>
+                  {l.native} ({l.label})
                 </option>
               ))}
             </select>
-            <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: 5, lineHeight: 1.4 }}>
-              {SUPPORTED_MODELS.find(m => m.id === selectedModel)?.description}
-            </div>
           </div>
 
           {/* Project Sections Filter */}
-          <div style={{ padding: '12px 16px 6px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: '0.70rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-              Projects &amp; Focus
+          <div style={{ padding: '12px 16px 8px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{
+              fontSize: '0.74rem',
+              color: '#ffffff',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: 8,
+              fontFamily: "'Times New Roman', Times, serif"
+            }}>
+              Projects & Focus
             </div>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
               {PROJECT_CATEGORIES.map(cat => {
                 const Icon = cat.icon;
                 const active = activeProject === cat.id;
@@ -976,18 +1462,20 @@ export default function QuantumChatGPT({
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 4,
-                      padding: '4px 8px',
-                      borderRadius: '5px',
-                      fontSize: '0.72rem',
-                      background: active ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.03)',
-                      color: active ? '#60a5fa' : '#94a3b8',
-                      border: active ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255,255,255,0.05)',
+                      gap: 5,
+                      padding: '5px 9px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontFamily: "'Poppins', sans-serif",
+                      background: active ? '#ffffff' : 'rgba(255,255,255,0.03)',
+                      color: active ? '#000000' : '#a1a1aa',
+                      border: active ? '1px solid #ffffff' : '1px solid rgba(255,255,255,0.08)',
                       cursor: 'pointer',
-                      transition: 'all 0.1s',
+                      fontWeight: active ? 700 : 500,
+                      transition: 'all 0.12s ease',
                     }}
                   >
-                    <Icon size={11} /> {cat.name}
+                    <Icon size={12} /> {cat.name}
                   </button>
                 );
               })}
@@ -999,13 +1487,13 @@ export default function QuantumChatGPT({
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              background: '#161f38',
+              gap: '8px',
+              background: '#121216',
               borderRadius: '6px',
-              padding: '6px 10px',
-              border: '1px solid rgba(255,255,255,0.06)',
+              padding: '7px 12px',
+              border: '1px solid rgba(255,255,255,0.10)',
             }}>
-              <Search size={13} color="#94a3b8" />
+              <Search size={14} color="#71717a" />
               <input
                 type="text"
                 placeholder="Filter chats..."
@@ -1014,14 +1502,15 @@ export default function QuantumChatGPT({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#f3f4f6',
-                  fontSize: '0.78rem',
+                  color: '#ffffff',
+                  fontSize: '0.82rem',
                   outline: 'none',
                   width: '100%',
+                  fontFamily: "'Poppins', sans-serif",
                 }}
               />
               {searchFilter && (
-                <button onClick={() => setSearchFilter('')} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <button onClick={() => setSearchFilter('')} style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer' }}>
                   <X size={12} />
                 </button>
               )}
@@ -1031,14 +1520,22 @@ export default function QuantumChatGPT({
           {/* Conversation History List */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
             {filteredSessions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px 12px', color: '#64748b', fontSize: '0.78rem' }}>
+              <div style={{ textAlign: 'center', padding: '24px 12px', color: '#71717a', fontSize: '0.82rem' }}>
                 No conversations found in this project.
               </div>
             ) : (
               <>
                 {todaySessions.length > 0 && (
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', padding: '4px 8px' }}>
+                    <div style={{
+                      fontSize: '0.74rem',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      padding: '4px 8px',
+                      fontFamily: "'Times New Roman', Times, serif"
+                    }}>
                       Today
                     </div>
                     {todaySessions.map(s => renderSessionItem(s))}
@@ -1046,7 +1543,15 @@ export default function QuantumChatGPT({
                 )}
                 {yesterdaySessions.length > 0 && (
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', padding: '4px 8px' }}>
+                    <div style={{
+                      fontSize: '0.74rem',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      padding: '4px 8px',
+                      fontFamily: "'Times New Roman', Times, serif"
+                    }}>
                       Yesterday
                     </div>
                     {yesterdaySessions.map(s => renderSessionItem(s))}
@@ -1054,7 +1559,15 @@ export default function QuantumChatGPT({
                 )}
                 {olderSessions.length > 0 && (
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', padding: '4px 8px' }}>
+                    <div style={{
+                      fontSize: '0.74rem',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      padding: '4px 8px',
+                      fontFamily: "'Times New Roman', Times, serif"
+                    }}>
                       Older
                     </div>
                     {olderSessions.map(s => renderSessionItem(s))}
@@ -1066,8 +1579,16 @@ export default function QuantumChatGPT({
 
           {/* Sidebar Quick Navigation Links */}
           {onNavigate && (
-            <div style={{ padding: '8px 14px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
-              <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>
+            <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)' }}>
+              <div style={{
+                fontSize: '0.72rem',
+                color: '#ffffff',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: 8,
+                fontFamily: "'Times New Roman', Times, serif"
+              }}>
                 Platform Quick Jump
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
@@ -1076,72 +1597,76 @@ export default function QuantumChatGPT({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    padding: '5px 8px',
-                    borderRadius: 5,
+                    gap: 6,
+                    padding: '6px 9px',
+                    borderRadius: 6,
                     background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: '#94a3b8',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#d4d4d8',
                     cursor: 'pointer',
-                    fontSize: '0.72rem',
+                    fontSize: '0.76rem',
                     textAlign: 'left',
+                    fontFamily: "'Poppins', sans-serif",
                   }}
                 >
-                  <Terminal size={11} color="#60a5fa" /> Circuit Studio
+                  <Terminal size={12} color="#ffffff" /> Circuit Studio
                 </button>
                 <button
                   onClick={() => onNavigate('learning')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    padding: '5px 8px',
-                    borderRadius: 5,
+                    gap: 6,
+                    padding: '6px 9px',
+                    borderRadius: 6,
                     background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: '#94a3b8',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#d4d4d8',
                     cursor: 'pointer',
-                    fontSize: '0.72rem',
+                    fontSize: '0.76rem',
                     textAlign: 'left',
+                    fontFamily: "'Poppins', sans-serif",
                   }}
                 >
-                  <BookOpen size={11} color="#34d399" /> Learning Hub
+                  <BookOpen size={12} color="#ffffff" /> Learning Hub
                 </button>
                 <button
                   onClick={() => onNavigate('videos')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    padding: '5px 8px',
-                    borderRadius: 5,
+                    gap: 6,
+                    padding: '6px 9px',
+                    borderRadius: 6,
                     background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: '#94a3b8',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#d4d4d8',
                     cursor: 'pointer',
-                    fontSize: '0.72rem',
+                    fontSize: '0.76rem',
                     textAlign: 'left',
+                    fontFamily: "'Poppins', sans-serif",
                   }}
                 >
-                  <Play size={11} color="#f59e0b" /> Video Hub
+                  <Play size={12} color="#ffffff" /> Video Hub
                 </button>
                 <button
                   onClick={() => onNavigate('assessment')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    padding: '5px 8px',
-                    borderRadius: 5,
+                    gap: 6,
+                    padding: '6px 9px',
+                    borderRadius: 6,
                     background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: '#94a3b8',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#d4d4d8',
                     cursor: 'pointer',
-                    fontSize: '0.72rem',
+                    fontSize: '0.76rem',
                     textAlign: 'left',
+                    fontFamily: "'Poppins', sans-serif",
                   }}
                 >
-                  <Award size={11} color="#ec4899" /> Test Center
+                  <Award size={12} color="#ffffff" /> Test Center
                 </button>
               </div>
             </div>
@@ -1151,7 +1676,7 @@ export default function QuantumChatGPT({
           <div style={{
             padding: '12px 16px',
             borderTop: '1px solid rgba(255,255,255,0.08)',
-            background: '#090d1a',
+            background: '#09090d',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1161,22 +1686,23 @@ export default function QuantumChatGPT({
                 width: '32px',
                 height: '32px',
                 borderRadius: '50%',
-                background: user?.photoURL ? `url(${user.photoURL}) center/cover` : 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+                background: user?.photoURL ? `url(${user.photoURL}) center/cover` : '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                color: '#fff',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                color: '#000000',
+                fontFamily: "'Times New Roman', Times, serif",
               }}>
                 {!user?.photoURL && (user?.displayName?.[0] || 'U')}
               </div>
               <div style={{ overflow: 'hidden' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#f3f4f6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
                   {user?.displayName || 'Quantum Student'}
                 </div>
-                <div style={{ fontSize: '0.68rem', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ShieldCheck size={10} /> Quantum Scholar Pro
+                <div style={{ fontSize: '0.70rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <ShieldCheck size={11} color="#ffffff" /> Quantum Verified
                 </div>
               </div>
             </div>
@@ -1205,7 +1731,7 @@ export default function QuantumChatGPT({
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          background: '#0a0f1d',
+          background: '#08080a',
           overflow: 'hidden',
           position: 'relative',
         }}>
@@ -1214,55 +1740,122 @@ export default function QuantumChatGPT({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '12px 20px',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
-            background: 'rgba(11, 15, 29, 0.8)',
+            padding: '14px 28px',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(12, 12, 16, 0.95)',
             backdropFilter: 'blur(10px)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               {!isSidebarOpen && (
                 <button
                   onClick={() => setIsSidebarOpen(true)}
                   title="Open sidebar"
-                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 4 }}
+                  style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: 4 }}
                 >
-                  <PanelLeft size={18} />
+                  <PanelLeft size={20} />
                 </button>
               )}
               <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f3f4f6' }}>
+                <div style={{
+                  fontSize: '1.15rem',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  fontFamily: "'Times New Roman', Times, serif",
+                  letterSpacing: '0.01em',
+                }}>
                   {activeSession.title}
                 </div>
-                <div style={{ fontSize: '0.70rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>Model: <b style={{ color: '#60a5fa' }}>{SUPPORTED_MODELS.find(m => m.id === selectedModel)?.name}</b></span>
+                <div style={{ fontSize: '0.76rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '8px', marginTop: 2, fontFamily: "'Poppins', sans-serif" }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#d4d4d8' }}>
+                    <ShieldCheck size={13} color="#ffffff" /> Verified Quantum Engine
+                  </span>
                   <span>·</span>
-                  <span>Lang: <b style={{ color: '#34d399' }}>{INDIAN_LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'English'}</b></span>
+                  <span>Lang: <b style={{ color: '#ffffff' }}>{INDIAN_LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'English'}</b></span>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {/* Language Selector Pill */}
-              <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* Language Selector in Top Bar with Globe Icon */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#16161c',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '8px',
+                padding: '5px 12px',
+              }}>
+                <Globe size={14} color="#ffffff" />
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  style={{
+                    background: 'transparent',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 600,
+                  }}
+                >
+                  {INDIAN_LANGUAGES.filter(l => l.code !== 'all').map(l => (
+                    <option key={l.code} value={l.code} style={{ background: '#121216', color: '#ffffff' }}>
+                      {l.native} ({l.label})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Flashcards Deck Button */}
+              <button
+                onClick={() => setIsFlashcardsOpen(true)}
+                title="Launch 3D Flashcards Deck"
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  color: '#94a3b8',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '6px',
-                  padding: '5px 8px',
-                  fontSize: '0.74rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.80rem',
+                  fontWeight: 600,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#ffffff',
                   cursor: 'pointer',
-                  outline: 'none',
+                  fontFamily: "'Poppins', sans-serif",
+                  transition: 'all 0.15s ease',
                 }}
               >
-                {INDIAN_LANGUAGES.map(l => (
-                  <option key={l.code} value={l.code} style={{ background: '#111827', color: '#f3f4f6' }}>
-                    {l.native} ({l.name})
-                  </option>
-                ))}
-              </select>
+                <Layers size={14} color="#ffffff" />
+                <span>Flashcards</span>
+              </button>
+
+              {/* Quantum Studio Right Panel Toggle */}
+              <button
+                onClick={() => setIsStudioOpen(!isStudioOpen)}
+                title="Toggle Quantum Studio &amp; Treatises Deck"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 13px',
+                  borderRadius: '8px',
+                  fontSize: '0.80rem',
+                  fontWeight: 700,
+                  background: isStudioOpen ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                  border: isStudioOpen ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.12)',
+                  color: isStudioOpen ? '#000000' : '#ffffff',
+                  cursor: 'pointer',
+                  fontFamily: "'Poppins', sans-serif",
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Sparkles size={14} color={isStudioOpen ? '#000000' : '#ffffff'} />
+                <span>Studio Deck</span>
+              </button>
 
               {/* Diagram Toggle Button */}
               <button
@@ -1270,18 +1863,20 @@ export default function QuantumChatGPT({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
-                  padding: '5px 10px',
-                  borderRadius: '6px',
-                  fontSize: '0.74rem',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
-                  background: generateDiagram ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.04)',
-                  border: generateDiagram ? '1px solid #3b82f6' : '1px solid rgba(255,255,255,0.08)',
-                  color: generateDiagram ? '#60a5fa' : '#94a3b8',
+                  background: generateDiagram ? '#ffffff' : 'rgba(255,255,255,0.04)',
+                  border: generateDiagram ? '1px solid #ffffff' : '1px solid rgba(255,255,255,0.10)',
+                  color: generateDiagram ? '#000000' : '#d4d4d8',
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  fontFamily: "'Poppins', sans-serif",
                 }}
               >
-                <Sparkles size={12} color={generateDiagram ? '#60a5fa' : '#94a3b8'} />
+                <Sparkles size={13} color={generateDiagram ? '#000000' : '#ffffff'} />
                 Diagram: {generateDiagram ? 'ON' : 'OFF'}
               </button>
 
@@ -1292,14 +1887,14 @@ export default function QuantumChatGPT({
                   title="Toggle Theme"
                   style={{
                     background: 'none',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '6px',
-                    padding: '5px 8px',
-                    color: '#94a3b8',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    borderRadius: '8px',
+                    padding: '7px 10px',
+                    color: '#a1a1aa',
                     cursor: 'pointer',
                   }}
                 >
-                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                  {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                 </button>
               )}
             </div>
@@ -1309,60 +1904,65 @@ export default function QuantumChatGPT({
           <div style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '24px 32px',
+            padding: '30px 40px',
           }}>
             {messages.length === 0 ? (
               /* Empty State / Welcome Screen */
               <div style={{
-                maxWidth: '820px',
-                margin: '30px auto',
+                maxWidth: '960px',
+                margin: '20px auto 40px auto',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 textAlign: 'center',
+                width: '100%',
               }}>
                 <div style={{
-                  width: '56px',
-                  height: '56px',
+                  width: '58px',
+                  height: '58px',
                   borderRadius: '16px',
-                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                  background: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 8px 30px rgba(37, 99, 235, 0.45)',
-                  marginBottom: '18px',
+                  boxShadow: '0 8px 30px rgba(255, 255, 255, 0.15)',
+                  marginBottom: '22px',
+                  color: '#000000',
+                  fontWeight: 900,
+                  fontSize: '1.8rem',
+                  fontFamily: "'Times New Roman', Times, serif",
                 }}>
-                  <Sparkles size={28} color="#fff" />
+                  Q
                 </div>
 
                 <h1 style={{
-                  fontSize: '1.8rem',
+                  fontSize: '2.5rem',
                   fontWeight: 800,
                   color: '#ffffff',
-                  marginBottom: '8px',
-                  letterSpacing: '-0.03em',
-                  background: 'linear-gradient(135deg, #ffffff 40%, #93c5fd)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
+                  marginBottom: '12px',
+                  letterSpacing: '-0.02em',
+                  fontFamily: "'Times New Roman', Times, serif",
+                  lineHeight: 1.25,
                 }}>
                   What quantum breakthrough will we explore?
                 </h1>
 
                 <p style={{
-                  fontSize: '0.92rem',
-                  color: '#94a3b8',
-                  maxWidth: '560px',
-                  lineHeight: 1.6,
-                  marginBottom: '26px',
+                  fontSize: '1.05rem',
+                  color: '#a1a1aa',
+                  maxWidth: '680px',
+                  lineHeight: 1.7,
+                  marginBottom: '32px',
+                  fontFamily: "'Poppins', sans-serif",
                 }}>
-                  Powered by multi-model quantum reasoning (Qwen 3.8 27B &amp; GPT-OSS 120B), 18,800+ indexed textbook chapters, and automatic SVG quantum circuit generation.
+                  Powered by verified multi-stage quantum reasoning, 18,800+ indexed textbook chapters, and automatic SVG quantum circuit generation.
                 </p>
 
                 {/* Quick Action Prompt Cards */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                  gap: '12px',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '14px',
                   width: '100%',
                   textAlign: 'left',
                 }}>
@@ -1371,30 +1971,37 @@ export default function QuantumChatGPT({
                       key={idx}
                       onClick={() => sendMessage(item.query)}
                       style={{
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: '10px',
-                        padding: '14px 16px',
+                        background: '#0d0d12',
+                        border: '1px solid rgba(255,255,255,0.10)',
+                        borderRadius: '12px',
+                        padding: '18px 20px',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.35)';
                         e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)';
+                        e.currentTarget.style.background = '#14141c';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.10)';
                         e.currentTarget.style.transform = 'none';
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                        e.currentTarget.style.background = '#0d0d12';
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#f3f4f6' }}>{item.title}</span>
-                        <ArrowUpRight size={14} color="#60a5fa" />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <span style={{
+                          fontSize: '0.98rem',
+                          fontWeight: 800,
+                          color: '#ffffff',
+                          fontFamily: "'Times New Roman', Times, serif",
+                        }}>
+                          {item.title}
+                        </span>
+                        <ArrowUpRight size={15} color="#ffffff" />
                       </div>
-                      <div style={{ fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                        {item.query.slice(0, 75)}…
+                      <div style={{ fontSize: '0.86rem', color: '#a1a1aa', lineHeight: 1.5, fontFamily: "'Poppins', sans-serif" }}>
+                        {item.query.slice(0, 95)}…
                       </div>
                     </div>
                   ))}
@@ -1402,43 +2009,49 @@ export default function QuantumChatGPT({
               </div>
             ) : (
               /* Message Stream */
-              <div style={{ maxWidth: '840px', margin: '0 auto', width: '100%' }}>
+              <div style={{ maxWidth: '1020px', margin: '0 auto', width: '100%' }}>
                 {messages.map((msg) => (
                   <MessageBubble
                     key={msg.id}
                     msg={msg}
                     onOpenInStudio={onLoadCircuitIntoStudio}
+                    onSelectCitation={handleSelectCitation}
+                    onNavigate={onNavigate}
+                    onPlayVideo={(video) => setActiveVideoForModal(video)}
+                    language={selectedLanguage}
                   />
                 ))}
 
                 {/* Loading indicator */}
                 {loading && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
                     <div style={{
-                      width: 32,
-                      height: 32,
+                      width: 36,
+                      height: 36,
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                      background: '#16161e',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
                       <div style={{
-                        width: 14,
-                        height: 14,
+                        width: 16,
+                        height: 16,
                         borderRadius: '50%',
                         border: '2px solid rgba(255,255,255,0.2)',
-                        borderTopColor: '#fff',
+                        borderTopColor: '#ffffff',
                         animation: 'spin 0.8s linear infinite',
                       }} />
                     </div>
                     <div style={{
-                      background: 'var(--bg-surface-elevated, #111827)',
-                      borderRadius: '4px 14px 14px 14px',
-                      padding: '12px 18px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      fontSize: '0.84rem',
-                      color: '#94a3b8',
+                      background: '#121218',
+                      borderRadius: '6px 16px 16px 16px',
+                      padding: '14px 20px',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      fontSize: '0.94rem',
+                      color: '#d4d4d8',
+                      fontFamily: "'Poppins', sans-serif",
                     }}>
                       Aura is formulating quantum proof, synthesizing Qiskit circuit &amp; diagram…
                     </div>
@@ -1451,54 +2064,87 @@ export default function QuantumChatGPT({
 
           {/* ── Chat Input Area ── */}
           <div style={{
-            padding: '16px 24px 20px 24px',
-            background: 'linear-gradient(180deg, rgba(10, 15, 29, 0) 0%, rgba(10, 15, 29, 0.95) 30%, #0a0f1d 100%)',
+            padding: '16px 32px 24px 32px',
+            background: 'linear-gradient(180deg, rgba(8, 8, 10, 0) 0%, rgba(8, 8, 10, 0.95) 30%, #08080a 100%)',
           }}>
-            <div style={{ maxWidth: '840px', margin: '0 auto', width: '100%' }}>
-              {/* Quick Action Chips */}
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '10px' }}>
+            <div style={{ maxWidth: '1020px', margin: '0 auto', width: '100%' }}>
+              {/* Quick Action Chips (NO EMOJIS, Clean Lucide Icons) */}
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px' }}>
+                <button
+                  onClick={() => setIsFlashcardsOpen(true)}
+                  style={{
+                    ...chipStyle,
+                    background: '#ffffff',
+                    color: '#000000',
+                    border: '1px solid #ffffff',
+                    fontWeight: 700,
+                  }}
+                >
+                  <Layers size={13} color="#000000" />
+                  <span>3D Flashcards</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsStudioOpen(true);
+                    handleSelectCitation(QUANTUM_TEXTBOOK_EXCERPTS[0]);
+                  }}
+                  style={{
+                    ...chipStyle,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    borderColor: 'rgba(255, 255, 255, 0.20)',
+                    color: '#ffffff',
+                  }}
+                >
+                  <BookOpen size={13} color="#ffffff" />
+                  <span>Read from Book</span>
+                </button>
                 <button
                   onClick={() => { setGenerateDiagram(true); sendMessage("Build a Bell state circuit in Qiskit 1.0 and generate circuit diagram"); }}
                   style={chipStyle}
                 >
-                  ⚡ Bell State Circuit
+                  <Zap size={13} color="#ffffff" />
+                  <span>Bell State Circuit</span>
                 </button>
                 <button
                   onClick={() => sendMessage("Derive the Quantum Fourier Transform mathematically and explain each step")}
                   style={chipStyle}
                 >
-                  📐 Derive QFT
+                  <Terminal size={13} color="#ffffff" />
+                  <span>Derive QFT</span>
                 </button>
                 <button
                   onClick={() => { setGenerateDiagram(true); sendMessage("Generate a Bloch sphere diagram for state |+> and explain the angles"); }}
                   style={chipStyle}
                 >
-                  🖼️ Bloch Sphere Diagram
+                  <Compass size={13} color="#ffffff" />
+                  <span>Bloch Sphere Diagram</span>
                 </button>
                 <button
                   onClick={() => sendMessage("Explain Grover's search algorithm with a simple analogy for a high school student")}
                   style={chipStyle}
                 >
-                  💡 Intuitive Analogy
+                  <Lightbulb size={13} color="#ffffff" />
+                  <span>Intuitive Analogy</span>
                 </button>
                 <button
                   onClick={() => sendMessage("Give me a challenging multiple choice quiz on quantum error correction")}
                   style={chipStyle}
                 >
-                  ❓ Quiz My Knowledge
+                  <HelpCircle size={13} color="#ffffff" />
+                  <span>Quiz My Knowledge</span>
                 </button>
               </div>
 
               {/* Main Input Box */}
               <div style={{
-                background: '#111827',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
-                borderRadius: '12px',
-                padding: '12px 14px',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+                background: '#121216',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '14px',
+                padding: '14px 16px',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px',
+                gap: '10px',
               }}>
                 <textarea
                   ref={textareaRef}
@@ -1506,23 +2152,23 @@ export default function QuantumChatGPT({
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={`Ask Aura Quantum AI anything in ${INDIAN_LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'English'}... (Shift+Enter for new line)`}
-                  rows={1}
+                  rows={2}
                   style={{
                     width: '100%',
                     background: 'none',
                     border: 'none',
-                    color: '#f3f4f6',
-                    fontSize: '0.90rem',
-                    lineHeight: 1.5,
+                    color: '#ffffff',
+                    fontSize: '1rem',
+                    lineHeight: 1.6,
                     resize: 'none',
                     outline: 'none',
-                    fontFamily: 'inherit',
+                    fontFamily: "'Poppins', sans-serif",
                   }}
                 />
 
                 {/* Bottom Toolbar inside Input */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -1541,12 +2187,15 @@ export default function QuantumChatGPT({
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: '#94a3b8',
+                        color: '#a1a1aa',
                         cursor: 'pointer',
-                        padding: 4,
+                        padding: 6,
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
                       }}
                     >
-                      <Upload size={16} />
+                      <Upload size={17} />
                     </button>
 
                     <button
@@ -1554,34 +2203,36 @@ export default function QuantumChatGPT({
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 4,
-                        background: generateDiagram ? 'rgba(59, 130, 246, 0.2)' : 'none',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 4,
-                        padding: '3px 8px',
-                        fontSize: '0.72rem',
-                        color: generateDiagram ? '#60a5fa' : '#94a3b8',
+                        gap: 5,
+                        background: generateDiagram ? '#ffffff' : 'rgba(255,255,255,0.05)',
+                        border: generateDiagram ? '1px solid #ffffff' : '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 6,
+                        padding: '5px 10px',
+                        fontSize: '0.78rem',
+                        color: generateDiagram ? '#000000' : '#d4d4d8',
                         cursor: 'pointer',
+                        fontWeight: 600,
+                        fontFamily: "'Poppins', sans-serif",
                       }}
                     >
-                      <Sparkles size={11} />
+                      <Sparkles size={12} color={generateDiagram ? '#000000' : '#ffffff'} />
                       {generateDiagram ? 'Diagram ON' : '+ Add Diagram'}
                     </button>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '0.74rem', color: '#71717a', fontFamily: "'Poppins', sans-serif" }}>
                       Enter to send · Shift+Enter for newline
                     </span>
                     <button
                       onClick={() => sendMessage()}
                       disabled={loading || !input.trim()}
                       style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: input.trim() ? 'linear-gradient(135deg, #2563eb, #3b82f6)' : 'rgba(255,255,255,0.06)',
-                        color: input.trim() ? '#fff' : '#64748b',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '9px',
+                        background: input.trim() ? '#ffffff' : 'rgba(255,255,255,0.08)',
+                        color: input.trim() ? '#000000' : '#71717a',
                         border: 'none',
                         cursor: input.trim() ? 'pointer' : 'default',
                         display: 'flex',
@@ -1590,7 +2241,7 @@ export default function QuantumChatGPT({
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      <Send size={15} />
+                      <Send size={16} />
                     </button>
                   </div>
                 </div>
@@ -1598,34 +2249,149 @@ export default function QuantumChatGPT({
             </div>
           </div>
         </main>
+
+        {/* ── NotebookLM-style Quantum Studio (Right Panel) ── */}
+        <QuantumStudio
+          isOpen={isStudioOpen}
+          onClose={() => setIsStudioOpen(false)}
+          activeTopic={activeSession.title}
+          language={selectedLanguage}
+          onOpenFlashcards={() => setIsFlashcardsOpen(true)}
+          onOpenCitation={handleSelectCitation}
+          onOpenInStudio={onLoadCircuitIntoStudio}
+          onPlayVideo={(video) => setActiveVideoForModal(video)}
+          onNavigateToHub={() => onNavigate && onNavigate('videos')}
+          onSendQuery={sendMessage}
+        />
       </div>
+
+      {/* ── Interactive 3D Quantum Flashcards Deck Modal ── */}
+      {isFlashcardsOpen && (
+        <QuantumFlashcards
+          initialTopic={activeSession.title}
+          onClose={() => setIsFlashcardsOpen(false)}
+          onDeepDive={(card) => {
+            setIsFlashcardsOpen(false);
+            sendMessage(`Explain the mathematical derivation and physical intuition behind ${card.front.title}: ${card.front.question}`);
+          }}
+        />
+      )}
+
+      {/* ── Exact Citation & Treatise Projection Modal ── */}
+      {activeCitationForModal && (
+        <CitationProjector
+          citation={activeCitationForModal}
+          onClose={() => setActiveCitationForModal(null)}
+          onDeepDive={(cit) => {
+            setActiveCitationForModal(null);
+            sendMessage(`Deep dive into ${cit.title} (${cit.chapter}, ${cit.section}) and explain the mathematical derivation of ${cit.key_formula || 'the governing equations'}`);
+          }}
+        />
+      )}
+
+      {/* ── Floating Embedded YouTube Lecture Player Modal ── */}
+      {activeVideoForModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 300,
+          padding: 20,
+        }}>
+          <div style={{
+            background: '#0d0d12',
+            border: '1px solid rgba(255,255,255,0.18)',
+            borderRadius: 16,
+            maxWidth: '820px',
+            width: '100%',
+            overflow: 'hidden',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.85)',
+            fontFamily: "'Poppins', sans-serif",
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Play size={16} color="#f87171" fill="#f87171" />
+                <span style={{ fontSize: '0.94rem', fontWeight: 700, color: '#ffffff', fontFamily: "'Times New Roman', Times, serif" }}>
+                  {activeVideoForModal.title}
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveVideoForModal(null)}
+                style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: 4 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden' }}>
+              <iframe
+                src={`${activeVideoForModal.embedUrl}?autoplay=1`}
+                title={activeVideoForModal.title}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#121218' }}>
+              <div style={{ fontSize: '0.78rem', color: '#a1a1aa' }}>
+                Instructor: <b style={{ color: '#ffffff' }}>{activeVideoForModal.instructor}</b> ({activeVideoForModal.languageLabel})
+              </div>
+              {onNavigate && (
+                <button
+                  onClick={() => { const vid = activeVideoForModal; setActiveVideoForModal(null); onNavigate('videos'); }}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    borderRadius: 6,
+                    padding: '6px 14px',
+                    color: '#ffffff',
+                    fontSize: '0.80rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  <span>Open in Video Hub with Dubber</span>
+                  <ExternalLink size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Clear All History Confirmation Modal ── */}
       {confirmClearAll && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 100,
+          fontFamily: "'Poppins', sans-serif",
         }}>
           <div style={{
-            background: '#111827',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '12px',
-            padding: '24px',
-            maxWidth: '420px',
+            background: '#0f0f14',
+            border: '1px solid rgba(255,255,255,0.14)',
+            borderRadius: '14px',
+            padding: '26px',
+            maxWidth: '440px',
             width: '90%',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, color: '#ef4444' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, color: '#f87171' }}>
               <AlertTriangle size={22} />
-              <div style={{ fontSize: '1rem', fontWeight: 700 }}>Clear All Conversations?</div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: "'Times New Roman', Times, serif", color: '#ffffff' }}>Clear All Conversations?</div>
             </div>
-            <p style={{ fontSize: '0.84rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: 20 }}>
+            <p style={{ fontSize: '0.88rem', color: '#a1a1aa', lineHeight: 1.6, marginBottom: 22 }}>
               This will permanently delete all your quantum chat history from this device and your cloud profile. This action cannot be undone.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -1633,12 +2399,14 @@ export default function QuantumChatGPT({
                 onClick={() => setConfirmClearAll(false)}
                 style={{
                   background: 'rgba(255,255,255,0.08)',
-                  color: '#f3f4f6',
+                  color: '#ffffff',
                   border: 'none',
                   borderRadius: '6px',
-                  padding: '8px 14px',
+                  padding: '9px 16px',
                   cursor: 'pointer',
-                  fontSize: '0.82rem',
+                  fontSize: '0.84rem',
+                  fontWeight: 500,
+                  fontFamily: "'Poppins', sans-serif",
                 }}
               >
                 Cancel
@@ -1646,14 +2414,15 @@ export default function QuantumChatGPT({
               <button
                 onClick={handleClearAllHistory}
                 style={{
-                  background: '#ef4444',
-                  color: '#fff',
+                  background: '#f87171',
+                  color: '#000000',
                   border: 'none',
                   borderRadius: '6px',
-                  padding: '8px 16px',
+                  padding: '9px 18px',
                   cursor: 'pointer',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  fontFamily: "'Poppins', sans-serif",
                 }}
               >
                 Yes, Delete All
@@ -1691,17 +2460,18 @@ export default function QuantumChatGPT({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '8px 10px',
-          borderRadius: '6px',
+          padding: '9px 12px',
+          borderRadius: '7px',
           marginBottom: '3px',
-          background: isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-          border: isActive ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent',
+          background: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+          border: isActive ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid transparent',
           cursor: 'pointer',
-          transition: 'all 0.1s ease',
+          transition: 'all 0.12s ease',
+          fontFamily: "'Poppins', sans-serif",
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', flex: 1 }}>
-          <Sparkles size={12} color={isActive ? '#60a5fa' : '#64748b'} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '9px', overflow: 'hidden', flex: 1 }}>
+          <Sparkles size={12} color={isActive ? '#ffffff' : '#71717a'} />
           {isEditing ? (
             <input
               type="text"
@@ -1711,20 +2481,21 @@ export default function QuantumChatGPT({
               onKeyDown={(e) => e.key === 'Enter' && saveRenameSession(s.id)}
               autoFocus
               style={{
-                background: '#161f38',
-                border: '1px solid #3b82f6',
+                background: '#121216',
+                border: '1px solid #ffffff',
                 borderRadius: '4px',
                 color: '#fff',
-                padding: '2px 6px',
-                fontSize: '0.78rem',
+                padding: '3px 8px',
+                fontSize: '0.84rem',
                 outline: 'none',
                 width: '100%',
+                fontFamily: "'Poppins', sans-serif",
               }}
             />
           ) : (
             <span style={{
-              fontSize: '0.80rem',
-              color: isActive ? '#ffffff' : '#94a3b8',
+              fontSize: '0.86rem',
+              color: isActive ? '#ffffff' : '#a1a1aa',
               fontWeight: isActive ? 600 : 400,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -1743,13 +2514,13 @@ export default function QuantumChatGPT({
             style={{
               background: 'none',
               border: 'none',
-              color: '#64748b',
+              color: '#a1a1aa',
               cursor: 'pointer',
-              padding: 2,
+              padding: 3,
               display: isActive ? 'block' : 'none',
             }}
           >
-            <Edit2 size={11} />
+            <Edit2 size={12} />
           </button>
           <button
             onClick={(e) => handleDeleteSession(s.id, e)}
@@ -1757,12 +2528,12 @@ export default function QuantumChatGPT({
             style={{
               background: 'none',
               border: 'none',
-              color: '#64748b',
+              color: '#71717a',
               cursor: 'pointer',
-              padding: 2,
+              padding: 3,
             }}
           >
-            <Trash2 size={12} />
+            <Trash2 size={13} />
           </button>
         </div>
       </div>
@@ -1771,13 +2542,18 @@ export default function QuantumChatGPT({
 }
 
 const chipStyle = {
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  background: '#121216',
+  border: '1px solid rgba(255, 255, 255, 0.12)',
   borderRadius: '20px',
-  padding: '4px 12px',
-  color: '#94a3b8',
-  fontSize: '0.72rem',
+  padding: '6px 14px',
+  color: '#d4d4d8',
+  fontSize: '0.82rem',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
   transition: 'all 0.15s ease',
+  fontFamily: "'Poppins', sans-serif",
+  fontWeight: 500,
 };

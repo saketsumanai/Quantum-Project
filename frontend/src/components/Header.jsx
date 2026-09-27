@@ -71,7 +71,6 @@ export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAu
           { id: "dashboard", label: "Dashboard" },
           { id: "learning", label: "Learning Hub" },
           { id: "videos", label: "Video Lectures" },
-          { id: "curriculum", label: "Curriculum" },
           { id: "assessment", label: "Assessments" },
           { id: "gateway", label: "Gateway Flow" },
         ].map((tab) => (
@@ -79,7 +78,6 @@ export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAu
             onMouseEnter={e => { if (activeTab !== tab.id) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-surface-elevated)'; }}}
             onMouseLeave={e => { if (activeTab !== tab.id) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}}
           >
-            {tab.id === "chat" && <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#10b981', marginRight: 5, verticalAlign: 'middle' }} />}
             {tab.label}
           </button>
         ))}

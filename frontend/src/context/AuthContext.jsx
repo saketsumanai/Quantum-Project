@@ -168,6 +168,10 @@ export function AuthProvider({ children }) {
 
   // Firebase auth state listener
   useEffect(() => {
+    if (!auth) {
+      setIsLoading(false);
+      return;
+    }
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
@@ -225,7 +229,7 @@ export function AuthProvider({ children }) {
       } catch (fbErr) {
         console.warn("[Firebase Auth] Cloud register note:", fbErr.message);
         if (fbErr.code === "auth/email-already-in-use") {
-          throw new Error("This email address is already registered in Firebase. Please log in.");
+          throw new Error("This email address is already registered. Please log in.");
         }
       }
 

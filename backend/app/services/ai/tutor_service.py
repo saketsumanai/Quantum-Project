@@ -667,21 +667,46 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
     current_prompt = f"{rag_section}{course_ctx}{circuit_desc}{difficulty_tag}Student Question: {query}"
     messages.append({"role": "user", "content": current_prompt})
 
+    def _extract_json_dict(text: str) -> Optional[Dict]:
+        try:
+            if "```json" in text:
+                text = text.split("```json")[1].split("```")[0].strip()
+            elif "```" in text:
+                text = text.split("```")[1].split("```")[0].strip()
+            # Try direct parse
+            try:
+                return json.loads(text.strip())
+            except Exception:
+                pass
+            # Regex match outermost curly braces
+            m = re.search(r"\{.*\}", text, re.DOTALL)
+            if m:
+                return json.loads(m.group(0))
+        except Exception:
+            pass
+        return None
+
     candidate_models = [
-        "openai/gpt-oss-20b",
         "openai/gpt-oss-120b",
         "qwen/qwen3.8-27b",
-        "groq/compound-mini",
+        "openai/gpt-oss-20b",
     ]
     if preferred_model and preferred_model != "auto" and preferred_model in candidate_models:
         candidate_models.remove(preferred_model)
         candidate_models.insert(0, preferred_model)
 
+    is_indic = (language or "en").lower() not in ("en", "english", "all")
+
     for model_name in candidate_models:
         try:
-            # Dynamic token budget: Qwen preview has 1000 OTPM cap; GPT-OSS models have large limits
-            token_budget = 900 if "qwen" in model_name else 1500
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            # Dynamic token budget: Indic scripts need 2x-3x token budget
+            if "qwen" in model_name:
+                token_budget = 1400 if is_indic else 950
+            else:
+                token_budget = 2400 if is_indic else 1500
+
+            async with httpx.AsyncClient(timeout=14.0) as client:
+                # First attempt with json_object format
                 resp = await client.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {groq_key}"},
@@ -693,26 +718,37 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
                         "max_tokens": token_budget,
                     },
                 )
+
+                # If json_object fails validation with 400, retry as standard chat completion
+                if resp.status_code == 400:
+                    resp = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={"Authorization": f"Bearer {groq_key}"},
+                        json={
+                            "model": model_name,
+                            "messages": messages,
+                            "temperature": 0.25,
+                            "max_tokens": token_budget,
+                        },
+                    )
+
                 if resp.status_code == 200:
                     content_str = resp.json()["choices"][0]["message"]["content"]
-                    if "```json" in content_str:
-                        content_str = content_str.split("```json")[1].split("```")[0].strip()
-                    elif "```" in content_str:
-                        content_str = content_str.split("```")[1].split("```")[0].strip()
-                    res = json.loads(content_str)
-                    display_name = (
-                        model_name
-                        .replace("openai/gpt-oss-120b", "GPT-OSS 120B (Groq)")
-                        .replace("groq/compound-mini", "Groq Compound Mini")
-                        .replace("groq/compound", "Groq Compound")
-                        .replace("qwen/qwen3.8-27b", "Qwen 3.8 27B")
-                        .replace("openai/gpt-oss-20b", "GPT-OSS 20B Turbo")
-                    )
-                    res["_active_model"] = display_name
-                    res["_rag_active"] = len(context_passages) > 0
-                    print(f"[Groq] ✓ {model_name} generated response successfully")
-                    return res
-                print(f"[Groq] {model_name} → {resp.status_code}: {resp.text[:200]}")
+                    res = _extract_json_dict(content_str)
+                    if res and isinstance(res, dict) and "vocal_prose_script" in res:
+                        display_name = (
+                            model_name
+                            .replace("openai/gpt-oss-120b", "GPT-OSS 120B (Groq)")
+                            .replace("groq/compound-mini", "Groq Compound Mini")
+                            .replace("groq/compound", "Groq Compound")
+                            .replace("qwen/qwen3.8-27b", "Qwen 3.8 27B")
+                            .replace("openai/gpt-oss-20b", "GPT-OSS 20B Turbo")
+                        )
+                        res["_active_model"] = display_name
+                        res["_rag_active"] = len(context_passages) > 0
+                        print(f"[Groq] ✓ {model_name} generated response successfully for language='{language}'")
+                        return res
+                print(f"[Groq] {model_name} → {resp.status_code}: {resp.text[:180]}")
         except Exception as model_err:
             print(f"[Groq] Error with {model_name}: {model_err}")
             continue
@@ -722,7 +758,7 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
 
 # ─── Custom Fine-Tuned LLaMA Endpoint (Ollama / vLLM / Colab ngrok) ───────────
 
-async def _query_custom_llm_with_context(query: str, context_passages: List[Dict], circuit_ctx: Dict, current_course_unit: str = "") -> Optional[Dict]:
+async def _query_custom_llm_with_context(query: str, context_passages: List[Dict], circuit_ctx: Dict, current_course_unit: str = "", language: str = "en") -> Optional[Dict]:
     import httpx
 
     custom_url = os.getenv("CUSTOM_LLM_URL") or os.getenv("OLLAMA_BASE_URL")
@@ -745,6 +781,7 @@ async def _query_custom_llm_with_context(query: str, context_passages: List[Dict
 
     system_prompt = (
         "You are Aura Quantum AI — an elite quantum computing professor and world-class researcher powering Quantum Leap.\n"
+        f"Language requirement: Respond in {language}.\n"
         "Explain concepts using clear intuitive analogies, exact LaTeX Dirac formulas, 100% runnable Qiskit 1.0+ code, "
         "and a diagnostic Socratic quiz. Respond strictly in valid JSON format with keys: "
         "intent_classification, vocal_prose_script, mathematical_latex_formula, qiskit_executable_code, quiz(question,options[4],answer,explanation)."
@@ -789,7 +826,8 @@ async def _query_gemini_with_context(
     query: str,
     context_passages: List[Dict],
     circuit_ctx: Dict,
-    user_level: str = "beginner"
+    user_level: str = "beginner",
+    language: str = "en",
 ) -> Optional[Dict]:
     import httpx
 
@@ -797,15 +835,30 @@ async def _query_gemini_with_context(
     if not gemini_key:
         return None
 
+    INDIAN_LANG_MAP = {
+        "hi": "You MUST explain and respond strictly in authentic HINDI (हिंदी Devanagari script).",
+        "hinglish": "You MUST explain and respond in conversational HINGLISH (conversational Hindi using English/Latin alphabet).",
+        "ta": "You MUST explain and respond strictly in TAMIL (தமிழ் script).",
+        "te": "You MUST explain and respond strictly in TELUGU (తెలుగు script).",
+        "bn": "You MUST explain and respond strictly in BENGALI (বাংলা script).",
+        "mr": "You MUST explain and respond strictly in MARATHI (मराठी script).",
+        "gu": "You MUST explain and respond strictly in GUJARATI (ગુજરાતી script).",
+        "kn": "You MUST explain and respond strictly in KANNADA (ಕನ್ನಡ script).",
+        "ml": "You MUST explain and respond strictly in MALAYALAM (മലയാളം script).",
+        "pa": "You MUST explain and respond strictly in PUNJABI (ਪੰਜਾਬੀ script).",
+    }
+    lang_rule = INDIAN_LANG_MAP.get((language or "en").lower(), "Respond in English.")
+
     ctx_block = "\n\n".join([f"[Source: {p['source']}]\n{p['text'][:600]}" for p in context_passages[:3]])
     prompt = f"""You are Aura Quantum AI for Quantum Leap SIH 2026. Level: {user_level}.
+CRITICAL LANGUAGE REQUIREMENT: {lang_rule}
 Passages: {ctx_block}
 Question: {query}
 Circuit: {json.dumps(circuit_ctx or {})}
-Return JSON only:
-intent_classification, vocal_prose_script, mathematical_latex_formula, qiskit_executable_code,
+Return JSON only with keys:
+intent_classification, vocal_prose_script (in {language}), mathematical_latex_formula, qiskit_executable_code,
 reasoning_process (1. Setup, 2. Derivation, 3. Verification, 4. Grounding),
-quiz (question, options[4], answer)"""
+quiz (question, options[4], answer, explanation)"""
 
     try:
         async with httpx.AsyncClient(timeout=14.0) as client:
@@ -819,6 +872,11 @@ quiz (question, options[4], answer)"""
                     text = text.split("```json")[1].split("```")[0].strip()
                 elif "```" in text:
                     text = text.split("```")[1].split("```")[0].strip()
+                m = re.search(r"\{.*\}", text, re.DOTALL)
+                if m:
+                    res = json.loads(m.group(0))
+                    res["_active_model"] = "Gemini 1.5 Flash (Google Cloud)"
+                    return res
                 return json.loads(text)
     except Exception as e:
         print(f"[Gemini] Error: {e}")
@@ -884,6 +942,16 @@ class AITutorService:
         t_llm_start = time.perf_counter()
         parsed = None
         course_unit_ctx = getattr(req, "current_topic", "") or ""
+        video_ctx = getattr(req, "video_context", None)
+        if video_ctx and isinstance(video_ctx, dict):
+            video_summary = (
+                f"[Active Video Lecture]: {video_ctx.get('title') or video_ctx.get('englishTitle', '')}\n"
+                f"Instructor: {video_ctx.get('instructor', '')} ({video_ctx.get('organization', '')})\n"
+                f"Topic: {video_ctx.get('topicLabel') or video_ctx.get('topic', '')}\n"
+                f"Description: {video_ctx.get('description', '')}\n"
+                f"Key Takeaways: {', '.join(video_ctx.get('keyTakeaways', []))}"
+            )
+            course_unit_ctx = f"{course_unit_ctx} | {video_summary}".strip(" |")
         req_model = getattr(req, "model", "auto") or "auto"
         req_diagram = bool(getattr(req, "generate_diagram", False))
 
@@ -905,7 +973,8 @@ class AITutorService:
             if parsed is None:
                 parsed = await _query_gemini_with_context(
                     req.user_query, passages, req.active_circuit_context or {},
-                    user_level=level
+                    user_level=level,
+                    language=getattr(req, "language", "en") or "en",
                 )
         t_llm_end = time.perf_counter()
         llm_latency_ms = max(round((t_llm_end - t_llm_start) * 1000, 2), 280.0)
@@ -1016,6 +1085,51 @@ class AITutorService:
         tier_data = domain_data.get(level, domain_data["beginner"])
         q = tier_data["quiz"]
 
+        # Localize fallback prose if user requested an Indic language
+        req_lang = (getattr(req, "language", "en") or "en").lower()
+        INDIC_FALLBACK_TRANSLATIONS = {
+            "hi": {
+                "superposition": "क्वांटम सुपरपोज़िशन (Quantum Superposition) क्वांटम यांत्रिकी का एक मूलभूत सिद्धांत है। एक क्लासिकल बिट या तो 0 हो सकता है या 1, लेकिन एक क्वांटम क्यूबिट (Qubit) एक साथ |0⟩ और |1⟩ दोनों अवस्थाओं के रैखिक संयोजन (Linear Combination) में रह सकता है। जब तक क्यूबिट का मापन (Measurement) नहीं किया जाता, यह संभाव्यता आयामों (Probability Amplitudes) के साथ दोनों अवस्थाओं में मौजूद रहता है।",
+                "entanglement": "क्वांटम एंटैंगलमेंट (Quantum Entanglement) एक ऐसी परिघटना है जिसमें दो या दो से अधिक क्यूबिट इस प्रकार परस्पर जुड़ जाते हैं कि एक क्यूबिट की अवस्था का मापन करने पर तुरंत दूसरे क्यूबिट की अवस्था निर्धारित हो जाती है, भले ही वे अंतरिक्ष में कितनी भी दूरी पर क्यों न हों। इसे आइंस्टीन ने 'spooky action at a distance' कहा था।",
+                "grover": "ग्रोवर का एल्गोरिदम (Grover's Algorithm) असंगठित डेटाबेस सर्च के लिए एक क्वांटम एल्गोरिदम है। जहां एक क्लासिकल कंप्यूटर को N तत्वों में खोजने के लिए O(N) समय लगता है, वहीं ग्रोवर एल्गोरिदम इसे क्वांटम आयाम प्रवर्धन (Amplitude Amplification) के माध्यम से केवल O(√N) समय में हल कर देता है।",
+                "vqe": "वेरिएशनल क्वांटम आइगेनसोल्वर (VQE) एक हाइब्रिड क्वांटम-क्लासिकल एल्गोरिदम है जिसका उपयोग मुख्य रूप से क्वांटम रसायन विज्ञान में अणुओं की न्यूनतम ऊर्जा अवस्था (Ground State Energy) खोजने के लिए किया जाता है।",
+            },
+            "hinglish": {
+                "superposition": "Quantum Superposition quantum computing ka basic principle hai. Classical bit ya toh 0 hoti hai ya 1, lekin ek quantum qubit ek hi time par |0> aur |1> dono states ka linear combination hold kar sakta hai. Jab tak hum measure nahi karte, qubit probability amplitudes ke saath dono states me rehta hai.",
+                "entanglement": "Quantum Entanglement ek aisi magical phenomenon hai jisme do ya usse zyada qubits aapas me strongly correlate ho jate hain. Agar aap ek qubit ko measure karenge, toh doosre qubit ki state instantly fix ho jayegi, chahe dono kitne bhi door kyun na hon.",
+                "grover": "Grover's Algorithm unstructured database search ke liye quantum algorithm hai. Jahan classical computer ko N items search karne me O(N) steps lagte hain, wahan Grover's algorithm quantum amplitude amplification use karke O(sqrt(N)) me search complete kar deta hai.",
+                "vqe": "Variational Quantum Eigensolver (VQE) ek hybrid quantum-classical algorithm hai jo NISQ hardware par molecules aur physical systems ki ground state energy calculate karne ke liye use hota hai.",
+            },
+            "ta": {
+                "superposition": "குவாண்டம் சூப்பர்பொசிஷன் (Superposition) என்பது குவாண்டம் அமைப்பின் அடிப்படை விதியாகும். ஒரு கிளாசிக்கல் பிட் 0 அல்லது 1 ஆக மட்டுமே இருக்க முடியும், ஆனால் ஒரு க்யூபிட் (Qubit) ஒரே நேரத்தில் |0⟩ மற்றும் |1⟩ ஆகிய இரண்டின் நேரியல் சேர்க்கையாக (Linear Combination) இருக்க முடியும்.",
+                "entanglement": "குவாண்டம் என்டேங்கிள்மென்ட் (Quantum Entanglement) என்பது இரண்டு அல்லது அதற்கு மேற்பட்ட க்யூபிட்டுகள் பிரிக்க முடியாதபடி ஒன்றோடொன்று பிணைக்கப்பட்ட ஒரு விசித்திரமான குவாண்டம் நிகழ்வாகும்.",
+                "grover": "குரோவர் அல்காரிதம் (Grover's Algorithm) என்பது ஒழுங்கமைக்கப்படாத தரவுத்தளத்தில் தேடுவதற்கான வேகமான குவாண்டம் அல்காரிதம் ஆகும்.",
+                "vqe": "வேரியேஷனல் குவாண்டம் ஐகன்சால்வர் (VQE) என்பது மூலக்கூறுகளின் குறைந்தபட்ச ஆற்றல் நிலையை கணக்கிட உதவும் ஒரு கலப்பின குவாண்டம் அல்காரிதம் ஆகும்.",
+            },
+            "te": {
+                "superposition": "క్వాంటమ్ సూపర్ పొజిషన్ (Superposition) అనేది క్వాంటమ్ కంప్యూటింగ్ యొక్క ప్రాథమిక సూత్రం. ఒక సాధారణ బిట్ 0 లేదా 1 మాత్రమే కాగలదు, కానీ ఒక క్యూబిట్ (Qubit) ఒకే సమయంలో |0⟩ మరియు |1⟩ రెండింటి లీనియర్ కాంబినేషన్‌లో ఉండగలదు.",
+                "entanglement": "క్వాంటమ్ ఎంటాంగిల్మెంట్ (Quantum Entanglement) అనేది రెండు లేదా అంతకంటే ఎక్కువ క్యూబిట్లు ఎంత దూరంలో ఉన్నా ఒకదానితో ఒకటి అనుసంధానించబడి ఉండే అద్భుతమైన స్థితి.",
+                "grover": "గ్రోవర్ అల్గోరిథం (Grover's Algorithm) అనేది అన్-స్ట్రక్చర్డ్ డేటాబేస్ సెర్చ్ కోసం ఉపయోగించే వేగవంతమైన క్వాంటమ్ అల్గోరిథం.",
+                "vqe": "వేరియేషనల్ క్వాంటమ్ ఈగెన్సాల్వర్ (VQE) అనేది అణువుల గ్రౌండ్ స్టేట్ ఎనర్జీని కనుగొనడానికి ఉపయోగించే హైబ్రిడ్ క్వాంటమ్ అల్గోరిథం.",
+            },
+            "bn": {
+                "superposition": "কোয়ান্টাম সুপারপজিশন (Superposition) কোয়ান্টাম বলবিদ্যার অন্যতম প্রধান স্তম্ভ। একটি সাধারণ বিট কেবল ০ বা ১ হতে পারে, কিন্তু একটি কোয়ান্টাম কিউবিট একই সাথে |০⟩ এবং |১⟩ উভয়ের উপরিপাতন অবস্থায় থাকতে পারে।",
+                "entanglement": "কোয়ান্টাম এন্ট্যাঙ্গেলমেন্ট (Quantum Entanglement) এমন একটি অবস্থা যেখানে দুটি কিউবিট একে অপরের সাথে এমনভাবে যুক্ত থাকে যে একটির পরিমাপ অবিলম্বে অন্যটির অবস্থাকে নিশ্চিত করে।",
+                "grover": "গ্রোভারের অ্যালগরিদম (Grover's Algorithm) ডেটাবেস অনুসন্ধানের জন্য একটি অত্যন্ত দ্রুতগতির কোয়ান্টাম অ্যালগরিদম।",
+                "vqe": "ভ্যারিয়েশনাল কোয়ান্টাম আইগেনসলভার (VQE) একটি হাইব্রিড কোয়ান্টাম-ক্লাসিক্যাল অ্যালগরিদম যা অণুর গ্রাউন্ড স্টেট শক্তি নির্ণয়ে ব্যবহৃত হয়।",
+            },
+            "mr": {
+                "superposition": "क्वांटम सुपरपोझिशन (Superposition) हे क्वांटम कॉम्प्युटिंगचे मुख्य वैशिष्ट्य आहे. क्लासिकल बिट ० किंवा १ असते, परंतु क्यूबिट एकाच वेळी |०⟩ आणि |१⟩ या दोन्ही अवस्थांच्या रेखीय संयोजनात (Linear Combination) राहू शकते.",
+                "entanglement": "क्वांटम एंटँगलमेंट (Quantum Entanglement) मध्ये दोन किंवा अधिक क्यूबिट्स परस्परांशी इतके जोडलेले असतात की एकाच्या मोजमापाने दुसऱ्याची अवस्था त्वरित स्पष्ट होते.",
+                "grover": "ग्रोव्हर अल्गोरिदम (Grover's Algorithm) अनस्ट्रक्चर्ड डेटाबेसमधून शोध घेण्यासाठी वापरला जाणारा वेगवान क्वांटम अल्गोरिदम आहे.",
+                "vqe": "व्हेरिएशनल क्वांटम आयगेनसोल्व्हर (VQE) हा रेणूंची मूळ ऊर्जा (Ground State Energy) मोजण्यासाठी वापरला जाणारा अल्गोरिदम आहे.",
+            }
+        }
+
+        fallback_prose = tier_data["prose"]
+        if req_lang in INDIC_FALLBACK_TRANSLATIONS:
+            fallback_prose = INDIC_FALLBACK_TRANSLATIONS[req_lang].get(domain_key, fallback_prose)
+
         fallback_metrics = RAGMetricsModel(
             retrieval_similarity_score=0.91,
             retrieval_latency_ms=retrieval_latency_ms,
@@ -1029,7 +1143,7 @@ class AITutorService:
         return AITutorQueryResponse(
             success=True,
             intent_classification=domain_data["intent"],
-            vocal_prose_script=tier_data["prose"],
+            vocal_prose_script=fallback_prose,
             mathematical_latex_formula=tier_data["latex"],
             qiskit_executable_code=tier_data["code"],
             quiz_generation_object=QuizModel(

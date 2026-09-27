@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen, Search, ExternalLink, PlayCircle, X, ChevronRight } from 'lucide-react';
+import { BookOpen, Search, ExternalLink, PlayCircle, X, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 
 const CATEGORY_CIRCUIT_MAP = {
   "Qubit States, Superposition & Bloch Sphere": "superposition",
@@ -20,6 +20,7 @@ export default function TextbookReaderModal({ isOpen, onClose, initialSearch = "
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedBook, setSelectedBook] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isReadingExcerpt, setIsReadingExcerpt] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -27,9 +28,10 @@ export default function TextbookReaderModal({ isOpen, onClose, initialSearch = "
     fetch("http://localhost:8000/api/v1/curriculum/library")
       .then((r) => r.json())
       .then((data) => {
-        setBooks(Array.isArray(data) ? data : []);
-        if (data.length > 0 && !selectedBook) {
-          setSelectedBook(data[0]);
+        const bookList = Array.isArray(data) ? data : [];
+        setBooks(bookList);
+        if (bookList.length > 0 && !selectedBook) {
+          setSelectedBook(bookList[0]);
         }
       })
       .catch((err) => console.error("Error fetching library catalog:", err))
@@ -37,7 +39,11 @@ export default function TextbookReaderModal({ isOpen, onClose, initialSearch = "
   }, [isOpen]);
 
   useEffect(() => {
-    if (initialSearch) setSearchQuery(initialSearch);
+    if (initialSearch) {
+      // Strip numeric lesson prefixes like "1.1 ", "Chapter 2: ", etc.
+      const cleaned = initialSearch.replace(/^\d+(\.\d+)*\s*[:\-–]?\s*/, "").trim();
+      setSearchQuery(cleaned);
+    }
     if (initialCategory) setSelectedCategory(initialCategory);
   }, [initialSearch, initialCategory]);
 
@@ -48,19 +54,88 @@ export default function TextbookReaderModal({ isOpen, onClose, initialSearch = "
   }, [books]);
 
   const filteredBooks = useMemo(() => {
-    return books.filter(b => {
-      const matchesCategory = !selectedCategory || b.category === selectedCategory;
-      const q = searchQuery.toLowerCase().trim();
-      if (!q) return matchesCategory;
+    if (books.length === 0) return [];
+    const q = searchQuery.toLowerCase().trim();
 
-      const titleMatch = (b.title || "").toLowerCase().includes(q);
-      const authorMatch = (b.author || "").toLowerCase().includes(q);
-      const summaryMatch = (b.training_vector_summary || "").toLowerCase().includes(q);
-      const conceptsMatch = (b.key_concepts || []).some(c => c.toLowerCase().includes(q));
+    const matchQuery = (b) => {
+      if (!q) return true;
+      const title = (b.title || "").toLowerCase();
+      const author = (b.author || "").toLowerCase();
+      const summary = (b.training_vector_summary || "").toLowerCase();
+      const concepts = (b.key_concepts || []).map(c => c.toLowerCase());
 
-      return matchesCategory && (titleMatch || authorMatch || summaryMatch || conceptsMatch);
+      // Exact substring match
+      if (title.includes(q) || author.includes(q) || summary.includes(q) || concepts.some(c => c.includes(q))) {
+        return true;
+      }
+
+      // Token keywords match
+      const tokens = q
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.length >= 3 && !['the', 'and', 'for', 'with', 'from', 'into'].includes(t));
+
+      if (tokens.length > 0) {
+        return tokens.some(t => title.includes(t) || summary.includes(t) || concepts.some(c => c.includes(t)));
+      }
+
+      return false;
+    };
+
+    // 1. Try with selected category
+    let result = books.filter(b => {
+      const matchesCat = !selectedCategory || b.category === selectedCategory;
+      return matchesCat && matchQuery(b);
     });
+
+    // 2. Fallback: if 0 results and category was set, search across all categories
+    if (result.length === 0 && selectedCategory && q) {
+      result = books.filter(b => matchQuery(b));
+    }
+
+    // 3. Fallback: if still 0 results, return all books in category, or all books
+    if (result.length === 0) {
+      if (selectedCategory) {
+        result = books.filter(b => b.category === selectedCategory);
+      }
+      if (result.length === 0) {
+        result = books;
+      }
+    }
+
+    return result;
   }, [books, selectedCategory, searchQuery]);
+
+  // Synchronize selectedBook to filtered results
+  useEffect(() => {
+    if (filteredBooks.length > 0) {
+      if (!selectedBook || !filteredBooks.some(b => b.id === selectedBook.id)) {
+        setSelectedBook(filteredBooks[0]);
+      }
+    }
+  }, [filteredBooks, selectedBook]);
+
+  // Handle stop speech when modal closes or book changes
+  useEffect(() => {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    setIsReadingExcerpt(false);
+  }, [selectedBook?.id, isOpen]);
+
+  const handleReadExcerpt = (text) => {
+    if (!('speechSynthesis' in window)) return;
+    if (isReadingExcerpt) {
+      window.speechSynthesis.cancel();
+      setIsReadingExcerpt(false);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.onend = () => setIsReadingExcerpt(false);
+    utterance.onerror = () => setIsReadingExcerpt(false);
+    setIsReadingExcerpt(true);
+    window.speechSynthesis.speak(utterance);
+  };
 
   if (!isOpen) return null;
 
@@ -255,14 +330,38 @@ export default function TextbookReaderModal({ isOpen, onClose, initialSearch = "
 
                 {/* RAG Knowledge Excerpt / Vector Summary */}
                 <div>
-                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#71717a', fontWeight: 600, marginBottom: '8px' }}>
-                    Curriculum Vector Excerpt &amp; Overview
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#71717a', fontWeight: 600 }}>
+                      Curriculum Vector Excerpt &amp; Overview
+                    </div>
+                    {selectedBook.training_vector_summary && (
+                      <button
+                        onClick={() => handleReadExcerpt(selectedBook.training_vector_summary)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: isReadingExcerpt ? 'rgba(52, 211, 153, 0.15)' : '#18181b',
+                          border: '1px solid ' + (isReadingExcerpt ? 'rgba(52, 211, 153, 0.4)' : '#27272a'),
+                          borderRadius: '4px',
+                          padding: '4px 10px',
+                          color: isReadingExcerpt ? '#34d399' : '#a1a1aa',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          fontWeight: 500,
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {isReadingExcerpt ? <VolumeX size={13} color="#34d399" /> : <Volume2 size={13} />}
+                        <span>{isReadingExcerpt ? "Stop Voice" : "Read Aloud"}</span>
+                      </button>
+                    )}
                   </div>
                   <div style={{
                     padding: '20px 24px', background: '#000000', border: '1px solid #27272a',
                     borderRadius: '6px', fontSize: '0.92rem', lineHeight: 1.7, color: '#e4e4e7'
                   }}>
-                    {selectedBook.training_vector_summary || "Foundational literature entry indexed in the ChromaDB RAG vector space."}
+                    {selectedBook.training_vector_summary || "Foundational literature entry indexed in the quantum research knowledge base."}
                   </div>
                 </div>
 

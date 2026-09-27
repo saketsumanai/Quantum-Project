@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
-import { Cpu, BookOpen, GraduationCap, ArrowRight, CheckCircle2, Database, Activity } from "lucide-react";
+import { Cpu, BookOpen, GraduationCap, ArrowRight, CheckCircle2, Database, Activity, Video } from "lucide-react";
 
 export function BentoCard({
   eyebrow,
@@ -109,14 +109,14 @@ export default function FUIBentoGridDark({ onNavigate }: { onNavigate?: (tab: st
         <BentoCard
           eyebrow="Module 02 • RAG Knowledge"
           title="Learning Hub"
-          description="Explore deep learning paths built directly from 76 landmark textbooks and research papers indexed in ChromaDB. Access mathematical derivations, executable Qiskit 1.0 code, and theory."
+          description="Explore deep learning paths built directly from 76 landmark textbooks and research papers. Access mathematical derivations, executable quantum code, and theory."
           onClick={() => onNavigate && onNavigate("learning")}
           graphic={
             <div className="space-y-2 font-mono">
               <div className="flex items-center justify-between text-xs text-zinc-300 border-b border-zinc-800 pb-1.5">
                 <span className="flex items-center gap-1.5">
                   <Database className="w-3.5 h-3.5 text-zinc-400" />
-                  Vector DB
+                  Knowledge Index
                 </span>
                 <span className="text-[10px] text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">7,323 Chunks</span>
               </div>
@@ -129,27 +129,27 @@ export default function FUIBentoGridDark({ onNavigate }: { onNavigate?: (tab: st
           }
         />
 
-        {/* Module 3: Structured Curriculum */}
+        {/* Module 3: Multilingual Video Hub */}
         <BentoCard
-          eyebrow="Module 03 • Mastery"
-          title="Curriculum"
-          description="Navigate structured lesson units covering Superposition, Entanglement, Grover's Search, Shor's Algorithm, and Surface Codes. Test conceptual mastery via interactive verification."
-          onClick={() => onNavigate && onNavigate("curriculum")}
+          eyebrow="Module 03 • Multilingual"
+          title="Video Lectures"
+          description="Watch premier NPTEL IIT and IBM Quantum lectures dubbed in 10 Indian languages with AI live voiceover and integrated notebook."
+          onClick={() => onNavigate && onNavigate("videos")}
           graphic={
             <div className="space-y-3 font-mono">
               <div className="flex justify-between items-center text-xs text-zinc-300">
                 <span className="flex items-center gap-1.5">
-                  <GraduationCap className="w-3.5 h-3.5 text-zinc-400" />
-                  Unit 02 Progress
+                  <Video className="w-3.5 h-3.5 text-zinc-400" />
+                  NPTEL IIT Premier
                 </span>
-                <span className="text-[10px] bg-zinc-900 text-zinc-300 px-2 py-0.5 rounded border border-zinc-800 font-semibold">100% Verified</span>
+                <span className="text-[10px] bg-zinc-900 text-zinc-300 px-2 py-0.5 rounded border border-zinc-800 font-semibold">10 Languages</span>
               </div>
               <div className="h-2 w-full bg-zinc-900 border border-zinc-800 rounded-full overflow-hidden">
                 <div className="h-full bg-white w-full rounded-full" />
               </div>
               <div className="text-[11px] text-zinc-300 flex items-center gap-1.5 pt-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                <span>Concept Check: Bell Pair |Φ+⟩</span>
+                <span>AI Live Voiceover & Dubbing</span>
               </div>
             </div>
           }

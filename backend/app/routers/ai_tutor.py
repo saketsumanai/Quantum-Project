@@ -324,55 +324,123 @@ Requirements:
     full_script = ""
     segments = []
 
+    candidate_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3.8-27b", "openai/gpt-oss-120b"]
     if groq_key:
-        try:
-            async with httpx.AsyncClient(timeout=18.0) as client:
-                resp = await client.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {groq_key}"},
-                    json={
-                        "model": "qwen/qwen3.8-27b",
-                        "response_format": {"type": "json_object"},
-                        "messages": [
-                            {"role": "system", "content": "You are a quantum physics educator fluent in Indian and global languages. Respond strictly in JSON."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        "temperature": 0.3,
-                        "max_tokens": 2000,
-                    }
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    content = data["choices"][0]["message"]["content"]
-                    parsed = json.loads(content)
-                    full_script = parsed.get("full_dub_script", "")
-                    for seg in parsed.get("segments", []):
-                        segments.append(DubTimelineSegment(
-                            timestamp=seg.get("timestamp", "00:00"),
-                            section_title=seg.get("section_title", "Lecture Section"),
-                            spoken_text=seg.get("spoken_text", ""),
-                        ))
-        except Exception as e:
-            print(f"[Dub Lecture] Groq error: {e}")
+        for model_cand in candidate_models:
+            try:
+                async with httpx.AsyncClient(timeout=14.0) as client:
+                    resp = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={"Authorization": f"Bearer {groq_key}"},
+                        json={
+                            "model": model_cand,
+                            "response_format": {"type": "json_object"},
+                            "messages": [
+                                {"role": "system", "content": "You are a master quantum physics educator fluent in Indian and global languages. Respond strictly in valid JSON."},
+                                {"role": "user", "content": prompt}
+                            ],
+                            "temperature": 0.3,
+                            "max_tokens": 2000,
+                        }
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        content = data["choices"][0]["message"]["content"]
+                        parsed = json.loads(content)
+                        full_script = parsed.get("full_dub_script", "")
+                        for seg in parsed.get("segments", []):
+                            segments.append(DubTimelineSegment(
+                                timestamp=seg.get("timestamp", "00:00"),
+                                section_title=seg.get("section_title", "Lecture Section"),
+                                spoken_text=seg.get("spoken_text", ""),
+                            ))
+                        if full_script and segments:
+                            break
+            except Exception as e:
+                print(f"[Dub Lecture] Model {model_cand} error: {e}")
 
     if not full_script or not segments:
-        # Fallback high-yield script
-        full_script = f"नमस्ते और क्वांटम लीप में आपका स्वागत है। इस व्याख्यान में हम {request.topic} के मूलभूत सिद्धांतों को विस्तार से समझेंगे।"
+        # High-yield native translations across all supported Indian languages & English
+        fallback_scripts = {
+            "hi": {
+                "full": f"नमस्ते और क्वांटम लीप में आपका स्वागत है। इस व्याख्यान में हम {request.title} और {request.topic} के मूलभूत सिद्धांतों को विस्तार से समझेंगे।",
+                "intro": f"क्वांटम कंप्यूटिंग के इस व्याख्यान में आपका स्वागत है। आज हम {request.title} की भौतिकी और अवस्थाओं को समझेंगे।",
+                "mech": "हिल्बर्ट स्पेस में एकात्मक संक्रियाओं और सुपरपोज़िशन के माध्यम से प्रायिकता आयाम विकसित होते हैं।",
+                "synth": "विनाशी व्यतिकरण द्वारा हम अवांछित अवस्थाओं को रद्द करते हुए सही परिणाम की प्रायिकता को अधिकतम करते हैं।"
+            },
+            "ta": {
+                "full": f"வணக்கம், குவாண்டம் லீப்பிற்கு உங்களை வரவேற்கிறோம். இந்த பாடத்தில் {request.title} மற்றும் {request.topic} கோட்பாடுகளை விரிவாக ஆராய்வோம்.",
+                "intro": f"இந்த குவாண்டம் இயற்பியல் விரிவுரைக்கு வரவேற்கிறோம். நாம் {request.title} பற்றிய அடிப்படைகளை கற்போம்.",
+                "mech": "சூப்பர்பொசிஷன் மற்றும் குவாண்டம் கேட்ஸ் மூலம் நிகழ்தகவு வீச்சுகள் கணக்கீட்டில் மாற்றியமைக்கப்படுகின்றன.",
+                "synth": "குவாண்டம் தலையீடு மூலம் சரியான விடையின் சாத்தியக்கூறு பெருக்கப்பட்டு துல்லியமான கணக்கீடு அடையப்படுகிறது."
+            },
+            "te": {
+                "full": f"నమస్కారం, క్వాంటమ్ లీప్‌కు స్వాగతం. ఈ ఉపన్యాసంలో మనం {request.title} మరియు {request.topic} ప్రాథమిక సూత్రాలను సమగ్రంగా నేర్చుకుందాం.",
+                "intro": f"ఈ క్వాంటమ్ ఉపన్యాసానికి స్వాగతం. నేడు మనం {request.title} మరియు క్యూబిట్ ప్రవర్తనను పరిశీలిద్దాం.",
+                "mech": "సూపర్‌పోజిషన్ మరియు యూనిటరీ గేట్ల సహాయంతో క్వాంటమ్ సమాచారం సమాంతరంగా ప్రాసెస్ చేయబడుతుంది.",
+                "synth": "క్వాంటమ్ ఇంటర్‌ఫెరెన్స్ ద్వారా కావలసిన ఫలితాన్ని ఆంప్లిఫై చేసి శీఘ్ర గణనను సాధిస్తాము."
+            },
+            "bn": {
+                "full": f"নমস্কার এবং কোয়ান্টাম লিপে স্বাগতম। এই পাঠে আমরা {request.title} এবং {request.topic} সম্পর্কে বিস্তারিতভাবে আলোচনা করব।",
+                "intro": f"কোয়ান্টাম কম্পিউটিংয়ের এই অধিবেশনে স্বাগতম। আজ আমরা {request.title} এর মূল গতিবিজ্ঞান শিখব।",
+                "mech": "হিলবার্ট স্পেসে ইউনিটারি রূপান্তর এবং সুপারপজিশনের মাধ্যমে সম্ভাব্যতা বিস্তার পরিচালিত হয়।",
+                "synth": "কোয়ান্টাম ব্যতিচারের সাহায্যে আমরা সঠিক ফলাফলের বিস্তার বৃদ্ধি করে জটিল সমস্যা সমাধান করি।"
+            },
+            "mr": {
+                "full": f"नमस्कार आणि क्वांटम लीपमध्ये आपले स्वागत आहे. या सत्रात आपण {request.title} आणि {request.topic} चे मूलभूत नियम समजून घेऊ.",
+                "intro": f"या क्वांटम व्याख्यानात आपले स्वागत आहे. आज आपण {request.title} व क्यूबिट्सच्या अवस्थांचा अभ्यास करू.",
+                "mech": "सुपरपोझिशन आणि युनिटरी गेट्सच्या साहाय्याने क्वांटम अवस्थांमध्ये अचूक बदल घडवून आणले जातात.",
+                "synth": "इंटरफेरन्सचा उपयोग करून अचूक उत्तराची शक्यता वाढवून क्वांटम गती साध्य केली जाते."
+            },
+            "kn": {
+                "full": f"ನಮಸ್ಕಾರ ಮತ್ತು ಕ್ವಾಂಟಮ್ ಲೀಪ್‌ಗೆ ಸ್ವಾಗತ. ಈ ಉಪನ್ಯಾಸದಲ್ಲಿ ನಾವು {request.title} ಮತ್ತು {request.topic} ಕುರಿತು ವಿವರವಾಗಿ ಕಲಿಯಲಿದ್ದೇವೆ.",
+                "intro": f"ಕ್ವಾಂಟಮ್ ಕಂಪ್ಯೂಟಿಂಗ್ ಉಪನ್ಯಾಸಕ್ಕೆ ಸ್ವಾಗತ. ಇಂದು ನಾವು {request.title} ನ ಮೂಲಭೂತ ತತ್ವಗಳನ್ನು ತಿಳಿಯೋಣ.",
+                "mech": "ಸೂಪರ್‌ಪೊಸಿಷನ್ ಮತ್ತು ಯೂನಿಟರಿ ಆಪರೇಟರ್‌ಗಳ ಮೂಲಕ ಸಂಭವನೀಯತೆಯ ಆಂಪ್ಲಿಟ್ಯೂಡ್‌ಗಳನ್ನು ಸಂಸ್ಕರಿಸಲಾಗುತ್ತದೆ.",
+                "synth": "ಕ್ವಾಂಟಮ್ ಇಂಟರ್‌ಫರೆನ್ಸ್ ಬಳಸಿ ಸರಿಯಾದ ಫಲಿತಾಂಶದ ಸಂಭವನೀಯತೆಯನ್ನು ಹೆಚ್ಚಿಸಲಾಗುತ್ತದೆ."
+            },
+            "ml": {
+                "full": f"നമസ്കാരം, ക്വാണ്ടം ലീപ്പിലേക്ക് സ്വാഗതം. ഈ ക്ലാസ്സിൽ നാം {request.title}, {request.topic} എന്നിവയെക്കുറിച്ച് വിശദമായി മനസ്സിലാക്കും.",
+                "intro": f"ക്വാണ്ടം കമ്പ്യൂട്ടിംഗ് ക്ലാസിലേക്ക് സ്വാഗതം. ഇന്ന് നാം {request.title} ന്റെ അടിസ്ഥാന സിദ്ധാന്തങ്ങൾ പഠിക്കും.",
+                "mech": "സൂപ്പർപോസിഷൻ, യൂണിറ്ററി മാറ്റങ്ങൾ എന്നിവയിലൂടെ പ്രോബബിലിറ്റി ആംപ്ലിറ്റ്യൂഡുകൾ നിയന്ത്രിക്കപ്പെടുന്നു.",
+                "synth": "ഇന്റർഫെറൻസ് പ്രയോജനപ്പെടുത്തി കൃത്യമായ ഉത്തരത്തിന്റെ സാധ്യത പരമാവധിയാക്കുന്നു."
+            },
+            "gu": {
+                "full": f"નમસ્તે અને ક્વોન્ટમ લીપમાં આપનું સ્વાગત છે. આ વ્યાખ્યાનમાં આપણે {request.title} અને {request.topic} ના મૂળભૂત સિદ્ધાંતો સમજીશું.",
+                "intro": f"ક્વોન્ટમ કમ્પ્યુટિંગ વ્યાખ્યાનમાં સ્વાગત છે. આજે આપણે {request.title} અને ક્યૂબિટની વર્તણૂક શીખીશું.",
+                "mech": "સુપરપોઝિશન અને યુનિટરી ગેટ્સ દ્વારા સંભાવનાના કંપનવિસ્તારનું સંચાલન કરવામાં આવે છે.",
+                "synth": "ક્વોન્ટમ હસ્તક્ષેપ દ્વારા સાચા પરિણામની સંભાવના વધારીને ઝડપી ગણતરી પ્રાપ્ત થાય છે."
+            },
+            "pa": {
+                "full": f"ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ ਅਤੇ ਕੁਆਂਟਮ ਲੀਪ ਵਿੱਚ ਤੁਹਾਡਾ ਸਵਾਗਤ ਹੈ। ਇਸ ਲੈਕਚਰ ਵਿੱਚ ਅਸੀਂ {request.title} ਅਤੇ {request.topic} ਨੂੰ ਵਿਸਥਾਰ ਨਾਲ ਸਮਝਾਂਗੇ।",
+                "intro": f"ਕੁਆਂਟਮ ਕੰਪਿਊਟਿੰਗ ਲੈਕਚਰ ਵਿੱਚ ਜੀ ਆਇਆਂ ਨੂੰ। ਅੱਜ ਅਸੀਂ {request.title} ਦੇ ਮੁੱਖ ਸਿਧਾਂਤਾਂ ਬਾਰੇ ਪੜ੍ਹਾਂਗੇ।",
+                "mech": "ਸੁਪਰਪੋਜ਼ੀਸ਼ਨ ਅਤੇ ਯੂਨੀਟਰੀ ਗੇਟਾਂ ਰਾਹੀਂ ਸੰਭਾਵਨਾ ਦੇ ਐਂਪਲੀਟਿਊਡ ਵਿਕਸਿਤ ਹੁੰਦੇ ਹਨ।",
+                "synth": "ਕੁਆਂਟਮ ਇੰਟਰਫੇਰੈਂਸ ਰਾਹੀਂ ਸਹੀ ਨਤੀਜੇ ਦੀ ਸੰਭਾਵਨਾ ਵਧਾ ਕੇ ਗਣਨਾ ਪੂਰੀ ਕੀਤੀ ਜਾਂਦੀ ਹੈ।"
+            },
+            "en": {
+                "full": f"Welcome to Quantum Leap. In this lecture, we explore {request.title} and the mathematical foundation of {request.topic}.",
+                "intro": f"Welcome to this lecture on {request.title}. We analyze how quantum states transcend classical computational constraints.",
+                "mech": "Through unitary transformations in Hilbert space, superposition maintains phase coherence and quantum parallelism.",
+                "synth": "By leveraging constructive interference, we systematically amplify target amplitudes to achieve exponential acceleration."
+            }
+        }
+
+        lang_data = fallback_scripts.get(target_lang, fallback_scripts["hi"])
+        full_script = lang_data["full"]
         segments = [
             DubTimelineSegment(
                 timestamp="00:00",
-                section_title="Introduction",
-                spoken_text=f"Welcome to this lecture on {request.topic}. In this session, we investigate how quantum mechanical states transcend classical computational constraints.",
+                section_title="Introduction & Physical Context",
+                spoken_text=lang_data["intro"],
             ),
             DubTimelineSegment(
                 timestamp="02:30",
-                section_title="Quantum State Evolution",
-                spoken_text=f"Notice the unitary evolution occurring in the state space. The superposition maintains phase coherence until deliberate computational readout.",
+                section_title="Quantum State & Circuit Evolution",
+                spoken_text=lang_data["mech"],
             ),
             DubTimelineSegment(
                 timestamp="05:30",
-                section_title="Synthesis & Takeaways",
-                spoken_text="By leveraging destructive interference, we systematically amplify target probability amplitudes while canceling erroneous pathways.",
+                section_title="Key Takeaways & Computational Synthesis",
+                spoken_text=lang_data["synth"],
             ),
         ]
 

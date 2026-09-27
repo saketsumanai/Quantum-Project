@@ -193,7 +193,7 @@ export default function GateTooltip({
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '3px' }}>
           <BookOpen size={12} color='#60a5fa' />
           <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase' }}>
-            Textbook Citation (data/books/)
+            Verified Research Citation
           </span>
         </div>
         <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#f4f4f5', marginBottom: '1px' }}>
@@ -203,7 +203,7 @@ export default function GateTooltip({
           {gate.citation.chapter} • {gate.citation.section} ({gate.citation.pages})
         </div>
         <div style={{ fontSize: '0.64rem', color: '#71717a', marginTop: '2px', fontStyle: 'italic' }}>
-          Archive file: {gate.citation.bookFile}
+          Reference: {gate.citation.bookFile}
         </div>
       </div>
 

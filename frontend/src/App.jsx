@@ -6,7 +6,6 @@ import CircuitCanvas from "./components/CircuitCanvas";
 import BlochSphere from "./components/BlochSphere";
 import MeasurementView from "./components/MeasurementView";
 import AITutorChat from "./components/AITutorChat";
-import CurriculumView from "./components/CurriculumView";
 import LearningHub from "./components/LearningHub";
 import AssessmentCenter from "./components/AssessmentCenter";
 import ExportModal from "./components/ExportModal";
@@ -22,7 +21,7 @@ const API = "http://localhost:8000/api/v1";
 function QuantumLeapApp() {
   const [activeTab, setActiveTab] = useState(() => {
     const hash = (typeof window !== "undefined" ? window.location.hash.replace("#", "") : "");
-    return ["landing", "chat", "videos", "learning", "assessment", "gateway", "studio", "curriculum"].includes(hash) ? hash : "landing";
+    return ["landing", "chat", "videos", "learning", "assessment", "gateway", "studio", "dashboard"].includes(hash) ? hash : "landing";
   });
   const [chatParams, setChatParams] = useState({ query: "", language: "en" });
   const [numQubits, setNumQubits] = useState(2);
@@ -40,6 +39,7 @@ function QuantumLeapApp() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [noiseEnabled, setNoiseEnabled] = useState(false);
   const [noiseProfile, setNoiseProfile] = useState("ibm_eagle");
+  const [hasSimulated, setHasSimulated] = useState(false);
 
   // ── Dark / Light theme ──
   const [theme, setTheme] = useState(() => {
@@ -96,19 +96,22 @@ function QuantumLeapApp() {
       ]);
       if (simRes.success) setSimulationResult(simRes);
       if (svRes.success) setStatevectorData(svRes);
+      setHasSimulated(true);
+      return { success: true, simRes, svRes };
     } catch (err) {
       console.error("Simulation error:", err);
       setSimulationError(err.message || "Failed to execute circuit simulation.");
+      throw err;
     } finally {
       setIsSimulating(false);
     }
   };
 
   useEffect(() => { 
-    if (activeTab === "studio" || !simulationResult) {
+    if (hasSimulated && activeTab === "studio") {
       executeSimulation();
     }
-  }, [activeTab, noiseEnabled, noiseProfile]); // eslint-disable-line
+  }, [noiseEnabled, noiseProfile]); // eslint-disable-line
 
   const handleLoadPreset = async (presetTarget) => {
     try {
@@ -119,7 +122,7 @@ function QuantumLeapApp() {
       if (preset && preset.num_qubits && preset.instructions) {
         setNumQubits(preset.num_qubits);
         setInstructions(preset.instructions);
-        executeSimulation(preset.instructions, preset.num_qubits);
+        setHasSimulated(false);
       }
     } catch (err) {
       console.error("Preset load error:", err);
@@ -159,7 +162,7 @@ function QuantumLeapApp() {
             if (circuit?.num_qubits) setNumQubits(circuit.num_qubits);
             if (circuit?.instructions) {
               setInstructions(circuit.instructions);
-              executeSimulation(circuit.instructions, circuit.num_qubits || numQubits);
+              setHasSimulated(false);
             }
             setActiveTab("studio");
           }}
@@ -221,12 +224,12 @@ function QuantumLeapApp() {
                 if (selectedQubit >= n) setSelectedQubit(0);
                 const filtered = instructions.filter((i) => i.qubits.every((q) => q < n));
                 setInstructions(filtered);
-                executeSimulation(filtered, n);
+                setHasSimulated(false);
               }}
               instructions={instructions}
               onUpdateInstructions={(updated) => {
                 setInstructions(updated);
-                executeSimulation(updated, numQubits);
+                setHasSimulated(false);
               }}
               onRunSimulation={(fw) => executeSimulation(instructions, numQubits, fw)}
               isSimulating={isSimulating}
@@ -244,6 +247,8 @@ function QuantumLeapApp() {
               isSimulating={isSimulating}
               noiseEnabled={noiseEnabled}
               noiseProfile={noiseProfile}
+              hasSimulated={hasSimulated}
+              onRunSimulation={() => executeSimulation(instructions, numQubits)}
             />
           </div>
 
@@ -267,13 +272,25 @@ function QuantumLeapApp() {
       ) : activeTab === "dashboard" ? (
         <StudentDashboard
           onNavigateToStudio={() => setActiveTab("studio")}
-          onNavigateToCurriculum={() => setActiveTab("curriculum")}
+          onNavigateToCurriculum={() => setActiveTab("learning")}
+          onNavigateToLearning={() => setActiveTab("learning")}
+          onNavigateToVideos={() => setActiveTab("videos")}
+          onNavigateToAssessment={() => setActiveTab("assessment")}
+          onNavigateToChat={(query, lang) => {
+            if (query) setChatParams({ query, language: lang || "en" });
+            setActiveTab("chat");
+          }}
+          onLoadCircuitIntoStudio={(circuit) => {
+            if (circuit?.num_qubits) setNumQubits(circuit.num_qubits);
+            if (circuit?.instructions) {
+              setInstructions(circuit.instructions);
+              setHasSimulated(false);
+            }
+            setActiveTab("studio");
+          }}
         />
       ) : (
-        <CurriculumView
-          onLoadCircuitPreset={handleLoadCircuitFromCurriculum}
-          onSwitchToStudio={() => setActiveTab("studio")}
-        />
+        <LandingPage onNavigate={setActiveTab} />
       )}
 
       <ExportModal

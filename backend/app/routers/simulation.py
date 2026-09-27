@@ -91,7 +91,7 @@ async def run_simulation_endpoint(request: SimulationRunRequest):
 @router.post("/statevector", response_model=StatevectorResponse)
 async def calculate_statevector_endpoint(request: StatevectorRequest):
     try:
-        flat_state, bloch_coords = engine.base_engine.simulate_statevector(request.circuit)
+        flat_state, bloch_coords = engine.simulate_statevector(request.circuit)
         num_qubits = request.circuit.num_qubits
         basis_labels = [f"{i:0{num_qubits}b}" for i in range(2 ** num_qubits)]
 

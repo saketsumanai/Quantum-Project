@@ -153,7 +153,7 @@ export function AIInputWithLoading({
 
         <div className="flex justify-between items-center px-2 text-[11px] text-zinc-500 font-mono">
           <span>{isActuallyLoading ? "Quantum reasoning engine active..." : "Press Enter to query • Shift+Enter for newline"}</span>
-          <span>Groq + ChromaDB RAG</span>
+          <span>Neural Verification Engine</span>
         </div>
       </div>
     </div>

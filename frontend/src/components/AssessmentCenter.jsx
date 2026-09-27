@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Award,
   Sparkles,
@@ -24,7 +24,13 @@ import {
   Download,
   Eye,
   Sliders,
-  Compass
+  Compass,
+  UploadCloud,
+  FileUp,
+  Image as ImageIcon,
+  Trash2,
+  Loader2,
+  Paperclip,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import MathRenderer, { LatexBlock } from "./MathRenderer";
@@ -55,6 +61,78 @@ export default function AssessmentCenter({ onSwitchToStudio, onSwitchToLearning 
   const [numQuestions, setNumQuestions] = useState(5);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState(null);
+
+  // Document & Screenshot Extraction state
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isExtractingDoc, setIsExtractingDoc] = useState(false);
+  const [extractError, setExtractError] = useState(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleExtractDocument = async (file) => {
+    if (!file) return;
+    setIsExtractingDoc(true);
+    setExtractError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${API}/assessment/extract-document`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || `Extraction failed with HTTP status ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.success && data.extracted_text) {
+        setCustomNotes((prev) => {
+          if (!prev.trim()) return data.extracted_text;
+          return `${prev}\n\n--- Appended from ${data.filename} ---\n${data.extracted_text}`;
+        });
+        setUploadedFile({
+          name: data.filename || file.name || "Uploaded Document",
+          type: data.file_type || (file.type?.includes("pdf") ? "pdf" : "image"),
+          size: file.size ? `${(file.size / 1024).toFixed(1)} KB` : "Pasted screenshot",
+          charCount: data.char_count || data.extracted_text.length,
+        });
+      } else {
+        throw new Error("No readable text could be extracted from the document.");
+      }
+    } catch (err) {
+      console.error("Document extraction error:", err);
+      setExtractError(err.message || "Failed to extract text from document / screenshot.");
+    } finally {
+      setIsExtractingDoc(false);
+    }
+  };
+
+  const handlePasteClipboard = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.indexOf("image") !== -1) {
+        const blob = item.getAsFile();
+        if (blob) {
+          e.preventDefault();
+          handleExtractDocument(blob);
+          return;
+        }
+      }
+    }
+  };
+
+  const handleDropFile = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      handleExtractDocument(file);
+    }
+  };
 
   // Curated tests
   const [curatedExams, setCuratedExams] = useState([]);
@@ -519,7 +597,7 @@ export default function AssessmentCenter({ onSwitchToStudio, onSwitchToLearning 
                   gap: "6px",
                 }}
               >
-                <FileText size={14} /> 2. Paste Notes / PDF / Screenshot Text
+                <FileUp size={14} /> 2. Upload PDF / Screenshot / Notes
               </button>
             </div>
 
@@ -587,29 +665,196 @@ export default function AssessmentCenter({ onSwitchToStudio, onSwitchToLearning 
             ) : (
               /* Custom Notes / Document Content */
               <div>
-                <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "#c084fc", marginBottom: "6px", display: "block" }}>
-                  Paste Document Text / Screenshot Notes / Syllabus:
-                </label>
-                <textarea
-                  rows={6}
-                  placeholder="Paste your quantum lecture notes, textbook excerpt, homework prompt, or OCR text from a screenshot here. The AI will generate custom multiple choice questions testing this exact content..."
-                  value={customNotes}
-                  onChange={(e) => setCustomNotes(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px",
-                    borderRadius: "6px",
-                    background: "rgba(0,0,0,0.4)",
-                    border: "1px solid rgba(168,85,247,0.3)",
-                    color: "#fff",
-                    fontSize: "0.85rem",
-                    lineHeight: 1.5,
-                    fontFamily: "inherit",
-                    resize: "vertical",
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".pdf,image/png,image/jpeg,image/webp,image/bmp,.txt,.md"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleExtractDocument(e.target.files[0]);
+                    }
                   }}
                 />
-                <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginTop: "4px" }}>
-                  The AI examiner will extract key theorems, matrices, and concepts from your text to build your quiz.
+
+                {/* Dropzone & Screenshot Paste Zone */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                  onDragLeave={() => setIsDragOver(false)}
+                  onDrop={handleDropFile}
+                  onPaste={handlePasteClipboard}
+                  tabIndex={0}
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    border: isDragOver ? "2px dashed #c084fc" : "1px dashed rgba(168,85,247,0.45)",
+                    borderRadius: "8px",
+                    padding: "20px 16px",
+                    background: isDragOver ? "rgba(168,85,247,0.15)" : "rgba(168,85,247,0.05)",
+                    textAlign: "center",
+                    marginBottom: "12px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    outline: "none",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                    <UploadCloud size={24} style={{ color: "#c084fc" }} />
+                    <span style={{ fontSize: "0.92rem", fontWeight: 600, color: "#fff" }}>
+                      Upload PDF Document or Paste Screenshot
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "0.78rem", color: "#9ca3af", margin: "0 0 10px 0", lineHeight: 1.4 }}>
+                    Drag & drop PDF / images here, click to browse files, or press <kbd style={{ background: "rgba(255,255,255,0.12)", padding: "2px 6px", borderRadius: "4px", color: "#c084fc", fontFamily: "monospace", fontSize: "0.76rem" }}>Ctrl + V</kbd> to paste a screenshot directly from clipboard
+                  </p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.72rem", color: "#d8b4fe", background: "rgba(168,85,247,0.15)", padding: "4px 10px", borderRadius: "12px", border: "1px solid rgba(168,85,247,0.3)", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <FileText size={12} /> PDF Slides & Textbooks
+                    </span>
+                    <span style={{ fontSize: "0.72rem", color: "#67e8f9", background: "rgba(6,182,212,0.15)", padding: "4px 10px", borderRadius: "12px", border: "1px solid rgba(6,182,212,0.3)", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <ImageIcon size={12} /> Screenshots & Snipping Tool (OCR)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Extraction Loading Indicator */}
+                {isExtractingDoc && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 14px",
+                    background: "rgba(168,85,247,0.12)",
+                    border: "1px solid rgba(168,85,247,0.35)",
+                    borderRadius: "6px",
+                    marginBottom: "12px",
+                    color: "#e9d5ff",
+                    fontSize: "0.82rem"
+                  }}>
+                    <Loader2 size={16} className="animate-spin" style={{ color: "#c084fc" }} />
+                    <span>Extracting quantum text and equations from document via OCR...</span>
+                  </div>
+                )}
+
+                {/* Error Banner */}
+                {extractError && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px 12px",
+                    background: "rgba(239,68,68,0.1)",
+                    border: "1px solid rgba(239,68,68,0.3)",
+                    borderRadius: "6px",
+                    marginBottom: "12px",
+                    fontSize: "0.78rem",
+                    color: "#fca5a5"
+                  }}>
+                    <AlertCircle size={15} style={{ color: "#ef4444" }} />
+                    <span>{extractError}</span>
+                  </div>
+                )}
+
+                {/* Active Uploaded File Chip */}
+                {uploadedFile && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 12px",
+                    background: "rgba(16,185,129,0.1)",
+                    border: "1px solid rgba(16,185,129,0.3)",
+                    borderRadius: "6px",
+                    marginBottom: "12px",
+                    fontSize: "0.8rem",
+                    color: "#a7f3d0"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                      <CheckCircle2 size={16} style={{ color: "#10b981" }} />
+                      <span style={{ fontWeight: 600, color: "#fff" }}>{uploadedFile.name}</span>
+                      <span style={{ fontSize: "0.72rem", color: "#6ee7b7", background: "rgba(16,185,129,0.2)", padding: "2px 6px", borderRadius: "4px" }}>
+                        {uploadedFile.type.toUpperCase()} ({uploadedFile.size})
+                      </span>
+                      <span style={{ fontSize: "0.72rem", color: "#9ca3af" }}>
+                        {uploadedFile.charCount} characters extracted
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadedFile(null);
+                        setCustomNotes("");
+                      }}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#f87171",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "0.74rem"
+                      }}
+                      title="Clear uploaded file"
+                    >
+                      <Trash2 size={14} /> Clear
+                    </button>
+                  </div>
+                )}
+
+                {/* Editable Textarea */}
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "#c084fc" }}>
+                      Review & Edit Extracted Notes:
+                    </label>
+                    {customNotes && (
+                      <span style={{ fontSize: "0.72rem", color: "#9ca3af" }}>
+                        {customNotes.length} characters
+                      </span>
+                    )}
+                  </div>
+                  <textarea
+                    rows={6}
+                    placeholder="Type or paste notes here, or upload a PDF/screenshot above. You can also press Ctrl+V right here to paste a screenshot from your clipboard..."
+                    value={customNotes}
+                    onChange={(e) => setCustomNotes(e.target.value)}
+                    onPaste={handlePasteClipboard}
+                    style={{
+                      width: "100%",
+                      padding: "12px 14px",
+                      borderRadius: "6px",
+                      background: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(168,85,247,0.3)",
+                      color: "#fff",
+                      fontSize: "0.85rem",
+                      lineHeight: 1.5,
+                      fontFamily: "inherit",
+                      resize: "vertical",
+                    }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
+                    <span style={{ fontSize: "0.72rem", color: "#9ca3af" }}>
+                      The AI examiner will extract key formulas, matrices, and theorems from your notes to generate the examination.
+                    </span>
+                    {customNotes && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomNotes("")}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "#9ca3af",
+                          fontSize: "0.72rem",
+                          cursor: "pointer",
+                          textDecoration: "underline"
+                        }}
+                      >
+                        Clear Text
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -1264,11 +1509,11 @@ export default function AssessmentCenter({ onSwitchToStudio, onSwitchToLearning 
                       if (isAnswerCorrect) {
                         borderStyle = "1.5px solid #10b981";
                         bgStyle = "rgba(16,185,129,0.1)";
-                        badge = <span style={{ color: "#10b981", fontSize: "0.68rem", fontWeight: 700 }}>✓ Correct</span>;
+                        badge = <span style={{ color: "#10b981", fontSize: "0.68rem", fontWeight: 700 }}>Correct</span>;
                       } else if (isStudentSelected && !isCorrect) {
                         borderStyle = "1.5px solid #ef4444";
                         bgStyle = "rgba(239,68,68,0.1)";
-                        badge = <span style={{ color: "#ef4444", fontSize: "0.68rem", fontWeight: 700 }}>✗ Your Choice</span>;
+                        badge = <span style={{ color: "#ef4444", fontSize: "0.68rem", fontWeight: 700 }}>Your Choice</span>;
                       }
 
                       return (

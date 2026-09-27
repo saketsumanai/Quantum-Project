@@ -118,22 +118,51 @@ export default function MathRenderer({ content, className = '', style = {} }) {
   }, [content]);
 
   return (
-    <div className={`math-rendered-text ${className}`} style={{ lineHeight: 1.65, ...style }}>
+    <div className={`math-rendered-text ${className}`} style={{ lineHeight: 1.85, fontSize: '1.18rem', color: '#ffffff', ...style }}>
       {renderedElements}
     </div>
   );
 }
 
 /**
- * Format markdown bold, code, and lists inside plain text segments
+ * Format markdown headings, bold, code, and lists inside plain text segments
  */
 function renderMarkdownSegment(segment) {
   // Split lines
   const lines = segment.split('\n');
   return lines.map((line, lIdx) => {
+    const trimmed = line.trim();
+
+    // Check for markdown headings (#, ##, ###, ####)
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const headingText = headingMatch[2];
+      const fontSize = level === 1 ? '1.9rem' : level === 2 ? '1.6rem' : level === 3 ? '1.38rem' : '1.22rem';
+      return (
+        <div
+          key={lIdx}
+          style={{
+            fontFamily: "'Times New Roman', Times, serif",
+            fontWeight: 800,
+            fontSize,
+            color: '#ffffff',
+            marginTop: lIdx === 0 ? '8px' : '22px',
+            marginBottom: '10px',
+            paddingBottom: '6px',
+            borderBottom: level <= 2 ? '1px solid rgba(255, 255, 255, 0.18)' : 'none',
+            letterSpacing: '-0.01em',
+            textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+          }}
+        >
+          {headingText}
+        </div>
+      );
+    }
+
     // Check if bullet point
-    const isBullet = line.trim().startsWith('- ') || line.trim().startsWith('* ');
-    const displayLine = isBullet ? line.trim().replace(/^[-*]\s+/, '') : line;
+    const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ');
+    const displayLine = isBullet ? trimmed.replace(/^[-*]\s+/, '') : line;
 
     // Parse inline bold and inline code
     const tokens = displayLine.split(/(\*\*.*?\*\*|`.*?`)/g);
@@ -141,7 +170,7 @@ function renderMarkdownSegment(segment) {
     const formattedLine = tokens.map((tok, tIdx) => {
       if (tok.startsWith('**') && tok.endsWith('**') && tok.length > 4) {
         return (
-          <strong key={tIdx} style={{ color: 'var(--text-primary, #ffffff)', fontWeight: 600 }}>
+          <strong key={tIdx} style={{ color: '#ffffff', fontWeight: 700 }}>
             {tok.slice(2, -2)}
           </strong>
         );
@@ -151,12 +180,13 @@ function renderMarkdownSegment(segment) {
           <code
             key={tIdx}
             style={{
-              padding: '2px 6px',
+              padding: '2px 7px',
               borderRadius: 4,
               background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               fontFamily: "'JetBrains Mono', 'IBM Plex Mono', monospace",
-              fontSize: '0.85em',
-              color: '#78a9ff',
+              fontSize: '0.88em',
+              color: '#f4f4f5',
             }}
           >
             {tok.slice(1, -1)}
@@ -168,9 +198,9 @@ function renderMarkdownSegment(segment) {
 
     if (isBullet) {
       return (
-        <div key={lIdx} style={{ display: 'flex', gap: 8, margin: '4px 0', paddingLeft: 12 }}>
-          <span style={{ color: '#0f62fe', fontWeight: 'bold' }}>•</span>
-          <div>{formattedLine}</div>
+        <div key={lIdx} style={{ display: 'flex', gap: 10, margin: '6px 0', paddingLeft: 10 }}>
+          <span style={{ color: '#ffffff', fontWeight: 'bold' }}>•</span>
+          <div style={{ flex: 1 }}>{formattedLine}</div>
         </div>
       );
     }

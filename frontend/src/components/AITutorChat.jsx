@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles, Send, BookOpen, Bot, X, MessageSquare, ChevronDown, ChevronRight,
-  Activity, Clock, Cpu, Mic, Brain, ShieldCheck, CheckCircle2, Terminal, HelpCircle, Trash2
+  Activity, Clock, Cpu, Mic, Brain, ShieldCheck, CheckCircle2, Terminal, HelpCircle, Trash2,
+  Video, Volume2, VolumeX
 } from 'lucide-react';
 import MathRenderer, { LatexBlock } from './MathRenderer';
 import MathBlock from './MathBlock';
@@ -216,7 +217,7 @@ function ProgressiveAssistantMessage({ message, onComplete }) {
           <div className="px-3 py-1.5 bg-zinc-900/60 border-b border-zinc-800 flex items-center justify-between text-[11px] font-mono text-zinc-400">
             <div className="flex items-center gap-1.5">
               <Terminal size={12} />
-              <span>Qiskit 1.x Runnable Proof</span>
+              <span>Executable Quantum Proof</span>
             </div>
             <span className="text-[10px] text-zinc-500">Python</span>
           </div>
@@ -293,6 +294,8 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
   const [isOpen, setIsOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
   const [userLevel, setUserLevel] = useState("beginner"); // beginner | intermediate | advanced
+  const [activeVideoContext, setActiveVideoContext] = useState(null);
+  const [speakingMessageIdx, setSpeakingMessageIdx] = useState(null);
 
   const [messages, setMessages] = useState(() => {
     try {
@@ -347,6 +350,43 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
     setMessages([DEFAULT_AURA_MSG]);
     setSelectedQuizAnswer(null);
     setQuizFeedback(null);
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setSpeakingMessageIdx(null);
+  };
+
+  // Read Aloud / Speech Handler
+  const handleReadAloud = (text, idx) => {
+    if (!('speechSynthesis' in window)) return;
+    if (speakingMessageIdx === idx) {
+      window.speechSynthesis.cancel();
+      setSpeakingMessageIdx(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    try { window.speechSynthesis.resume(); } catch (_) {}
+
+    let clean = (text || '')
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\\\[[\s\S]*?\\\]/g, ' ')
+      .replace(/\\\([\s\S]*?\\\)/g, ' ')
+      .replace(/[\$\*\#\_\~\[\]]/g, ' ')
+      .replace(/\\psi/gi, 'psi')
+      .replace(/\\phi/gi, 'phi')
+      .replace(/\\theta/gi, 'theta')
+      .replace(/\|0\\rangle/gi, 'ket zero')
+      .replace(/\|1\\rangle/gi, 'ket one')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!clean) return;
+
+    const utterance = new SpeechSynthesisUtterance(clean.slice(0, 1500));
+    utterance.rate = 1.0;
+    utterance.onend = () => setSpeakingMessageIdx(null);
+    utterance.onerror = () => setSpeakingMessageIdx(null);
+    setSpeakingMessageIdx(idx);
+    window.speechSynthesis.speak(utterance);
   };
 
   // Auto-scroll on new messages
@@ -356,21 +396,28 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
     }
   }, [messages, isOpen, isLoading]);
 
-  // Listen for external trigger events (e.g. from Gate Hover Tooltips)
+  // Listen for external trigger events (e.g. from Video Lectures or Gate Tooltips)
   useEffect(() => {
     const handleAskTutorEvent = (e) => {
-      if (e.detail && e.detail.prompt) {
+      if (e.detail) {
         setIsOpen(true);
-        handleSendQuery(e.detail.prompt);
+        if (e.detail.videoContext) {
+          setActiveVideoContext(e.detail.videoContext);
+        }
+        if (e.detail.prompt) {
+          handleSendQuery(e.detail.prompt, e.detail.videoContext);
+        }
       }
     };
     window.addEventListener('ask-ai-tutor', handleAskTutorEvent);
     return () => window.removeEventListener('ask-ai-tutor', handleAskTutorEvent);
-  }, [circuitContext, activeTopic, userLevel]);
+  }, [circuitContext, activeTopic, userLevel, activeVideoContext]);
 
-  const handleSendQuery = async (queryText) => {
+  const handleSendQuery = async (queryText, overrideVideoContext) => {
     const textToSend = queryText || inputQuery;
     if (!textToSend || !textToSend.trim() || isLoading) return;
+
+    const vidCtx = overrideVideoContext !== undefined ? overrideVideoContext : activeVideoContext;
 
     // Add user message
     const userMsg = { sender: 'user', text: textToSend };
@@ -389,6 +436,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
           active_circuit_context: circuitContext,
           current_topic: activeTopic,
           user_level: userLevel,
+          video_context: vidCtx || undefined,
         })
       });
 
@@ -460,76 +508,86 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
   return (
     <>
       {/* ── Floating Action Trigger (Bottom Right) ── */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          gap: '10px',
-        }}
-      >
-        {/* Floating Tooltip Bubble */}
-        {showTooltip && !isOpen && (
-          <div
-            style={{
-              position: 'relative',
-              background: '#09090b',
-              border: '1px solid #27272a',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 255, 255, 0.05)',
-              borderRadius: '12px',
-              padding: '10px 14px',
-              maxWidth: '250px',
-              backdropFilter: 'blur(16px)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-              <p
-                onClick={() => setIsOpen(true)}
-                style={{ fontSize: '0.84rem', color: '#ffffff', margin: 0, cursor: 'pointer', lineHeight: 1.4, fontWeight: 500 }}
-              >
-                Hey, I am there to help you!
-              </p>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowTooltip(false); }}
-                style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', padding: 0 }}
-                title="Dismiss"
-              >
-                <X size={12} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Round Floating Action Button */}
-        <button
-          onClick={() => {
-            setIsOpen(!isOpen);
-            setShowTooltip(false);
-          }}
+      {!isOpen && (
+        <div
           style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: isOpen ? '#18181b' : '#09090b',
-            border: isOpen ? '1px solid #52525b' : '1px solid #3f3f46',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.9)',
-            color: '#ffffff',
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 9999,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            outline: 'none',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '10px',
           }}
-          title="Open AI Quantum Tutor"
         >
-          {isOpen ? <X size={22} /> : <Bot size={24} />}
-        </button>
-      </div>
+          {/* Floating Tooltip Bubble */}
+          {showTooltip && (
+            <div
+              style={{
+                position: 'relative',
+                background: '#09090b',
+                border: '1px solid #27272a',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 255, 255, 0.05)',
+                borderRadius: '12px',
+                padding: '10px 14px',
+                maxWidth: '250px',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <p
+                  onClick={() => setIsOpen(true)}
+                  style={{ fontSize: '0.84rem', color: '#ffffff', margin: 0, cursor: 'pointer', lineHeight: 1.4, fontWeight: 500 }}
+                >
+                  Hey, I am there to help you!
+                </p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowTooltip(false); }}
+                  style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', padding: 0 }}
+                  title="Dismiss"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Round Floating Action Button */}
+          <button
+            onClick={() => {
+              setIsOpen(true);
+              setShowTooltip(false);
+            }}
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: '#09090b',
+              border: '1px solid #3f3f46',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.9), 0 0 15px rgba(245, 166, 35, 0.15)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#f5a623';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#3f3f46';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title="Open AI Quantum Tutor"
+          >
+            <Bot size={24} color="#f5a623" />
+          </button>
+        </div>
+      )}
 
       {/* ── Slide-Over Drawer Panel ── */}
       {isOpen && (
@@ -609,6 +667,33 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
               </button>
             </div>
           </div>
+
+          {/* Active Video Lecture Context Banner */}
+          {activeVideoContext && (
+            <div style={{
+              padding: '8px 14px',
+              background: 'rgba(59, 130, 246, 0.08)',
+              borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                <Video size={13} color="#60a5fa" style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: '0.74rem', color: '#93c5fd', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Lecture: {activeVideoContext.title}
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveVideoContext(null)}
+                title="Clear video context"
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 0 }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
 
           {/* 3-Tier Difficulty Selector Pills */}
           <div style={{ padding: '10px 16px', background: '#000000', borderBottom: '1px solid #18181b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -700,11 +785,46 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: m.sender === 'user' ? '#ffffff' : '#d4d4d8', fontWeight: 700 }}>
                     {m.sender === 'user' ? 'You' : <><Bot size={13} color="#ffffff" /> Quantum AI Tutor</>}
                   </div>
-                  {m.user_level && m.sender !== 'user' && (
-                    <span style={{ fontSize: '0.62rem', color: '#71717a', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-                      {m.user_level}
-                    </span>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {m.sender !== 'user' && (
+                      <button
+                        type="button"
+                        onClick={() => handleReadAloud(m.text, idx)}
+                        title={speakingMessageIdx === idx ? "Stop Voice" : "Read Aloud"}
+                        style={{
+                          background: speakingMessageIdx === idx ? 'rgba(52, 211, 153, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                          border: speakingMessageIdx === idx ? '1px solid #34d399' : '1px solid rgba(255, 255, 255, 0.12)',
+                          borderRadius: '4px',
+                          padding: '2px 8px',
+                          color: speakingMessageIdx === idx ? '#34d399' : '#d4d4d8',
+                          fontSize: '0.68rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {speakingMessageIdx === idx ? (
+                          <>
+                            <VolumeX size={12} color="#34d399" />
+                            <span>Stop</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 size={12} />
+                            <span>Read Aloud</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {m.user_level && m.sender !== 'user' && (
+                      <span style={{ fontSize: '0.62rem', color: '#71717a', textTransform: 'uppercase', fontFamily: 'monospace' }}>
+                        {m.user_level}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Content */}

@@ -139,6 +139,7 @@ class AITutorQueryRequest(BaseModel):
     generate_diagram: Optional[bool] = False
     current_topic: Optional[str] = ""
     user_level: Optional[str] = Field(default="beginner", description="beginner | intermediate | advanced")
+    video_context: Optional[Dict[str, Any]] = None
 
 class AITutorQueryResponse(BaseModel):
     success: bool

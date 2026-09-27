@@ -18,14 +18,16 @@ import {
   Mic,
   Radio,
   Sliders,
-  Settings,
-  Key,
   Pause,
   RotateCcw,
   ShieldCheck,
   Languages,
   ChevronDown,
   ChevronUp,
+  FileText,
+  Download,
+  Copy,
+  Check,
 } from "lucide-react";
 import { INDIAN_LANGUAGES, VIDEO_TOPICS, VIDEO_LECTURES } from "../data/videoLecturesData";
 
@@ -45,12 +47,54 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(null);
   const [dubRate, setDubRate] = useState(1.0);
   const [dubVolume, setDubVolume] = useState(1.0);
-  const [showApiModal, setShowApiModal] = useState(false);
   const [showFullScript, setShowFullScript] = useState(false);
-  const [sarvamKey, setSarvamKey] = useState(() => localStorage.getItem("ql_sarvam_key") || import.meta.env.VITE_SARVAM_API_KEY || "");
-  const [elevenLabsKey, setElevenLabsKey] = useState(() => localStorage.getItem("ql_elevenlabs_key") || "");
-  const [saveKeySuccess, setSaveKeySuccess] = useState(false);
   const activeAudioRef = React.useRef(null);
+
+  // ── Lecture Notes State ──────────────────────────────────────────────────────
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [notes, setNotes] = useState(() => localStorage.getItem("ql_notes_" + VIDEO_LECTURES[0]?.id) || "");
+  const [copiedNotes, setCopiedNotes] = useState(false);
+  const [notesSavedNotice, setNotesSavedNotice] = useState(false);
+
+  useEffect(() => {
+    if (activeVideo?.id) {
+      setNotes(localStorage.getItem("ql_notes_" + activeVideo.id) || "");
+    }
+  }, [activeVideo?.id]);
+
+  const handleNotesChange = (val) => {
+    setNotes(val);
+    if (activeVideo?.id) {
+      localStorage.setItem("ql_notes_" + activeVideo.id, val);
+    }
+    setNotesSavedNotice(true);
+    setTimeout(() => setNotesSavedNotice(false), 1500);
+  };
+
+  const handleInsertTimestamp = () => {
+    const timestampTag = `\n[${activeVideo?.duration ? "Note @ " + activeVideo.duration : "Timestamp"}] `;
+    handleNotesChange((notes || "") + timestampTag);
+  };
+
+  const handleCopyNotes = () => {
+    if (!notes) return;
+    navigator.clipboard.writeText(notes);
+    setCopiedNotes(true);
+    setTimeout(() => setCopiedNotes(false), 2000);
+  };
+
+  const handleDownloadNotes = () => {
+    if (!notes) return;
+    const blob = new Blob([
+      `Lecture: ${activeVideo.title}\nInstructor: ${activeVideo.instructor}\nTopic: ${activeVideo.topicLabel || activeVideo.topic}\nDate: ${new Date().toLocaleDateString()}\n\n--- NOTES ---\n${notes}`
+    ], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `QuantumLeap_Notes_${activeVideo.id}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Stop any active speech on unmount or video change
   useEffect(() => {
@@ -253,16 +297,28 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
     return map;
   }, []);
 
-  const handleAskAI = (video) => {
-    if (onSwitchToChat) {
-      const langName =
-        INDIAN_LANGUAGES.find((l) => l.code === video.language)?.label || "Hindi";
-      onSwitchToChat({
-        query: `Explain the key concepts of "${video.englishTitle || video.title}" in ${langName}, including formulas and step-by-step intuition.`,
-        language: video.language !== "en" ? video.language : "hi",
-        topic: video.topic,
-      });
-    }
+  const handleOpenAITutorForLecture = (video) => {
+    const target = video || activeVideo;
+    const cleanLang = (target.languageLabel || "").replace(/[^a-zA-Z\s]/g, "").trim() || "English";
+    window.dispatchEvent(
+      new CustomEvent("ask-ai-tutor", {
+        detail: {
+          prompt: `I am studying "${target.englishTitle || target.title}" by ${target.instructor} (${target.organization}). Can you explain the core concepts and answer questions based on this lecture in ${cleanLang}?`,
+          videoContext: {
+            id: target.id,
+            title: target.title,
+            englishTitle: target.englishTitle,
+            instructor: target.instructor,
+            organization: target.organization,
+            topic: target.topic,
+            topicLabel: target.topicLabel,
+            description: target.description,
+            keyTakeaways: target.keyTakeaways || [],
+            language: target.language,
+          },
+        },
+      })
+    );
   };
 
   // ─── Audio Dubbing Engine Handlers ──────────────────────────────────────────
@@ -310,7 +366,6 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
         body: JSON.stringify({
           text: text.slice(0, 350),
           target_language: dubLanguage,
-          custom_api_key: sarvamKey || undefined,
         }),
       });
       if (res.ok) {
@@ -405,18 +460,6 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
     setActiveSegmentIndex(null);
   };
 
-  const handleSaveApiKeys = (e) => {
-    e.preventDefault();
-    if (sarvamKey) localStorage.setItem("ql_sarvam_key", sarvamKey.trim());
-    else localStorage.removeItem("ql_sarvam_key");
-
-    if (elevenLabsKey) localStorage.setItem("ql_elevenlabs_key", elevenLabsKey.trim());
-    else localStorage.removeItem("ql_elevenlabs_key");
-
-    setSaveKeySuccess(true);
-    setTimeout(() => setSaveKeySuccess(false), 2500);
-  };
-
   return (
     <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "24px", color: "var(--text-primary)", fontFamily: "var(--font-sans)" }}>
       {/* ── Header Banner ── */}
@@ -466,7 +509,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
 
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <button
-            onClick={() => handleAskAI(activeVideo)}
+            onClick={() => handleOpenAITutorForLecture(activeVideo)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -489,7 +532,31 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
             onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
           >
             <Sparkles size={14} />
-            Ask AI in this Language
+            Ask AI Tutor on Lecture
+          </button>
+
+          <button
+            onClick={() => setIsNotesOpen((prev) => !prev)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: isNotesOpen ? "rgba(245, 166, 35, 0.15)" : "var(--bg-surface)",
+              color: isNotesOpen ? "#f5a623" : "var(--text-primary)",
+              border: "1px solid " + (isNotesOpen ? "rgba(245, 166, 35, 0.5)" : "var(--border-subtle)"),
+              padding: "10px 18px",
+              borderRadius: "6px",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              fontFamily: "var(--font-sans)",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <FileText size={14} color={isNotesOpen ? "#f5a623" : "#d4d4d8"} />
+            {isNotesOpen ? "Hide Notes" : "Take Notes"}
           </button>
 
           {onSwitchToAssessment && (
@@ -545,6 +612,9 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
               <button
                 onClick={() => setQuantumDubState(p => ({ ...p, playerMode: "youtube" }))}
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                   padding: "4px 10px",
                   borderRadius: "5px",
                   fontSize: "0.75rem",
@@ -555,14 +625,15 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
                   cursor: "pointer",
                 }}
               >
-                📺 Original English
+                <Video size={13} />
+                <span>Original Lecture</span>
               </button>
               <button
                 onClick={() => {
                   if (quantumDubState.watchUrl) {
                     setQuantumDubState(p => ({ ...p, playerMode: "dubbed" }));
                   } else {
-                    initiateQuantumDubbing(activeVideo.youtubeUrl);
+                    initiateQuantumDubbing(activeVideo.youtubeUrl || `https://www.youtube.com/watch?v=${activeVideo.youtubeId}`);
                   }
                 }}
                 style={{
@@ -580,7 +651,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
                 }}
               >
                 <Sparkles size={12} />
-                {quantumDubState.watchUrl ? "🇮🇳 Hindi Dubbed (Quantum-Aware)" : "⚡ Dub into Hindi (Edge-TTS)"}
+                <span>{quantumDubState.watchUrl ? "Hindi Dubbed (Quantum-Aware)" : "Neural Dub into Hindi"}</span>
               </button>
             </div>
 
@@ -727,7 +798,29 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
               </h2>
             </div>
 
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setIsNotesOpen((prev) => !prev)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "0.80rem",
+                  background: isNotesOpen ? "rgba(245, 166, 35, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid " + (isNotesOpen ? "rgba(245, 166, 35, 0.5)" : "var(--border-subtle)"),
+                  borderRadius: "4px",
+                  padding: "6px 12px",
+                  color: isNotesOpen ? "#f5a623" : "var(--text-primary)",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <FileText size={13} color={isNotesOpen ? "#f5a623" : "#d4d4d8"} />
+                <span>{isNotesOpen ? "Hide Notes" : "Take Notes"}</span>
+              </button>
+
               <a
                 href={`https://www.youtube.com/watch?v=${activeVideo.youtubeId}`}
                 target="_blank"
@@ -746,6 +839,118 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
               </a>
             </div>
           </div>
+
+          {/* ── Interactive Lecture Notes Drawer ── */}
+          {isNotesOpen && (
+            <div style={{
+              padding: "16px 20px",
+              background: "#08080c",
+              borderTop: "1px solid rgba(245, 166, 35, 0.25)",
+              borderBottom: "1px solid var(--border-subtle)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <FileText size={15} color="#f5a623" />
+                  <span style={{ fontSize: "0.86rem", fontWeight: 700, color: "#ffffff" }}>
+                    Student Notebook
+                  </span>
+                  <span style={{ fontSize: "0.72rem", color: "#a1a1aa" }}>
+                    — Notes auto-save in your browser
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  {notesSavedNotice && (
+                    <span style={{ fontSize: "0.72rem", color: "#10b981", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <Check size={12} /> Auto-Saved
+                    </span>
+                  )}
+                  <button
+                    onClick={handleInsertTimestamp}
+                    type="button"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background: "#18181b",
+                      border: "1px solid #27272a",
+                      color: "#e4e4e7",
+                      borderRadius: "4px",
+                      padding: "4px 8px",
+                      fontSize: "0.72rem",
+                      cursor: "pointer",
+                    }}
+                    title="Insert lecture duration tag"
+                  >
+                    <Clock size={12} />
+                    <span>Insert Time</span>
+                  </button>
+                  <button
+                    onClick={handleCopyNotes}
+                    type="button"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background: "#18181b",
+                      border: "1px solid #27272a",
+                      color: "#e4e4e7",
+                      borderRadius: "4px",
+                      padding: "4px 8px",
+                      fontSize: "0.72rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {copiedNotes ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+                    <span>{copiedNotes ? "Copied" : "Copy Notes"}</span>
+                  </button>
+                  <button
+                    onClick={handleDownloadNotes}
+                    type="button"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background: "#18181b",
+                      border: "1px solid #27272a",
+                      color: "#e4e4e7",
+                      borderRadius: "4px",
+                      padding: "4px 8px",
+                      fontSize: "0.72rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Download size={12} />
+                    <span>Export (.txt)</span>
+                  </button>
+                </div>
+              </div>
+
+              <textarea
+                value={notes}
+                onChange={(e) => handleNotesChange(e.target.value)}
+                placeholder="Type your lecture notes, equations, questions, or formulas here... They are automatically saved and persistent for this video."
+                rows={5}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  background: "#030304",
+                  border: "1px solid #27272a",
+                  borderRadius: "6px",
+                  color: "#ffffff",
+                  fontSize: "0.82rem",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  lineHeight: 1.6,
+                  resize: "vertical",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
 
           {/* ── Multilingual Neural Audio Dubber & Live Voiceover Engine ── */}
           <div style={{
@@ -797,33 +1002,10 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
                     )}
                   </div>
                   <div style={{ fontSize: "0.72rem", color: "#9ca3af" }}>
-                    Hardware-accelerated speech synthesis with support for Sarvam AI & ElevenLabs
+                    Hardware-accelerated multilingual neural speech synthesis
                   </div>
                 </div>
               </div>
-
-              {/* API Setup Button */}
-              <button
-                type="button"
-                onClick={() => setShowApiModal(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "6px 10px",
-                  borderRadius: "4px",
-                  background: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#cbd5e1",
-                  fontSize: "0.74rem",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                <Key size={13} />
-                <span>Dubbing APIs & Keys</span>
-              </button>
             </div>
 
             {/* Language Selection & Action Controls */}
@@ -1100,8 +1282,29 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
 
           {activeVideo.keyTakeaways && activeVideo.keyTakeaways.length > 0 && (
             <div>
-              <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700, marginBottom: "6px" }}>
-                Key Concepts Covered
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>
+                  Key Concepts Covered
+                </div>
+                <button
+                  type="button"
+                  onClick={() => speakText(activeVideo.keyTakeaways.join(". "))}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "none",
+                    border: "none",
+                    color: "#78a9ff",
+                    fontSize: "0.72rem",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                  title="Read Key Concepts Aloud"
+                >
+                  <Volume2 size={12} />
+                  <span>Read Aloud</span>
+                </button>
               </div>
               <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
                 {activeVideo.keyTakeaways.map((item, i) => (
@@ -1123,10 +1326,10 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
               <Sparkles size={14} /> AI Lecture Assistant
             </div>
             <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginBottom: "10px", lineHeight: 1.4 }}>
-              Have doubts about this lecture? Click below to chat with our 120B Quantum AI in {activeVideo.languageLabel} or English.
+              Have doubts about this lecture? Click below to chat with our 120B Quantum AI Tutor.
             </div>
             <button
-              onClick={() => handleAskAI(activeVideo)}
+              onClick={() => handleOpenAITutorForLecture(activeVideo)}
               style={{
                 width: "100%",
                 padding: "8px 12px",
@@ -1143,7 +1346,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
                 gap: "6px",
               }}
             >
-              <HelpCircle size={14} /> Ask Doubts in {activeVideo.languageLabel.split(" ")[0]}
+              <HelpCircle size={14} /> Ask Doubts on Lecture
             </button>
           </div>
         </div>
@@ -1416,185 +1619,6 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
               </div>
             );
           })}
-        </div>
-      )}
-      {/* ── Dubbing APIs & Key Manager Modal ── */}
-      {showApiModal && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(11, 15, 25, 0.85)",
-          backdropFilter: "blur(8px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 300,
-          padding: "16px",
-        }}>
-          <div style={{
-            background: "#111827",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
-            borderRadius: "10px",
-            width: "560px",
-            maxWidth: "94vw",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            padding: "24px",
-            color: "#f3f4f6",
-            boxShadow: "0 24px 48px rgba(0, 0, 0, 0.6)",
-            position: "relative",
-          }}>
-            <button
-              type="button"
-              onClick={() => setShowApiModal(false)}
-              style={{
-                position: "absolute", top: "16px", right: "16px",
-                background: "none", border: "none", color: "#9ca3af",
-                cursor: "pointer", padding: "4px",
-              }}
-            >
-              ✕
-            </button>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-              <div style={{
-                padding: "6px", borderRadius: "6px",
-                background: "rgba(99, 102, 241, 0.2)", color: "#a5b4fc",
-              }}>
-                <Key size={18} />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "#ffffff" }}>
-                  YouTube Video Audio Dubbing APIs
-                </h3>
-                <div style={{ fontSize: "0.76rem", color: "#9ca3af" }}>
-                  Which APIs can dub video lectures into Indian languages, and how to use them:
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
-              {/* Option 1: Sarvam AI */}
-              <div style={{
-                background: "rgba(15, 23, 42, 0.6)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "6px",
-                padding: "12px",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                  <span style={{ fontSize: "0.86rem", fontWeight: 700, color: "#38bdf8" }}>
-                    1. Sarvam AI (Recommended for Indian Languages)
-                  </span>
-                  <a
-                    href="https://dashboard.sarvam.ai"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ fontSize: "0.72rem", color: "#38bdf8", textDecoration: "none" }}
-                  >
-                    Get Free Key ↗
-                  </a>
-                </div>
-                <p style={{ margin: "0 0 8px 0", fontSize: "0.76rem", color: "#94a3b8", lineHeight: 1.4 }}>
-                  Built by India's leading generative AI lab. Features <strong>Bulbul v1</strong> text-to-speech with natural Indian cadence, accents, and pronunciation across Hindi, Tamil, Telugu, Kannada, Bengali, Malayalam, Marathi, and Gujarati.
-                </p>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.70rem", color: "#cbd5e1", marginBottom: "3px" }}>
-                    Sarvam API Key (Header: <code>api-subscription-key</code>):
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Enter Sarvam subscription key..."
-                    value={sarvamKey}
-                    onChange={(e) => setSarvamKey(e.target.value)}
-                    style={{
-                      width: "100%", padding: "7px 10px", background: "#1f2937",
-                      border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: "4px",
-                      color: "#ffffff", fontSize: "0.78rem", outline: "none", boxSizing: "border-box",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Option 2: ElevenLabs */}
-              <div style={{
-                background: "rgba(15, 23, 42, 0.6)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "6px",
-                padding: "12px",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                  <span style={{ fontSize: "0.86rem", fontWeight: 700, color: "#a855f7" }}>
-                    2. ElevenLabs Multilingual v2
-                  </span>
-                  <a
-                    href="https://elevenlabs.io"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ fontSize: "0.72rem", color: "#c084fc", textDecoration: "none" }}
-                  >
-                    Get Free Key ↗
-                  </a>
-                </div>
-                <p style={{ margin: "0 0 8px 0", fontSize: "0.76rem", color: "#94a3b8", lineHeight: 1.4 }}>
-                  World-standard emotional voice synthesis. Has a dedicated <strong>Video Dubbing API</strong> (<code>/v1/dubbing</code>) where you provide a YouTube URL and target language code to generate synchronized speech with automatic speaker voice cloning.
-                </p>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.70rem", color: "#cbd5e1", marginBottom: "3px" }}>
-                    ElevenLabs API Key (Header: <code>xi-api-key</code>):
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Enter xi-api-key..."
-                    value={elevenLabsKey}
-                    onChange={(e) => setElevenLabsKey(e.target.value)}
-                    style={{
-                      width: "100%", padding: "7px 10px", background: "#1f2937",
-                      border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: "4px",
-                      color: "#ffffff", fontSize: "0.78rem", outline: "none", boxSizing: "border-box",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Option 3: Browser SpeechSynthesis & Bhashini */}
-              <div style={{
-                background: "rgba(34, 197, 94, 0.08)",
-                border: "1px solid rgba(34, 197, 94, 0.25)",
-                borderRadius: "6px",
-                padding: "12px",
-              }}>
-                <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#4ade80", marginBottom: "4px" }}>
-                  3. Built-in Local Speech Engine (Currently Active · 100% Free)
-                </div>
-                <p style={{ margin: 0, fontSize: "0.76rem", color: "#cbd5e1", lineHeight: 1.45 }}>
-                  The player uses your browser's native hardware-accelerated speech synthesis with regional BCP-47 voice packages (<code>hi-IN</code>, <code>ta-IN</code>, <code>te-IN</code>, <code>bn-IN</code>, etc.). No keys or costs required!
-                </p>
-              </div>
-            </div>
-
-            {/* Save Button */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px" }}>
-              <span style={{ fontSize: "0.74rem", color: saveKeySuccess ? "#4ade80" : "#64748b" }}>
-                {saveKeySuccess ? "✓ API keys saved securely to client storage" : "Keys are stored encrypted in your local browser."}
-              </span>
-              <button
-                type="button"
-                onClick={handleSaveApiKeys}
-                style={{
-                  padding: "8px 18px",
-                  borderRadius: "4px",
-                  background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
-                  border: "none",
-                  color: "#ffffff",
-                  fontSize: "0.82rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Save API Keys
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

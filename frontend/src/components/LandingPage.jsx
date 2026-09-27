@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Cpu, GraduationCap, BookOpen, ArrowRight, ChevronRight, ChevronLeft, Zap, Globe, Activity, Layers, Award, Sparkles } from "lucide-react";
+import { Cpu, GraduationCap, BookOpen, ArrowRight, ChevronRight, ChevronLeft, Zap, Globe, Activity, Layers, Award, Sparkles, Quote, Terminal, CheckCircle2 } from "lucide-react";
 import { animate, stagger } from "animejs";
 import WhyUsMetricsSection from "./WhyUsMetricsSection";
+import { ContainerScroll, CardsContainer, CardTransformed, useContainerScrollContext } from "./ui/animated-cards-stack";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+
+function PrinciplesScrollTracker({ onProgress }) {
+  const { scrollYProgress } = useContainerScrollContext();
+  useEffect(() => {
+    return scrollYProgress.on("change", (latest) => {
+      onProgress(latest);
+    });
+  }, [scrollYProgress, onProgress]);
+  return null;
+}
 
 export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => {} }) {
   const titleRef = useRef(null);
@@ -11,6 +23,18 @@ export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => 
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeLangIdx, setActiveLangIdx] = useState(0);
   const [ragMetricsData, setRagMetricsData] = useState(null);
+  const coreBeliefsRef = useRef(null);
+
+  const handleScrollToPrinciple = (idx) => {
+    setActiveBelief(idx);
+    if (coreBeliefsRef.current) {
+      const rect = coreBeliefsRef.current.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const totalScrollable = Math.max(1, coreBeliefsRef.current.offsetHeight - window.innerHeight);
+      const targetTop = scrollTop + rect.top + (idx / 3) * totalScrollable;
+      window.scrollTo({ top: targetTop, behavior: "smooth" });
+    }
+  };
 
   // Fetch live RAG benchmark metrics on mount
   useEffect(() => {
@@ -200,29 +224,29 @@ export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => 
     {
       id: "studio",
       title: "Circuit Studio Engine",
-      subtitle: "Statevector Aer Simulation",
-      description: "Build, evaluate, and inspect multi-qubit circuits on a high-performance C++ & Python Aer statevector simulator. Drag Pauli, Hadamard, and CNOT gates with real-time measurement distribution.",
+      subtitle: "Multi-Qubit Statevector Simulation",
+      description: "Build, evaluate, and inspect multi-qubit circuits on a high-performance quantum statevector simulator. Drag Pauli, Hadamard, and CNOT gates with real-time measurement distribution.",
       ctaText: "Launch Circuit Studio →",
       badge: "VIRTUAL QPU",
       metric: "16 Qubits Active",
     },
     {
       id: "learning",
-      title: "RAG Quantum Knowledge Hub",
-      subtitle: "76 Textbook Vector Indexes",
-      description: "Explore deep quantum research paths built directly from 76 landmark textbooks and research papers indexed in ChromaDB. Access mathematical derivations, executable Qiskit 1.0 code, and theory.",
+      title: "Quantum Knowledge Hub",
+      subtitle: "76 Verified Literature Indexes",
+      description: "Explore deep quantum research paths built directly from 76 landmark textbooks and research papers. Access mathematical derivations, executable quantum code, and theory.",
       ctaText: "Explore Learning Hub →",
-      badge: "VECTOR DB",
+      badge: "KNOWLEDGE BASE",
       metric: "7,323 Chunks",
     },
     {
-      id: "curriculum",
-      title: "Structured Mastery Curriculum",
-      subtitle: "Unit Progression & Concept Checks",
-      description: "Navigate structured lesson units covering Superposition, Entanglement, Grover's Search, Shor's Algorithm, and Surface Codes. Test conceptual mastery via interactive verification.",
-      ctaText: "Open Curriculum →",
-      badge: "QISKIT 1.0",
-      metric: "100% Verified",
+      id: "videos",
+      title: "Multilingual Video Lectures",
+      subtitle: "10 Indian Languages & NPTEL IIT Premier",
+      description: "Watch authentic video lectures dubbed in Hindi, Tamil, Telugu, and more with AI live voiceover, contextual doubt-solving, and integrated note-taking.",
+      ctaText: "Watch Video Lectures →",
+      badge: "MULTILINGUAL",
+      metric: "10 Languages",
     },
   ];
 
@@ -235,7 +259,7 @@ export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => 
       display: "flex",
       flexDirection: "column",
       position: "relative",
-      overflowX: "hidden",
+      overflowX: "clip",
     }}>
       {/* Global Dither Noise Overlay */}
       <div style={{
@@ -497,169 +521,488 @@ export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => 
       {/* ── Section: Why Us? Live Empirical Evaluation Metrics ── */}
       <WhyUsMetricsSection telemetry={ragMetricsData} />
 
-      {/* ── Section 2: Core Principles (Sticky Progress Navigation Sidebar) ── */}
-      <div id="core-beliefs" style={{ position: "relative", zIndex: 2, padding: "100px 24px", maxWidth: "1280px", margin: "0 auto", width: "100%" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "60px", alignItems: "start" }}>
-          
-          {/* Sticky Progress Indicator Navigation */}
-          <div style={{ position: "sticky", top: "120px", display: "flex", flexDirection: "column", gap: "24px" }}>
-            <div style={{ fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", color: "#a1a1aa", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700 }}>
-              QUANTUM PRINCIPLES
-            </div>
+      {/* ── Section 2: Core Principles (Animated 3D Cards Stack & Sticky Navigation) ── */}
+      <div id="core-beliefs" ref={coreBeliefsRef} style={{
+        position: "relative",
+        zIndex: 2,
+        padding: "80px 24px",
+        maxWidth: "1360px",
+        margin: "0 auto",
+        width: "100%",
+        fontFamily: "'Poppins', sans-serif",
+      }}>
+        <ContainerScroll className="relative min-h-[300vh] w-full">
+          <PrinciplesScrollTracker onProgress={(p) => {
+            if (p < 0.25) setActiveBelief(0);
+            else if (p < 0.50) setActiveBelief(1);
+            else if (p < 0.75) setActiveBelief(2);
+            else setActiveBelief(3);
+          }} />
 
-            {/* Vertical Progress Line & Menu Items */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", position: "relative", paddingLeft: "16px", borderLeft: "2px solid #27272a" }}>
-              {[
-                "Information is Quantum State",
-                "Coherence drives progress",
-                "Scale unlocks advantage",
-                "Quantum discovery is global"
-              ].map((label, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setActiveBelief(idx)}
-                  style={{
-                    fontSize: "0.88rem",
-                    fontWeight: activeBelief === idx ? 600 : 400,
-                    color: activeBelief === idx ? "#ffffff" : "#71717a",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <span style={{
-                    width: activeBelief === idx ? "8px" : "0px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#ffffff",
-                    boxShadow: activeBelief === idx ? "0 0 10px #ffffff" : "none",
-                    transition: "all 0.2s ease",
-                    display: "inline-block"
-                  }} />
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Sticky Viewport with Dual-Column Layout */}
+          <div style={{
+            position: "sticky",
+            top: "85px",
+            height: "calc(100vh - 105px)",
+            width: "100%",
+            display: "grid",
+            gridTemplateColumns: "300px 1fr",
+            gap: "44px",
+            alignItems: "center",
+          }}>
+            {/* Left Column: Sticky Progress Indicator Navigation */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px", fontFamily: "'Poppins', sans-serif" }}>
+              <div style={{ fontSize: "0.75rem", fontFamily: "'Poppins', sans-serif", color: "#a1a1aa", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+                QUANTUM PRINCIPLES
+              </div>
 
-          {/* Principle Blocks Display */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "60px" }}>
-            
-            {/* Principle 1 */}
-            <div style={{
-              background: "linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              borderRadius: "20px",
-              padding: "48px",
-              boxShadow: "0 12px 36px rgba(0, 0, 0, 0.8)",
-            }}>
-              <div style={{ fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", color: "#a1a1aa", letterSpacing: "0.1em", marginBottom: "16px" }}>
-                PRINCIPLE 01
-              </div>
-              <h2 style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)", fontWeight: 300, color: "#ffffff", lineHeight: 1.15, margin: "0 0 24px 0" }}>
-                Information is <span style={{ fontWeight: 400, textDecoration: "underline", textDecorationColor: "#3f3f46", textUnderlineOffset: "8px" }}>Quantum State.</span>
-              </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "1.25rem", color: "#a1a1aa", fontWeight: 300 }}>
-                <div>Superposition is information.</div>
-                <div style={{ color: "#ffffff", fontWeight: 400 }}>Hilbert space opportunity is infinite.</div>
-              </div>
-            </div>
-
-            {/* Principle 2 */}
-            <div style={{
-              background: "linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              borderRadius: "20px",
-              padding: "48px",
-              boxShadow: "0 12px 36px rgba(0, 0, 0, 0.8)",
-            }}>
-              <div style={{ fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", color: "#a1a1aa", letterSpacing: "0.1em", marginBottom: "16px" }}>
-                PRINCIPLE 02
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)", fontWeight: 300, lineHeight: 1.25 }}>
-                <div style={{ color: "#71717a" }}>Noise isn't meant to be feared.</div>
-                <div style={{ color: "#a1a1aa" }}>Decoherence is constant.</div>
-                <div style={{ color: "#e4e4e7" }}>Fault-tolerance fuels innovation.</div>
-                <div style={{ color: "#ffffff", fontWeight: 500 }}>Quantum algorithms empower researchers.</div>
-                <div style={{ color: "#ffffff", fontWeight: 600 }}>Coherence is progress.</div>
-              </div>
-            </div>
-
-            {/* Principle 3 */}
-            <div style={{
-              background: "linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              borderRadius: "20px",
-              padding: "48px",
-              boxShadow: "0 12px 36px rgba(0, 0, 0, 0.8)",
-            }}>
-              <div style={{ fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", color: "#a1a1aa", letterSpacing: "0.1em", marginBottom: "16px" }}>
-                PRINCIPLE 03
-              </div>
-              <h2 style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)", fontWeight: 300, color: "#ffffff", lineHeight: 1.15, margin: "0 0 24px 0" }}>
-                Scale unlocks <span style={{ fontWeight: 400, textDecoration: "underline", textDecorationColor: "#3f3f46", textUnderlineOffset: "8px" }}>advantage.</span>
-              </h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
-                {["Qubits", "Entanglement", "Statevectors"].map((item, idx) => (
-                  <div key={idx} style={{
-                    background: "#050505",
-                    border: "1px solid rgba(255, 255, 255, 0.12)",
-                    borderRadius: "12px",
-                    padding: "24px",
-                    textAlign: "center",
-                  }}>
-                    <div style={{ fontSize: "1.3rem", fontWeight: 600, color: "#ffffff" }}>{item}</div>
+              {/* Vertical Progress Line & Menu Items */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "18px", position: "relative", paddingLeft: "16px", borderLeft: "2px solid #27272a" }}>
+                {[
+                  { label: "Information is Quantum State", pioneer: "Rolf Landauer & C. Bennett" },
+                  { label: "Coherence drives progress", pioneer: "Richard Feynman & J. Preskill" },
+                  { label: "Scale unlocks advantage", pioneer: "David Deutsch & Peter Shor" },
+                  { label: "Quantum discovery is global", pioneer: "Lov Grover & Global Open Science" },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleScrollToPrinciple(idx)}
+                    style={{
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "12px",
+                    }}
+                  >
+                    <span style={{
+                      width: activeBelief === idx ? "8px" : "0px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: "#ffffff",
+                      boxShadow: activeBelief === idx ? "0 0 10px rgba(255, 255, 255, 0.9)" : "none",
+                      transition: "all 0.2s ease",
+                      display: "inline-block",
+                      marginTop: "7px",
+                      flexShrink: 0
+                    }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{
+                        fontSize: "0.92rem",
+                        fontFamily: "'Poppins', sans-serif",
+                        fontWeight: activeBelief === idx ? 600 : 400,
+                        color: activeBelief === idx ? "#ffffff" : "#71717a",
+                        transition: "color 0.2s ease",
+                      }}>
+                        {item.label}
+                      </span>
+                      <span style={{
+                        fontSize: "0.76rem",
+                        fontFamily: "'Poppins', sans-serif",
+                        color: activeBelief === idx ? "#d4d4d8" : "#52525b",
+                        marginTop: "2px",
+                        fontWeight: 400,
+                        transition: "color 0.2s ease"
+                      }}>
+                        {item.pioneer}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
 
-            {/* Principle 4 (Multilingual Headline + Stats Grid) */}
-            <div style={{
-              background: "linear-gradient(135deg, rgba(20, 20, 24, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              borderRadius: "20px",
-              padding: "48px",
-              boxShadow: "0 12px 36px rgba(0, 0, 0, 0.8)",
-            }}>
-              <div style={{ fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace", color: "#a1a1aa", letterSpacing: "0.1em", marginBottom: "16px" }}>
-                PRINCIPLE 04
-              </div>
-
-              {/* Multilingual Rotating Headline */}
-              <div style={{ minHeight: "100px" }}>
-                <h2 style={{
-                  fontSize: "clamp(1.8rem, 3.8vw, 2.8rem)",
-                  fontWeight: 300,
-                  color: "#ffffff",
-                  lineHeight: 1.25,
-                  margin: "0 0 8px 0",
-                  transition: "opacity 0.4s ease",
-                }}>
-                  {multilingualHeadlines[activeLangIdx].text}
-                </h2>
-                <div style={{ fontSize: "0.72rem", fontFamily: "'JetBrains Mono', monospace", color: "#a1a1aa", letterSpacing: "0.1em" }}>
-                  GLOBAL TRANSITION • {multilingualHeadlines[activeLangIdx].lang}
-                </div>
-              </div>
-
-              {/* Stats Counters */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginTop: "32px", paddingTop: "24px", borderTop: "1px solid rgba(255, 255, 255, 0.12)" }}>
-                <div>
-                  <div style={{ fontSize: "3rem", fontWeight: 200, color: "#ffffff", fontFamily: "'JetBrains Mono', monospace" }}>16 Qubits</div>
-                  <div style={{ fontSize: "0.85rem", color: "#a1a1aa", textTransform: "uppercase", letterSpacing: "0.08em" }}>Simulated Real-Time</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "3rem", fontWeight: 200, color: "#ffffff", fontFamily: "'JetBrains Mono', monospace" }}>7,323</div>
-                  <div style={{ fontSize: "0.85rem", color: "#a1a1aa", textTransform: "uppercase", letterSpacing: "0.08em" }}>RAG Chunks Indexed</div>
-                </div>
+              {/* Scroll transformation indicator */}
+              <div style={{
+                marginTop: "16px",
+                padding: "10px 14px",
+                borderRadius: "8px",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "0.74rem",
+                color: "#a1a1aa",
+                fontFamily: "'Poppins', sans-serif",
+                letterSpacing: "0.06em",
+                fontWeight: 500,
+              }}>
+                <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "#ffffff", boxShadow: "0 0 8px rgba(255, 255, 255, 0.8)" }} />
+                <span>SCROLL TO TRANSFORM CARDS</span>
               </div>
             </div>
 
+            {/* Right Column: CardsContainer with 3D Transformed Stacking Cards */}
+            <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
+              <CardsContainer className="relative w-full max-w-[940px] h-[480px]">
+                
+                {/* ── CARD 1: Principle 01 ── */}
+                <CardTransformed
+                  arrayLength={4}
+                  index={1}
+                  incrementY={0}
+                  incrementZ={25}
+                  incrementRotation={0}
+                  variant="dark"
+                  className="!bg-[#0c0c10]/98 !border-white/14 !p-7 md:!p-8 !items-stretch !justify-between shadow-2xl backdrop-blur-2xl !rounded-2xl cursor-pointer group select-none"
+                  style={{
+                    background: "linear-gradient(145deg, rgba(22, 22, 28, 0.98) 0%, rgba(10, 10, 14, 0.99) 100%)",
+                    border: "1px solid rgba(255, 255, 255, 0.14)",
+                    boxShadow: "0 28px 70px rgba(0, 0, 0, 0.95), inset 0 1px 1px 0 rgba(255, 255, 255, 0.16)",
+                    fontFamily: "'Poppins', sans-serif",
+                  }}
+                  onClick={() => handleScrollToPrinciple(1)}
+                  title="Click to peel card to Principle 02"
+                >
+                  <div className="flex items-center justify-between w-full border-b border-white/10 pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="size-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.7)]" />
+                      <span className="font-semibold text-xs tracking-widest text-zinc-300 uppercase">
+                        PRINCIPLE 01 • QUANTUM FOUNDATIONS
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-medium px-2.5 py-1 rounded bg-white/5 border border-white/12 text-zinc-200">
+                      LANDAUER'S PRINCIPLE
+                    </span>
+                  </div>
+
+                  <div className="my-1">
+                    <h2 className="text-2xl md:text-[1.85rem] font-semibold text-white leading-tight tracking-tight">
+                      Information is <span className="font-semibold underline decoration-zinc-600 underline-offset-8">Quantum State.</span>
+                    </h2>
+                    <p className="mt-2 text-[0.92rem] text-zinc-300 font-normal leading-relaxed">
+                      Superposition is not an approximation — it is the fundamental information medium of the physical universe.
+                    </p>
+                  </div>
+
+                  {/* Primary Quote: Rolf Landauer */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:p-5 flex flex-col gap-3">
+                    <p className="text-[0.94rem] md:text-[0.98rem] text-zinc-100 font-normal italic leading-relaxed">
+                      "Information is not a disembodied abstract entity; it is always tied to a physical representation. In a quantum mechanical universe, <strong className="text-white font-semibold not-italic">information is physical</strong>."
+                    </p>
+                    <div className="flex items-center gap-3 pt-1">
+                      <Avatar className="size-9 border border-white/20">
+                        <AvatarImage src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" alt="Rolf Landauer" />
+                        <AvatarFallback className="bg-zinc-800 text-white text-xs font-mono">RL</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="text-xs md:text-sm font-semibold text-white">Rolf Landauer</div>
+                        <div className="text-[11px] text-zinc-400">IBM Fellow • Formulator of Landauer's Principle of Information Physics (1927–1999)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Secondary Voice: Charles H. Bennett */}
+                  <div className="flex items-center justify-between text-xs text-zinc-300 pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-medium">Charles H. Bennett (IBM Fellow):</span>
+                      <span className="italic text-zinc-400 hidden sm:inline">"Quantum states cannot be cloned, yet Hilbert space enables exponential parallel amplitude."</span>
+                    </div>
+                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-200">|ψ⟩ = α|0⟩ + β|1⟩</span>
+                  </div>
+                </CardTransformed>
+
+                {/* ── CARD 2: Principle 02 ── */}
+                <CardTransformed
+                  arrayLength={4}
+                  index={2}
+                  incrementY={0}
+                  incrementZ={25}
+                  incrementRotation={-3}
+                  variant="dark"
+                  className="!bg-[#0c0c10]/98 !border-white/14 !p-7 md:!p-8 !items-stretch !justify-between shadow-2xl backdrop-blur-2xl !rounded-2xl cursor-pointer group select-none"
+                  style={{
+                    background: "linear-gradient(145deg, rgba(22, 22, 28, 0.98) 0%, rgba(10, 10, 14, 0.99) 100%)",
+                    border: "1px solid rgba(255, 255, 255, 0.14)",
+                    boxShadow: "0 28px 70px rgba(0, 0, 0, 0.95), inset 0 1px 1px 0 rgba(255, 255, 255, 0.16)",
+                    fontFamily: "'Poppins', sans-serif",
+                  }}
+                  onClick={() => handleScrollToPrinciple(2)}
+                  title="Click to peel card to Principle 03"
+                >
+                  <div className="flex items-center justify-between w-full border-b border-white/10 pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="size-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.7)]" />
+                      <span className="font-semibold text-xs tracking-widest text-zinc-300 uppercase">
+                        PRINCIPLE 02 • COHERENCE & ERROR CORRECTION
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-medium px-2.5 py-1 rounded bg-white/5 border border-white/12 text-zinc-200">
+                      FAULT-TOLERANT SUPREMACY
+                    </span>
+                  </div>
+
+                  <div className="my-1">
+                    <h2 className="text-2xl md:text-[1.85rem] font-semibold text-white leading-tight tracking-tight">
+                      Noise Isn't Feared. <span className="font-semibold underline decoration-zinc-600 underline-offset-8">Coherence Is Progress.</span>
+                    </h2>
+                    <p className="mt-2 text-[0.92rem] text-zinc-300 font-normal leading-relaxed">
+                      Decoherence is the price of quantum sensitivity; fault tolerance and stabilizer codes are our engineering bridge.
+                    </p>
+                  </div>
+
+                  {/* Primary Quote: Richard Feynman */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:p-5 flex flex-col gap-3">
+                    <p className="text-[0.94rem] md:text-[0.98rem] text-zinc-100 font-normal italic leading-relaxed">
+                      "Nature isn't classical, dammit, and if you want to make a simulation of nature, you'd better make it quantum mechanical, and by golly it's a wonderful problem, because it doesn't look so easy."
+                    </p>
+                    <div className="flex items-center gap-3 pt-1">
+                      <Avatar className="size-9 border border-white/20">
+                        <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Richard Feynman" />
+                        <AvatarFallback className="bg-zinc-800 text-white text-xs font-mono">RF</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="text-xs md:text-sm font-semibold text-white">Richard P. Feynman</div>
+                        <div className="text-[11px] text-zinc-400">Nobel Laureate in Physics • Caltech (Proposed Quantum Computation, 1981)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Secondary Voice: John Preskill */}
+                  <div className="flex items-center justify-between text-xs text-zinc-300 pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-medium">John Preskill (Caltech):</span>
+                      <span className="italic text-zinc-400 hidden sm:inline">"We expect quantum computers will eventually outperform the best classical supercomputers."</span>
+                    </div>
+                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-200">T₁ / T₂ Coherence Threshold</span>
+                  </div>
+                </CardTransformed>
+
+                {/* ── CARD 3: Principle 03 ── */}
+                <CardTransformed
+                  arrayLength={4}
+                  index={3}
+                  incrementY={0}
+                  incrementZ={25}
+                  incrementRotation={3}
+                  variant="dark"
+                  className="!bg-[#0c0c10]/98 !border-white/14 !p-7 md:!p-8 !items-stretch !justify-between shadow-2xl backdrop-blur-2xl !rounded-2xl cursor-pointer group select-none"
+                  style={{
+                    background: "linear-gradient(145deg, rgba(22, 22, 28, 0.98) 0%, rgba(10, 10, 14, 0.99) 100%)",
+                    border: "1px solid rgba(255, 255, 255, 0.14)",
+                    boxShadow: "0 28px 70px rgba(0, 0, 0, 0.95), inset 0 1px 1px 0 rgba(255, 255, 255, 0.16)",
+                    fontFamily: "'Poppins', sans-serif",
+                  }}
+                  onClick={() => handleScrollToPrinciple(3)}
+                  title="Click to peel card to Principle 04"
+                >
+                  <div className="flex items-center justify-between w-full border-b border-white/10 pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="size-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.7)]" />
+                      <span className="font-semibold text-xs tracking-widest text-zinc-300 uppercase">
+                        PRINCIPLE 03 • ALGORITHMIC COMPLEXITY
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-medium px-2.5 py-1 rounded bg-white/5 border border-white/12 text-zinc-200">
+                      EXPONENTIAL ADVANTAGE
+                    </span>
+                  </div>
+
+                  <div className="my-1">
+                    <h2 className="text-2xl md:text-[1.85rem] font-semibold text-white leading-tight tracking-tight">
+                      Scale Unlocks <span className="font-semibold underline decoration-zinc-600 underline-offset-8">Algorithmic Advantage.</span>
+                    </h2>
+                    <p className="mt-2 text-[0.92rem] text-zinc-300 font-normal leading-relaxed">
+                      Quantum speedup is achieved through destructive interference of incorrect states and constructive amplification of the true solution.
+                    </p>
+                  </div>
+
+                  {/* Primary Quote: David Deutsch */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:p-5 flex flex-col gap-3">
+                    <p className="text-[0.94rem] md:text-[0.98rem] text-zinc-100 font-normal italic leading-relaxed">
+                      "Quantum computation is nothing less than a distinctly new way of harnessing nature... Quantum algorithms calculate solutions by constructive interference among parallel computational paths."
+                    </p>
+                    <div className="flex items-center gap-3 pt-1">
+                      <Avatar className="size-9 border border-white/20">
+                        <AvatarImage src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80" alt="David Deutsch" />
+                        <AvatarFallback className="bg-zinc-800 text-white text-xs font-mono">DD</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="text-xs md:text-sm font-semibold text-white">David Deutsch</div>
+                        <div className="text-[11px] text-zinc-400">Pioneer of Quantum Computation • University of Oxford (Dirac Medalist)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Secondary Voice: Peter Shor */}
+                  <div className="flex items-center justify-between text-xs text-zinc-300 pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-medium">Peter W. Shor (M.I.T.):</span>
+                      <span className="italic text-zinc-400 hidden sm:inline">"Can quantum mechanics calculate things exponentially faster? The answer is provably yes."</span>
+                    </div>
+                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-200">O(poly n) vs O(eⁿ)</span>
+                  </div>
+                </CardTransformed>
+
+                {/* ── CARD 4: Principle 04 ── */}
+                <CardTransformed
+                  arrayLength={4}
+                  index={4}
+                  incrementY={0}
+                  incrementZ={25}
+                  incrementRotation={-2}
+                  variant="dark"
+                  className="!bg-[#0c0c10]/98 !border-white/14 !p-7 md:!p-8 !items-stretch !justify-between shadow-2xl backdrop-blur-2xl !rounded-2xl cursor-pointer group select-none"
+                  style={{
+                    background: "linear-gradient(145deg, rgba(22, 22, 28, 0.98) 0%, rgba(10, 10, 14, 0.99) 100%)",
+                    border: "1px solid rgba(255, 255, 255, 0.14)",
+                    boxShadow: "0 28px 70px rgba(0, 0, 0, 0.95), inset 0 1px 1px 0 rgba(255, 255, 255, 0.16)",
+                    fontFamily: "'Poppins', sans-serif",
+                  }}
+                  onClick={() => handleScrollToPrinciple(0)}
+                  title="Click to reset stack to Principle 01"
+                >
+                  <div className="flex items-center justify-between w-full border-b border-white/10 pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="size-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.7)]" />
+                      <span className="font-semibold text-xs tracking-widest text-zinc-300 uppercase">
+                        PRINCIPLE 04 • GLOBAL DISCOVERY
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-medium px-2.5 py-1 rounded bg-white/5 border border-white/12 text-zinc-200">
+                      OPEN QUANTUM SCIENCE
+                    </span>
+                  </div>
+
+                  <div className="my-1">
+                    <h2 className="text-2xl md:text-[1.85rem] font-semibold text-white leading-tight tracking-tight">
+                      Quantum Discovery <span className="font-semibold underline decoration-zinc-600 underline-offset-8">Is Global.</span>
+                    </h2>
+                    <div className="mt-2 text-[0.92rem] text-zinc-100 font-normal transition-opacity duration-300">
+                      "{multilingualHeadlines[activeLangIdx].text}"
+                    </div>
+                    <div className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mt-0.5">
+                      GLOBAL TRANSITION • {multilingualHeadlines[activeLangIdx].lang}
+                    </div>
+                  </div>
+
+                  {/* Primary Quote: Lov Grover */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:p-5 flex flex-col gap-3">
+                    <p className="text-[0.94rem] md:text-[0.98rem] text-zinc-100 font-normal italic leading-relaxed">
+                      "By designing algorithms that amplify the probability amplitude of target states, we rotate the statevector directly toward the solution in O(√N) queries — provable quadratic speedup over any classical search."
+                    </p>
+                    <div className="flex items-center gap-3 pt-1">
+                      <Avatar className="size-9 border border-white/20">
+                        <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80" alt="Lov Grover" />
+                        <AvatarFallback className="bg-zinc-800 text-white text-xs font-mono">LG</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="text-xs md:text-sm font-semibold text-white">Lov K. Grover</div>
+                        <div className="text-[11px] text-zinc-400">Bell Laboratories • Inventor of Grover's Quantum Search Algorithm</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Platform Telemetry */}
+                  <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/10">
+                    <div className="flex flex-col">
+                      <span className="text-xl md:text-2xl font-semibold text-white">16 Qubits</span>
+                      <span className="text-[11px] text-zinc-400 uppercase tracking-wider font-medium">Simulated Real-Time</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xl md:text-2xl font-semibold text-white">7,323 Chunks</span>
+                      <span className="text-[11px] text-zinc-400 uppercase tracking-wider font-medium">RAG Textbooks Indexed</span>
+                    </div>
+                  </div>
+                </CardTransformed>
+
+              </CardsContainer>
+
+              {/* Interactive Card Progression & Manual Controls */}
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                maxWidth: "940px",
+                marginTop: "12px",
+                padding: "8px 14px",
+                background: "rgba(14, 14, 18, 0.85)",
+                border: "1px solid rgba(255, 255, 255, 0.10)",
+                borderRadius: "12px",
+                backdropFilter: "blur(12px)",
+                fontFamily: "'Poppins', sans-serif",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  {[
+                    { idx: 0, label: "01 Landauer" },
+                    { idx: 1, label: "02 Feynman" },
+                    { idx: 2, label: "03 Deutsch" },
+                    { idx: 3, label: "04 Grover" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.idx}
+                      onClick={() => handleScrollToPrinciple(tab.idx)}
+                      style={{
+                        padding: "5px 14px",
+                        fontSize: "0.76rem",
+                        fontFamily: "'Poppins', sans-serif",
+                        borderRadius: "9999px",
+                        border: "1px solid",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        background: activeBelief === tab.idx ? "#ffffff" : "rgba(255, 255, 255, 0.04)",
+                        color: activeBelief === tab.idx ? "#000000" : "#a1a1aa",
+                        borderColor: activeBelief === tab.idx ? "#ffffff" : "rgba(255, 255, 255, 0.1)",
+                        fontWeight: activeBelief === tab.idx ? 600 : 400,
+                        boxShadow: activeBelief === tab.idx ? "0 0 12px rgba(255, 255, 255, 0.35)" : "none",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <button
+                    onClick={() => handleScrollToPrinciple(Math.max(0, activeBelief - 1))}
+                    disabled={activeBelief === 0}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "5px 12px",
+                      fontSize: "0.76rem",
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 500,
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      color: activeBelief === 0 ? "#52525b" : "#ffffff",
+                      cursor: activeBelief === 0 ? "not-allowed" : "pointer",
+                      opacity: activeBelief === 0 ? 0.35 : 1,
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <ChevronLeft size={13} /> PREV
+                  </button>
+                  <button
+                    onClick={() => handleScrollToPrinciple(Math.min(3, activeBelief + 1))}
+                    disabled={activeBelief === 3}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "5px 12px",
+                      fontSize: "0.76rem",
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 500,
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      color: activeBelief === 3 ? "#52525b" : "#ffffff",
+                      cursor: activeBelief === 3 ? "not-allowed" : "pointer",
+                      opacity: activeBelief === 3 ? 0.35 : 1,
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    NEXT <ChevronRight size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </ContainerScroll>
       </div>
 
       {/* ── Section 3: Interactive Capabilities Carousel ── */}

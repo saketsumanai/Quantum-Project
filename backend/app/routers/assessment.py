@@ -6,7 +6,7 @@ import random
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 
 from backend.app.models.schemas import (
@@ -68,203 +68,9 @@ DYNAMIC_SOLUTIONS: Dict[str, Dict[str, Any]] = {
 
 QUIZ_SOLUTIONS: Dict[str, Dict[str, Any]] = {}
 
-# Pre-compiled high-yield questions for instant offline/failsafe mode
-CURATED_EXAM_BANK = {
-    "gates": [
-        {
-            "id": "gate_q1",
-            "question": "What is the matrix representation and action of the Pauli-X gate?",
-            "options": [
-                "It acts as a quantum NOT gate, mapping |0⟩ to |1⟩ and |1⟩ to |0⟩",
-                "It introduces an arbitrary phase factor e^(iθ) to |1⟩",
-                "It projects a state onto the equator of the Bloch sphere",
-                "It entangles two adjacent qubits without classical control"
-            ],
-            "correct_index": 0,
-            "explanation": "The Pauli-X gate corresponds to matrix [[0, 1], [1, 0]] and inverts the computational basis states |0⟩ ↔ |1⟩, acting as a quantum bit-flip.",
-            "formula": "X = \\begin{bmatrix} 0 & 1 \\\\ 1 & 0 \\end{bmatrix}, \\quad X|0\\rangle = |1\\rangle",
-            "code_snippet": "from qiskit import QuantumCircuit\nqc = QuantumCircuit(1)\nqc.x(0)  # Flips |0> to |1>"
-        },
-        {
-            "id": "gate_q2",
-            "question": "Applying a Hadamard gate twice (H·H) to any pure qubit state results in which state?",
-            "options": [
-                "The state is completely erased and collapses to |0⟩",
-                "The original initial state unchanged (since H is Hermitian and unitary, H² = I)",
-                "The orthogonal conjugate of the initial state",
-                "A permanent 90-degree phase shift on the Z axis"
-            ],
-            "correct_index": 1,
-            "explanation": "Because the Hadamard operator is both Hermitian (H = H†) and Unitary (H†H = I), it is an involution: H² = I. Applying it twice returns the original state.",
-            "formula": "H^2 = H \\cdot H = I = \\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}",
-            "code_snippet": "# H applied twice returns original qubit state\nqc.h(0)\nqc.h(0)"
-        },
-        {
-            "id": "gate_q3",
-            "question": "What is the action of the Phase gate S on computational basis states?",
-            "options": [
-                "S|0⟩ = |0⟩ and S|1⟩ = i|1⟩ (a π/2 phase rotation around Z)",
-                "S|0⟩ = -|0⟩ and S|1⟩ = -|1⟩",
-                "S creates an equal superposition of |0⟩ and |1⟩",
-                "S swaps the amplitudes of q₀ and q₁"
-            ],
-            "correct_index": 0,
-            "explanation": "The S gate is the square root of Z (S² = Z). It leaves |0⟩ invariant and applies an e^(iπ/2) = i phase to |1⟩.",
-            "formula": "S = \\begin{bmatrix} 1 & 0 \\\\ 0 & i \\end{bmatrix}, \\quad S|1\\rangle = i|1\\rangle",
-            "code_snippet": "qc.s(0)  # S gate rotation"
-        }
-    ],
-    "entanglement": [
-        {
-            "id": "ent_q1",
-            "question": "Which quantum circuit prepares the canonical Bell state |Φ⁺⟩ = (|00⟩ + |11⟩)/√2?",
-            "options": [
-                "Apply H to q0, then CNOT with q0 as control and q1 as target",
-                "Apply X to q0, then H to q1",
-                "Apply CNOT(q0, q1), then H to q0",
-                "Apply H to both q0 and q1 simultaneously"
-            ],
-            "correct_index": 0,
-            "explanation": "H on q0 puts it in (|0⟩+|1⟩)/√2. The subsequent CNOT flips q1 only when q0 is |1⟩, producing (|00⟩+|11⟩)/√2.",
-            "formula": "|\\Phi^+\\rangle = \\frac{|00\\rangle + |11\\rangle}{\\sqrt{2}}",
-            "code_snippet": "qc = QuantumCircuit(2)\nqc.h(0)\nqc.cx(0, 1)"
-        },
-        {
-            "id": "ent_q2",
-            "question": "If Alice and Bob share a Bell state |Φ⁺⟩ and Alice measures her qubit and obtains outcome 0, what is the probability Bob measures 1?",
-            "options": [
-                "0% (Bob will measure 0 with 100% certainty)",
-                "50% (Quantum measurements are always completely random)",
-                "100% (The states are anti-correlated)",
-                "25% (Subject to Born rule decoherence)"
-            ],
-            "correct_index": 0,
-            "explanation": "Because |Φ⁺⟩ has only components |00⟩ and |11⟩, Alice obtaining 0 instantaneously projects the joint wavefunction to |00⟩, guaranteeing Bob measures 0.",
-            "formula": "P(q_1 = 1 \\mid q_0 = 0) = 0",
-            "code_snippet": "# Perfect correlation in Bell state measurement"
-        }
-    ],
-    "grover": [
-        {
-            "id": "grv_q1",
-            "question": "For an unsorted database with N = 2ⁿ items and M = 1 marked item, how many Grover iterations are required for maximum success probability?",
-            "options": [
-                "≈ (π/4) √N iterations",
-                "O(N) iterations (same as classical)",
-                "O(log N) iterations",
-                "Exactly N/2 iterations"
-            ],
-            "correct_index": 0,
-            "explanation": "Grover's algorithm provides a quadratic speedup over classical brute force, rotating the state vector by 2θ ≈ 2/`√N` per step, reaching optimal alignment at ≈ (π/4)√N.",
-            "formula": "R \\approx \\left\\lfloor \\frac{\\pi}{4}\\sqrt{N} \\right\\rfloor",
-            "code_snippet": "import math\niterations = int(math.pi / 4 * math.sqrt(2**num_qubits))"
-        },
-        {
-            "id": "grv_q2",
-            "question": "What is the geometric effect of the Grover Diffusion operator D = 2|s⟩⟨s| - I on quantum state amplitudes?",
-            "options": [
-                "It reflects all state amplitudes about their mean average amplitude",
-                "It inverts the phase of only the marked target state",
-                "It normalizes the quantum state to unity",
-                "It applies a discrete Fourier transform to all basis states"
-            ],
-            "correct_index": 0,
-            "explanation": "The diffusion operator, also known as inversion about the mean, amplifies amplitudes that are below the average and decreases those above it, selectively boosting the marked item.",
-            "formula": "D = 2|s\\rangle\\langle s| - I, \\quad a_i \\to 2\\mu - a_i",
-            "code_snippet": "# Grover Diffusion operator\nqc.h(range(n))\nqc.x(range(n))\nqc.mcx(control_qubits, target_qubit)\nqc.x(range(n))\nqc.h(range(n))"
-        }
-    ],
-    "qft": [
-        {
-            "id": "qft_q1",
-            "question": "What is the computational circuit complexity of the Quantum Fourier Transform on n qubits compared to the classical FFT?",
-            "options": [
-                "O(n²) quantum gates vs O(n 2ⁿ) classical FFT operations (exponential speedup)",
-                "O(2ⁿ) quantum gates vs O(n) classical operations",
-                "Both require O(n log n) operations",
-                "Quantum QFT requires O(n³) with classical overhead"
-            ],
-            "correct_index": 0,
-            "explanation": "QFT requires only n(n+1)/2 Hadamard and controlled-phase gates, giving O(n²) quantum complexity, an exponential reduction over the classical FFT which takes O(N log N) where N = 2ⁿ.",
-            "formula": "QFT|j\\rangle = \\frac{1}{\\sqrt{2^n}}\\sum_{k=0}^{2^n-1} e^{2\\pi i j k / 2^n}|k\\rangle",
-            "code_snippet": "from qiskit.circuit.library import QFT\nqft_circ = QFT(num_qubits=3)"
-        },
-        {
-            "id": "qft_q2",
-            "question": "In Quantum Phase Estimation (QPE), what is the role of the inverse Quantum Fourier Transform (QFT†)?",
-            "options": [
-                "It transforms the phase information encoded in the Fourier basis into computational basis state readouts",
-                "It creates equal superposition across the counting register",
-                "It applies unitary Hamiltonian simulation to the eigenstate",
-                "It prevents decoherence by correcting bit-flip noise"
-            ],
-            "correct_index": 0,
-            "explanation": "Controlled-U operations encode phase θ into the Fourier amplitudes of the counting register; applying QFT† translates these Fourier phases into binary eigenvalues measurable in the computational basis.",
-            "formula": "|\\tilde{\\theta}\\rangle = QFT^\\dagger \\left( \\frac{1}{\\sqrt{2^t}} \\sum_{k=0}^{2^t-1} e^{2\\pi i \\theta k} |k\\rangle \\right)",
-            "code_snippet": "# Apply inverse QFT to readout register\nqc.append(QFT(t).inverse(), range(t))"
-        }
-    ],
-    "vqe": [
-        {
-            "id": "vqe_q1",
-            "question": "What fundamental physical theorem guarantees that the VQE expectation value ⟨ψ(θ)|H|ψ(θ)⟩ is an upper bound on the ground state energy E₀?",
-            "options": [
-                "The Rayleigh-Ritz Variational Principle",
-                "The No-Cloning Theorem",
-                "The Quantum Adiabatic Theorem",
-                "Bell's Inequality Theorem"
-            ],
-            "correct_index": 0,
-            "explanation": "The Rayleigh-Ritz variational principle states that for any normalized trial state |ψ(θ)⟩, the expectation value ⟨ψ(θ)|H|ψ(θ)⟩ ≥ E₀, where E₀ is the exact lowest eigenvalue (ground state energy).",
-            "formula": "\\langle \\psi(\\theta)| H |\\psi(\\theta) \\rangle \\ge E_0",
-            "code_snippet": "# VQE energy evaluation: <H> >= E_0\nenergy = estimator.run([ansatz], [hamiltonian], [optimal_params]).result().values[0]"
-        },
-        {
-            "id": "vqe_q2",
-            "question": "How does VQE divide computational work between classical and quantum processors in NISQ hardware?",
-            "options": [
-                "The quantum processor prepares ansatz states and measures Hamiltonian observables; a classical optimizer updates parameter angles θ",
-                "The quantum processor performs gradient descent; the classical processor stores the wavefunction matrix",
-                "The quantum processor runs Shor's algorithm; the classical processor performs error mitigation",
-                "The classical computer prepares the physical qubits; the quantum chip only does readout"
-            ],
-            "correct_index": 0,
-            "explanation": "VQE is a hybrid quantum-classical algorithm: short-depth parameter circuits U(θ) run on the quantum chip to estimate ⟨H⟩, and a classical routine (COBYLA, SPSA, Adam) searches for θ* that minimizes the energy.",
-            "formula": "\\theta^* = \\arg\\min_\\theta \\langle \\psi(\\theta)| H |\\psi(\\theta) \\rangle",
-            "code_snippet": "# Hybrid loop: classical optimizer updates parameter vector theta"
-        }
-    ],
-    "error_correction": [
-        {
-            "id": "qec_q1",
-            "question": "What is the minimum number of physical qubits required to detect and correct ANY arbitrary single-qubit error (bit-flip, phase-flip, or combination)?",
-            "options": [
-                "5 physical qubits (the 5-qubit code establishes the quantum Hamming bound)",
-                "3 physical qubits",
-                "7 physical qubits (Steane code)",
-                "9 physical qubits (Shor code)"
-            ],
-            "correct_index": 0,
-            "explanation": "The 5-qubit code is the smallest quantum error-correcting code capable of protecting one logical qubit against arbitrary single-qubit errors (satisfying the quantum Hamming bound 2^k · (1 + 3n) ≤ 2^n for n=5, k=1).",
-            "formula": "[[n, k, d]] = [[5, 1, 3]]",
-            "code_snippet": "# 5-qubit perfect stabilizer code protects against X, Y, and Z errors"
-        },
-        {
-            "id": "qec_q2",
-            "question": "In quantum stabilizer error correction, why can syndrome measurements detect errors without collapsing the logical quantum data?",
-            "options": [
-                "Syndromes measure multi-qubit Pauli parity operators that commute with the logical codewords",
-                "Syndrome measurements only measure classical readout bits",
-                "Errors are detected via the no-cloning theorem without touching qubits",
-                "Measurement collapse is delayed by quantum teleportation"
-            ],
-            "correct_index": 0,
-            "explanation": "Stabilizer operators S_i commute with the logical Pauli operators L_X and L_Z. Measuring the eigenvalues of S_i collapses the error syndrome without distinguishing between logical states |0_L⟩ and |1_L⟩.",
-            "formula": "[S_i, \\bar{X}] = [S_i, \\bar{Z}] = 0, \\quad S_i |\\psi_L\\rangle = +1 |\\psi_L\\rangle",
-            "code_snippet": "# Stabilizer parity check preserves logical superposition"
-        }
-    ]
-}
+# Import comprehensive curated examination bank (10+ verified questions per track)
+from backend.app.routers.assessment_bank import CURATED_EXAM_BANK
+
 
 # Auto-index all curated questions into QUIZ_SOLUTIONS and DYNAMIC_SOLUTIONS
 for topic_key, q_list in CURATED_EXAM_BANK.items():
@@ -608,16 +414,96 @@ async def get_dashboard_stats(
     )
 
 
+@router.post("/extract-document")
+async def extract_document_endpoint(file: UploadFile = File(...)):
+    """
+    Extracts text from PDF or Image (screenshot/notes) for AI quiz generation.
+    Supports PDF (via PyMuPDF fitz) and PNG/JPG/WEBP/BMP (via winocr).
+    """
+    filename = file.filename or "uploaded_file"
+    ext = os.path.splitext(filename)[1].lower()
+    content_bytes = await file.read()
+    
+    if not content_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    
+    extracted_text = ""
+    file_type = "unknown"
+    
+    if ext == ".pdf" or (file.content_type and "pdf" in file.content_type):
+        file_type = "pdf"
+        try:
+            import fitz
+            doc = fitz.open(stream=content_bytes, filetype="pdf")
+            pages_text = []
+            for page_idx in range(len(doc)):
+                t = doc[page_idx].get_text().strip()
+                if t:
+                    pages_text.append(f"--- Page {page_idx + 1} ---\n{t}")
+            extracted_text = "\n\n".join(pages_text)
+            doc.close()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PDF extraction failed: {str(e)}")
+            
+    elif ext in [".png", ".jpg", ".jpeg", ".webp", ".bmp"] or (file.content_type and "image" in file.content_type):
+        file_type = "image"
+        try:
+            from PIL import Image
+            import io
+            import winocr
+            img = Image.open(io.BytesIO(content_bytes)).convert("RGB")
+            ocr_res = await winocr.recognize_pil(img, "en")
+            extracted_text = ocr_res.text.strip()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Image OCR failed: {str(e)}")
+    else:
+        try:
+            extracted_text = content_bytes.decode("utf-8", errors="ignore").strip()
+            file_type = "text"
+        except Exception:
+            raise HTTPException(status_code=400, detail="Unsupported file format. Please upload a PDF or an Image (PNG, JPG, WEBP).")
+
+    if not extracted_text:
+        extracted_text = "No readable text detected in the uploaded file. Please ensure the document or screenshot contains legible text."
+
+    return {
+        "success": True,
+        "filename": filename,
+        "file_type": file_type,
+        "extracted_text": extracted_text,
+        "char_count": len(extracted_text)
+    }
+
+
 @router.post("/ai-quiz/generate", response_model=AIQuizGenerateResponse)
 async def generate_ai_quiz_endpoint(request: AIQuizGenerateRequest):
     """
     Dynamically generates a tailored quantum multiple-choice examination
     using Groq LLM + 76-book quantum RAG semantic search.
+    Guarantees exact question count (3, 5, or 10).
     """
     topic = request.topic.strip()
     diff = request.difficulty or "intermediate"
     count = min(max(request.num_questions or 5, 2), 10)
     quiz_id = f"ai_quiz_{uuid.uuid4().hex[:8]}"
+
+    # Determine topic match key for fallback / supplementation
+    key_match = "gates"
+    t_lower = topic.lower()
+    if "entangle" in t_lower or "bell" in t_lower:
+        key_match = "entanglement"
+    elif "grover" in t_lower or "search" in t_lower or "oracle" in t_lower:
+        key_match = "grover"
+    elif "fourier" in t_lower or "qft" in t_lower or "phase estimation" in t_lower or "qpe" in t_lower:
+        key_match = "qft"
+    elif "vqe" in t_lower or "variational" in t_lower or "eigen" in t_lower:
+        key_match = "vqe"
+    elif "error" in t_lower or "qec" in t_lower or "surface" in t_lower or "stabilizer" in t_lower or "noise" in t_lower:
+        key_match = "error_correction"
+    elif "superpos" in t_lower:
+        key_match = "superposition"
+    elif "teleport" in t_lower:
+        key_match = "teleportation"
 
     # 1. Retrieve RAG literature passages
     rag_hits = _chroma_searcher.search(f"{topic} quantum algorithms theory questions", top_k=4)
@@ -630,8 +516,6 @@ async def generate_ai_quiz_endpoint(request: AIQuizGenerateRequest):
     candidate_models = [
         "openai/gpt-oss-20b",     # Fast generation (<0.9s)
         "openai/gpt-oss-120b",    # 120B high-reasoning model
-        "qwen/qwen3.8-27b",       # Qwen 27B
-        "groq/compound-mini",     # Fast compound fallback
     ]
     models_to_try = list(dict.fromkeys(m for m in candidate_models if m))
 
@@ -675,14 +559,15 @@ Return ONLY valid JSON matching this schema:
 Literature Context:
 {rag_ctx}
 
-Generate {count} {diff} multiple-choice questions specifically testing the material provided in the student notes above. Ensure scientific accuracy and strict JSON format."""
+Generate EXACTLY {count} {diff} multiple-choice questions specifically testing the material provided in the student notes above. Ensure scientific accuracy and strict JSON format."""
         else:
-            user_prompt = f"""Literature Context:\n{rag_ctx}\n\nGenerate {count} {diff} questions on '{topic}'. Ensure scientific accuracy."""
+            user_prompt = f"""Literature Context:\n{rag_ctx}\n\nGenerate EXACTLY {count} {diff} questions on '{topic}'. Ensure scientific accuracy."""
+
+        token_budget = max(3500, count * 750)
 
         for model_name in models_to_try:
             try:
-                async with httpx.AsyncClient(timeout=15.0) as client:
-                    token_budget = 900 if "qwen" in model_name else 1600
+                async with httpx.AsyncClient(timeout=25.0) as client:
                     resp = await client.post(
                         "https://api.groq.com/openai/v1/chat/completions",
                         headers={
@@ -710,7 +595,7 @@ Generate {count} {diff} multiple-choice questions specifically testing the mater
                         qs = []
                         for idx, q_raw in enumerate(data.get("questions", [])):
                             qs.append(QuizQuestion(
-                                id=q_raw.get("id", f"q{idx+1}"),
+                                id=q_raw.get("id", f"q{idx+1}_{uuid.uuid4().hex[:4]}"),
                                 question=q_raw.get("question", "Quantum concept question"),
                                 options=q_raw.get("options", ["A", "B", "C", "D"])[:4],
                                 correct_index=int(q_raw.get("correct_index", 0)) % 4,
@@ -719,7 +604,30 @@ Generate {count} {diff} multiple-choice questions specifically testing the mater
                                 formula=q_raw.get("formula"),
                                 code_snippet=q_raw.get("code_snippet"),
                             ))
-                        if len(qs) >= 2:
+
+                        if len(qs) >= 1:
+                            # If AI generated fewer than count, supplement from curated bank to guarantee exact count
+                            if len(qs) < count:
+                                curated_pool = CURATED_EXAM_BANK.get(key_match, CURATED_EXAM_BANK["gates"])
+                                existing_texts = {q.question.strip().lower() for q in qs}
+                                for fallback_item in curated_pool:
+                                    if len(qs) >= count:
+                                        break
+                                    if fallback_item["question"].strip().lower() not in existing_texts:
+                                        qs.append(QuizQuestion(
+                                            id=f"q_supp_{len(qs)+1}_{uuid.uuid4().hex[:4]}",
+                                            question=fallback_item["question"],
+                                            options=fallback_item["options"],
+                                            correct_index=fallback_item["correct_index"],
+                                            explanation=fallback_item["explanation"],
+                                            topic=topic,
+                                            formula=fallback_item.get("formula"),
+                                            code_snippet=fallback_item.get("code_snippet"),
+                                        ))
+
+                            # Ensure exact requested count
+                            qs = qs[:count]
+
                             for q in qs:
                                 QUIZ_SOLUTIONS[q.id] = {
                                     "correct_index": q.correct_index,
@@ -727,6 +635,8 @@ Generate {count} {diff} multiple-choice questions specifically testing the mater
                                     "topic": topic,
                                     "explanation": q.explanation,
                                 }
+                                DYNAMIC_SOLUTIONS[q.id] = QUIZ_SOLUTIONS[q.id]
+
                             return AIQuizGenerateResponse(
                                 success=True,
                                 quiz_id=quiz_id,
@@ -736,7 +646,7 @@ Generate {count} {diff} multiple-choice questions specifically testing the mater
                                 estimated_minutes=max(1, count * 2),
                                 questions=qs,
                                 is_ai_generated=True,
-                                sources=[h.get("source", "Quantum Corpus") for h in rag_hits] if rag_hits else ["Groq GPT-OSS 120B"],
+                                sources=[h.get("source", "Quantum Corpus") for h in rag_hits] if rag_hits else ["Groq GPT-OSS 20B/120B"],
                             )
                     else:
                         print(f"[Assessment] {model_name} HTTP {resp.status_code}: {resp.text[:150]}")
@@ -746,23 +656,11 @@ Generate {count} {diff} multiple-choice questions specifically testing the mater
 
     # Fallback to curated exam questions if offline / key issue
     fallback_qs: List[QuizQuestion] = []
-    key_match = "gates"
-    t_lower = topic.lower()
-    if "entangle" in t_lower or "bell" in t_lower:
-        key_match = "entanglement"
-    elif "grover" in t_lower or "search" in t_lower or "oracle" in t_lower:
-        key_match = "grover"
-    elif "fourier" in t_lower or "qft" in t_lower or "phase estimation" in t_lower or "qpe" in t_lower:
-        key_match = "qft"
-    elif "vqe" in t_lower or "variational" in t_lower or "eigen" in t_lower:
-        key_match = "vqe"
-    elif "error" in t_lower or "qec" in t_lower or "surface" in t_lower or "stabilizer" in t_lower or "noise" in t_lower:
-        key_match = "error_correction"
-
     pool = CURATED_EXAM_BANK.get(key_match, CURATED_EXAM_BANK["gates"])
     for idx, item in enumerate(pool[:count]):
+        q_id = f"{item['id']}_{uuid.uuid4().hex[:4]}"
         fallback_qs.append(QuizQuestion(
-            id=item["id"],
+            id=q_id,
             question=item["question"],
             options=item["options"],
             correct_index=item["correct_index"],
@@ -771,12 +669,13 @@ Generate {count} {diff} multiple-choice questions specifically testing the mater
             formula=item.get("formula"),
             code_snippet=item.get("code_snippet"),
         ))
-        QUIZ_SOLUTIONS[item["id"]] = {
+        QUIZ_SOLUTIONS[q_id] = {
             "correct_index": item["correct_index"],
             "points": 50,
             "topic": topic,
             "explanation": item["explanation"],
         }
+        DYNAMIC_SOLUTIONS[q_id] = QUIZ_SOLUTIONS[q_id]
 
     return AIQuizGenerateResponse(
         success=True,

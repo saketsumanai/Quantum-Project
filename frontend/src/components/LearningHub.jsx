@@ -476,7 +476,7 @@ function ModuleDetailModal({ module, onClose, onOpenStudio }) {
                   onClick={handleCopy}
                   style={{ background: "var(--ql-layer-02)", border: "1px solid var(--ql-border)", color: "#78A9FF", padding: "4px 10px", fontSize: "0.75rem", cursor: "pointer" }}
                 >
-                  {copied ? "✓ Copied" : "Copy Code"}
+                  {copied ? "Copied" : "Copy Code"}
                 </button>
               </div>
               <pre style={{
@@ -652,7 +652,7 @@ function CourseViewer({ course, onBack, onOpenStudio, onSwitchToVideos, onOpenTe
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "0.72rem", color: "#fff", fontWeight: 600, marginTop: "2px"
                 }}>
-                  {isCompleted ? "✓" : i + 1}
+                  {isCompleted ? "Done" : i + 1}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{
@@ -697,7 +697,7 @@ function CourseViewer({ course, onBack, onOpenStudio, onSwitchToVideos, onOpenTe
                   fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", borderRadius: "2px"
                 }}
               >
-                {completedUnits.has(activeUnitIdx) ? "✓ Completed" : "Mark as Completed"}
+                {completedUnits.has(activeUnitIdx) ? "Completed" : "Mark as Completed"}
               </button>
             </div>
           </div>
@@ -800,7 +800,7 @@ function CourseViewer({ course, onBack, onOpenStudio, onSwitchToVideos, onOpenTe
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
               {activeUnit.learningObjectives.map((obj, oIdx) => (
                 <div key={oIdx} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "0.88rem", color: "var(--ql-text-primary)", lineHeight: 1.5 }}>
-                  <span style={{ color: "#34d399", fontWeight: 700, fontSize: "0.95rem" }}>✓</span>
+                  <span style={{ color: "#34d399", fontWeight: 700, fontSize: "0.85rem" }}>•</span>
                   <span>{obj}</span>
                 </div>
               ))}
@@ -856,7 +856,7 @@ function CourseViewer({ course, onBack, onOpenStudio, onSwitchToVideos, onOpenTe
                       cursor: "pointer", fontSize: "0.78rem"
                     }}
                   >
-                    {copiedIndex === `${sIdx}` ? "✓ Copied!" : "Copy Code"}
+                    {copiedIndex === `${sIdx}` ? "Copied!" : "Copy Code"}
                   </button>
                 </div>
                 <pre style={{
@@ -930,8 +930,8 @@ function CourseViewer({ course, onBack, onOpenStudio, onSwitchToVideos, onOpenTe
                       {isSelected && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#78A9FF" }} />}
                     </div>
                     <MathRenderer content={opt} style={{ display: 'inline' }} />
-                    {isSubmitted && isCorrect && <span style={{ marginLeft: "auto", color: "#34d399", fontWeight: 600 }}>✓ Correct</span>}
-                    {isSubmitted && isSelected && !isCorrect && <span style={{ marginLeft: "auto", color: "#f87171" }}>✗ Incorrect</span>}
+                    {isSubmitted && isCorrect && <span style={{ marginLeft: "auto", color: "#34d399", fontWeight: 600 }}>Correct</span>}
+                    {isSubmitted && isSelected && !isCorrect && <span style={{ marginLeft: "auto", color: "#f87171", fontWeight: 600 }}>Incorrect</span>}
                   </div>
                 );
               })}
@@ -982,7 +982,7 @@ function CourseViewer({ course, onBack, onOpenStudio, onSwitchToVideos, onOpenTe
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
             {onOpenTextbook && (
               <button
-                onClick={() => onOpenTextbook(activeUnit.title)}
+                onClick={() => onOpenTextbook(activeUnit.title, courseDetails.courseLabel || "")}
                 style={{
                   padding: "12px 20px", background: "#18181b", border: "1px solid #27272a",
                   color: "#ffffff", fontWeight: 600, fontSize: "0.88rem", cursor: "pointer",
@@ -1039,7 +1039,7 @@ function CourseViewer({ course, onBack, onOpenStudio, onSwitchToVideos, onOpenTe
           <div style={{ marginTop: "16px", padding: "16px 20px", background: "var(--ql-layer-02)", border: "1px solid var(--ql-border)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
               <div style={{ fontSize: "0.72rem", color: "var(--ql-text-helper)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                Textbook References (Indexed in ChromaDB RAG Corpus)
+                Textbook References (Indexed in Research Knowledge Base)
               </div>
               {onOpenTextbook && (
                 <button
@@ -1271,7 +1271,7 @@ export default function LearningHub({ onSwitchToStudio, onSwitchToAssessment, on
                   Learn Quantum Computing
                 </h1>
                 <p style={{ fontSize: "0.95rem", color: "var(--ql-text-secondary)", lineHeight: 1.7, margin: "0 0 28px 0" }}>
-                  Master quantum algorithms, circuits, and error correction through complete, in-depth courses built from 76 landmark textbooks and research papers — with mathematical derivations, runnable Qiskit 1.0 code, and interactive quizzes.
+                  Master quantum algorithms, circuits, and error correction through complete, in-depth courses built from 76 landmark textbooks and research papers — with mathematical derivations, runnable quantum code, and interactive quizzes.
                 </p>
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                   <button
@@ -1595,7 +1595,7 @@ export default function LearningHub({ onSwitchToStudio, onSwitchToAssessment, on
         <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "32px" }}>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 300, margin: "0 0 8px 0" }}>Interactive Modules</h1>
           <p style={{ color: "var(--ql-text-secondary)", margin: "0 0 28px 0", fontSize: "0.92rem" }}>
-            Click on any module to open in-depth theoretical analysis, mathematical formulation, and runnable Qiskit 1.0 code.
+            Click on any module to open in-depth theoretical analysis, mathematical formulation, and runnable quantum code.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1px", background: "var(--ql-border)" }}>
             {MODULES.map(m => (
@@ -1608,7 +1608,7 @@ export default function LearningHub({ onSwitchToStudio, onSwitchToAssessment, on
       {/* Footer */}
       <div style={{ padding: "24px 32px", borderTop: "1px solid var(--ql-border)", marginTop: "auto", background: "var(--ql-layer-01)" }}>
         <p style={{ fontSize: "0.78rem", color: "var(--ql-text-helper)", margin: 0 }}>
-          Quantum Leap · Team Gitwolves · SIH 2026 · Course content sourced from 76 peer-reviewed textbooks &amp; papers in our ChromaDB knowledge base
+          Quantum Leap · Team Gitwolves · SIH 2026 · Course content sourced from 76 peer-reviewed textbooks &amp; papers in our quantum research library
         </p>
       </div>
     </div>
