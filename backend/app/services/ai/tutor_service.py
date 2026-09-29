@@ -486,6 +486,61 @@ class ChromaSearcher:
 _chroma_searcher = ChromaSearcher()
 
 
+# ─── High-Accuracy Multilingual Language Detection ───────────────────────────
+HINGLISH_VOCABULARY = {
+    "kya", "kaise", "kyun", "kyu", "kab", "kisko", "kiska", "kisme", "kaun", "kaunsa",
+    "hota", "hoti", "hote", "hoga", "hogi", "hoge", "hai", "hain", "hoon", "ho", "tha", "the", "thi",
+    "samjhao", "batao", "karo", "karna", "karein", "kare", "karta", "karte", "karti",
+    "mujhe", "humko", "hume", "mera", "meri", "mere", "tum", "tumhara", "tumhari",
+    "aap", "aapka", "aapki", "aur", "bhi", "par", "pe", "mein", "se", "ko", "ki", "ke", "ka",
+    "ye", "yeh", "wo", "woh", "nhi", "nahi", "mat", "accha", "achha", "thik", "theek",
+    "bhai", "bro", "yaar", "bolo", "padhao", "sikhao", "sirf", "pehle", "baad",
+    "wala", "wali", "wale", "lagta", "lagti", "kuch", "sab", "aisa", "waisa", "aise", "waise"
+}
+
+def detect_query_language(text: str, user_pref: str = "en") -> str:
+    """
+    Intelligently determines target language for quantum tutoring.
+    Automatically detects Indic scripts and Romanized Hinglish/Tanglish/Tenglish
+    when user has not explicitly locked a language preference.
+    """
+    pref = (user_pref or "en").strip().lower()
+    if pref not in ("en", "auto", "all", ""):
+        return pref
+    if not text:
+        return "en"
+
+    # Indic Script UTF-8 Range Matches
+    if re.search(r"[\u0B80-\u0BFF]", text): return "ta" # Tamil
+    if re.search(r"[\u0C00-\u0C7F]", text): return "te" # Telugu
+    if re.search(r"[\u0980-\u09FF]", text): return "bn" # Bengali
+    if re.search(r"[\u0A80-\u0AFF]", text): return "gu" # Gujarati
+    if re.search(r"[\u0C80-\u0CFF]", text): return "kn" # Kannada
+    if re.search(r"[\u0D00-\u0D7F]", text): return "ml" # Malayalam
+    if re.search(r"[\u0A00-\u0A7F]", text): return "pa" # Punjabi
+    if re.search(r"[\u0B00-\u0B7F]", text): return "or" # Odia
+    if re.search(r"[\u0900-\u097F]", text):
+        if any(w in text for w in ["आहे", "नाही", "कसे", "सांगा", "माहिती", "करा"]):
+            return "mr" # Marathi
+        return "hi"     # Hindi
+
+    # Romanized Token Matching for Hinglish
+    tokens = re.findall(r"\b[a-zA-Z]+\b", text.lower())
+    matches = sum(1 for w in tokens if w in HINGLISH_VOCABULARY)
+    if matches >= 2 or (len(tokens) <= 5 and matches >= 1):
+        return "hinglish"
+
+    # Tanglish (Tamil in Latin alphabet)
+    if any(w in tokens for w in ["vanakkam", "epdi", "solunga", "puriyala", "theriyuma", "nanba"]):
+        return "ta"
+
+    # Tenglish (Telugu in Latin alphabet)
+    if any(w in tokens for w in ["cheppandi", "telusa", "ardham", "enti", "undhi", "ela"]):
+        return "te"
+
+    return "en"
+
+
 # ─── Groq LLM Query with 3-Tier Difficulty Conditioning ───────────────────────
 
 async def _query_groq_with_context(
@@ -971,6 +1026,9 @@ class AITutorService:
         # 2. Try Custom Fine-Tuned Llama, then Groq, then Gemini
         t_llm_start = time.perf_counter()
         parsed = None
+        req_lang_raw = getattr(req, "language", "en") or "en"
+        effective_lang = detect_query_language(req.user_query, req_lang_raw)
+
         course_unit_ctx = getattr(req, "current_topic", "") or ""
         video_ctx = getattr(req, "video_context", None)
         if video_ctx and isinstance(video_ctx, dict):
@@ -988,14 +1046,15 @@ class AITutorService:
         if req_model != "failsafe":
             parsed = await _query_custom_llm_with_context(
                 req.user_query, passages, req.active_circuit_context or {},
-                current_course_unit=course_unit_ctx
+                current_course_unit=course_unit_ctx,
+                language=effective_lang
             )
             if parsed is None:
                 parsed = await _query_groq_with_context(
                     req.user_query, passages, req.active_circuit_context or {},
                     current_course_unit=course_unit_ctx,
                     history=req.conversation_history,
-                    language=getattr(req, "language", "en") or "en",
+                    language=effective_lang,
                     preferred_model=req_model,
                     generate_diagram=req_diagram,
                     user_level=level,
@@ -1004,7 +1063,7 @@ class AITutorService:
                 parsed = await _query_gemini_with_context(
                     req.user_query, passages, req.active_circuit_context or {},
                     user_level=level,
-                    language=getattr(req, "language", "en") or "en",
+                    language=effective_lang,
                 )
         t_llm_end = time.perf_counter()
         llm_latency_ms = max(round((t_llm_end - t_llm_start) * 1000, 2), 280.0)
@@ -1100,6 +1159,7 @@ class AITutorService:
                 diagram=parsed.get("diagram"),
                 model_used=active_model_name,
                 rag_metrics=rag_metrics,
+                language_detected=effective_lang,
                 user_level_applied=level,
                 reasoning_process=reasoning,
             )

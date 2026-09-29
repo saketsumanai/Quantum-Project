@@ -105,10 +105,38 @@ def inject_quantum_glossary(text: str) -> str:
         result = pattern.sub(replacement, result)
     return result
 
+LANGUAGE_NAME_MAP = {
+    "hi": "Hindi (हिंदी)",
+    "hinglish": "Hinglish (conversational Hindi written in English/Latin script)",
+    "ta": "Tamil (தமிழ்)",
+    "te": "Telugu (తెలుగు)",
+    "bn": "Bengali (বাংলা)",
+    "mr": "Marathi (मराठी)",
+    "gu": "Gujarati (ગુજરાતી)",
+    "kn": "Kannada (ಕನ್ನಡ)",
+    "ml": "Malayalam (മലയാളം)",
+    "pa": "Punjabi (ਪੰਜਾਬੀ)",
+    "en": "English (Academic)",
+}
+
+EDGE_TTS_VOICE_MAP = {
+    "hi": "hi-IN-MadhurNeural",
+    "hinglish": "hi-IN-MadhurNeural",
+    "ta": "ta-IN-ValluvarNeural",
+    "te": "te-IN-MohanNeural",
+    "bn": "bn-IN-BashkarNeural",
+    "mr": "mr-IN-ManoharNeural",
+    "gu": "gu-IN-NiranjanNeural",
+    "kn": "kn-IN-GaganNeural",
+    "ml": "ml-IN-MidhunNeural",
+    "pa": "pa-IN-GurpreetNeural",
+    "en": "en-IN-PrabhatNeural",
+}
+
 async def translate_with_quantum_glossary_ai(english_text: str, target_lang: str = "hi") -> str:
     """
     Translates transcript using Groq (Qwen 3.8 27B) with the Quantum Glossary system prompt
-    to create natural conversational Hindi/Hinglish without awkward literal translations.
+    to create natural conversational Indian language dubbing without awkward literal translations.
     """
     import httpx
     groq_key = (os.getenv("GROQ_API_KEY") or "").strip()
@@ -116,16 +144,18 @@ async def translate_with_quantum_glossary_ai(english_text: str, target_lang: str
         # Fallback to local dictionary injection
         return inject_quantum_glossary(english_text)
 
+    target_lang_clean = (target_lang or "hi").lower()
+    target_lang_label = LANGUAGE_NAME_MAP.get(target_lang_clean, "Hindi (Hinglish)")
     glossary_sample = ", ".join([f"'{k}' -> '{v}'" for k, v in list(QUANTUM_GLOSSARY.items())[:18]])
 
     prompt = f"""You are an elite bilingual quantum computing science educator.
-Translate the following lecture transcript into natural, fluent educational conversational Hindi (Hinglish).
+Translate the following lecture transcript into natural, fluent educational {target_lang_label}.
 
 CRITICAL QUANTUM GLOSSARY RULES:
-1. Do NOT translate technical quantum terms literally into obscure Hindi.
-2. MUST PRESERVE technical words using standard educational Hinglish: {glossary_sample}.
-3. Keep the tone engaging, clear, and easy to follow like an IIT or IBM Quantum professor.
-4. Output ONLY the translated script without commentary.
+1. Do NOT translate technical quantum terms literally into obscure phrases.
+2. MUST PRESERVE technical words in standard English/Latin: Qubit, Superposition, Bloch Sphere, Entanglement, Hadamard, CNOT, Quantum Circuit, Measurement, Statevector, Qiskit.
+3. Keep the tone engaging, clear, authoritative, and easy to follow like an IIT or IBM Quantum professor.
+4. Output ONLY the translated spoken script without any markdown quotes or meta commentary.
 
 English Lecture Transcript:
 {english_text}"""
@@ -204,16 +234,22 @@ async def run_quantum_dubbing_pipeline(
     video_id: str,
     youtube_url: str,
     target_language: str = "hi",
-    voice: str = "hi-IN-MadhurNeural",
+    voice: Optional[str] = None,
     custom_transcript: Optional[str] = None
 ):
     """
     Main asynchronous background worker that runs all 5 steps of the quantum dubbing pipeline
     and updates DUBBING_JOBS in real-time.
     """
+    target_lang_clean = (target_language or "hi").lower()
+    effective_voice = voice or EDGE_TTS_VOICE_MAP.get(target_lang_clean, "hi-IN-MadhurNeural")
+    # If the user passed default Hindi voice but selected a different language, pick proper voice
+    if voice == "hi-IN-MadhurNeural" and target_lang_clean != "hi" and target_lang_clean != "hinglish":
+        effective_voice = EDGE_TTS_VOICE_MAP.get(target_lang_clean, effective_voice)
+
     job = DUBBING_JOBS[video_id]
-    output_audio = os.path.join(OUTPUT_DIR, f"{video_id}_{target_language}.mp3")
-    output_video = os.path.join(OUTPUT_DIR, f"{video_id}_{target_language}.mp4")
+    output_audio = os.path.join(OUTPUT_DIR, f"{video_id}_{target_lang_clean}.mp3")
+    output_video = os.path.join(OUTPUT_DIR, f"{video_id}_{target_lang_clean}.mp4")
 
     try:
         # ── Step 1: Downloading metadata / stream ─────────────────────────────
@@ -254,9 +290,9 @@ async def run_quantum_dubbing_pipeline(
         # ── Step 4: Neural TTS Audio Synthesis ────────────────────────────────
         job["step"] = "tts_synthesis"
         job["progress"] = 80
-        job["message"] = f"Synthesizing high-fidelity neural voice using {voice}..."
+        job["message"] = f"Synthesizing high-fidelity neural voice using {effective_voice}..."
         
-        tts_ok = await synthesize_edge_tts_audio(translated_text, output_audio, voice=voice)
+        tts_ok = await synthesize_edge_tts_audio(translated_text, output_audio, voice=effective_voice)
         if not tts_ok:
             raise RuntimeError("TTS audio generation failed.")
         await asyncio.sleep(1.0)
@@ -264,7 +300,7 @@ async def run_quantum_dubbing_pipeline(
         # ── Step 5: Muxing into Final Video ───────────────────────────────────
         job["step"] = "muxing"
         job["progress"] = 92
-        job["message"] = "Muxing synthesized Hindi quantum audio with lecture video track using FFmpeg..."
+        job["message"] = f"Muxing synthesized {LANGUAGE_NAME_MAP.get(target_lang_clean, 'Indian language')} audio with video track..."
         
         mux_ok = mux_audio_video_ffmpeg(video_input="", audio_input=output_audio, output_path=output_video)
         await asyncio.sleep(1.0)

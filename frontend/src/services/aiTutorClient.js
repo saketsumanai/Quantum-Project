@@ -17,6 +17,55 @@ const GROQ_MODELS = [
   "qwen/qwen3.8-27b",
 ];
 
+// ─── Multilingual & Hinglish Neural Language Detector ─────────────────────────
+export const HINGLISH_INDICATORS = new Set([
+  "kya", "hai", "hain", "karo", "kare", "kaise", "hota", "hoti", "hote",
+  "samjhao", "batao", "bataiye", "aur", "mein", "me", "hum", "yeh", "ye",
+  "woh", "wo", "apna", "apni", "nahi", "kyun", "kyu", "bhi", "accha",
+  "theek", "thik", "kardo", "samajh", "bolo", "mujhe", "tumhe", "aap",
+  "karna", "wali", "wale", "wala", "kuch", "zyada", "kam", "pehle",
+  "baad", "iska", "iski", "iske", "unka", "unki", "inke", "kab", "kahan",
+  "kidhar", "kaun", "kaunsa", "kaunsi", "chahiye", "dekho", "suno",
+  "samajhna", "sikhna", "sikhao", "padhao", "bhai", "bro", "dost", "samjha",
+  "dijiye", "batao na", "bata do"
+]);
+
+export function detectLanguage(text, userPref = "") {
+  if (userPref && userPref !== "auto" && userPref !== "all" && userPref !== "en") {
+    return userPref.toLowerCase();
+  }
+
+  if (!text || typeof text !== "string") return "en";
+  const clean = text.trim();
+  if (!clean) return "en";
+
+  // Check Indic scripts directly
+  if (/[\u0B80-\u0BFF]/.test(clean)) return "ta"; // Tamil
+  if (/[\u0C00-\u0C7F]/.test(clean)) return "te"; // Telugu
+  if (/[\u0980-\u09FF]/.test(clean)) return "bn"; // Bengali
+  if (/[\u0A80-\u0AFF]/.test(clean)) return "gu"; // Gujarati
+  if (/[\u0C80-\u0CFF]/.test(clean)) return "kn"; // Kannada
+  if (/[\u0D00-\u0D7F]/.test(clean)) return "ml"; // Malayalam
+  if (/[\u0A00-\u0A7F]/.test(clean)) return "pa"; // Punjabi
+  if (/[\u0B00-\u0B7F]/.test(clean)) return "or"; // Odia
+  if (/[\u0900-\u097F]/.test(clean)) return "hi"; // Hindi / Devanagari
+
+  // Check Hinglish (Hindi words written in Latin script)
+  const words = clean.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean);
+  let hinglishHits = 0;
+  for (const w of words) {
+    if (HINGLISH_INDICATORS.has(w)) {
+      hinglishHits++;
+    }
+  }
+
+  if (hinglishHits >= 2 || (words.length <= 6 && hinglishHits >= 1)) {
+    return "hinglish";
+  }
+
+  return userPref && userPref !== "auto" && userPref !== "all" ? userPref : "en";
+}
+
 // Offline verified quantum knowledge dictionary for instantaneous zero-latency responses
 const OFFLINE_KNOWLEDGE = {
   superposition: {
@@ -336,13 +385,74 @@ export function parseQuantumAiResponse(raw, fallbackModel = "Groq LPU (GPT-OSS 1
 }
 
 /**
+ * Comprehensive System Prompts for Multi-Language Socratic Quantum Tutor
+ */
+const LANGUAGE_PROMPTS = {
+  hinglish: `Target Language: Hinglish (Conversational Hindi written in English / Latin script).
+CRITICAL RULES FOR HINGLISH:
+1. You MUST answer in natural, engaging conversational Hinglish (e.g. "Imagine karo ek spinning coin hai... Jab tak aap measure nahi karte, qubit simultaneously |0> aur |1> dono states me hota hai.").
+2. Strictly keep ALL core scientific & mathematical quantum terms in English: Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Unitary, Ket |0>, Ket |1>, Qiskit.
+3. Do NOT output Devanagari script for Hinglish. Use clean Latin script.`,
+
+  hi: `Target Language: Hindi (हिंदी).
+CRITICAL RULES FOR HINDI:
+1. Explain fluently and naturally in Hindi (हिंदी).
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside clear Hindi explanations.`,
+
+  ta: `Target Language: Tamil (தமிழ்).
+CRITICAL RULES FOR TAMIL:
+1. Explain fluently and accurately in Tamil (தமிழ்) script.
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside Tamil explanations.`,
+
+  te: `Target Language: Telugu (తెలుగు).
+CRITICAL RULES FOR TELUGU:
+1. Explain fluently and accurately in Telugu (తెలుగు) script.
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside Telugu explanations.`,
+
+  bn: `Target Language: Bengali (বাংলা).
+CRITICAL RULES FOR BENGALI:
+1. Explain fluently and accurately in Bengali (বাংলা) script.
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside Bengali explanations.`,
+
+  mr: `Target Language: Marathi (मराठी).
+CRITICAL RULES FOR MARATHI:
+1. Explain fluently and accurately in Marathi (मराठी) script.
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside Marathi explanations.`,
+
+  gu: `Target Language: Gujarati (ગુજરાતી).
+CRITICAL RULES FOR GUJARATI:
+1. Explain fluently and accurately in Gujarati (ગુજરાતી) script.
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside Gujarati explanations.`,
+
+  kn: `Target Language: Kannada (ಕನ್ನಡ).
+CRITICAL RULES FOR KANNADA:
+1. Explain fluently and accurately in Kannada (ಕನ್ನಡ) script.
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside Kannada explanations.`,
+
+  ml: `Target Language: Malayalam (മലയാളം).
+CRITICAL RULES FOR MALAYALAM:
+1. Explain fluently and accurately in Malayalam (മലയാളം) script.
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside Malayalam explanations.`,
+
+  pa: `Target Language: Punjabi (ਪੰਜਾਬੀ).
+CRITICAL RULES FOR PUNJABI:
+1. Explain fluently and accurately in Punjabi (ਪੰਜਾਬੀ) script.
+2. Keep core technical terms (Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit) in English alongside Punjabi explanations.`,
+
+  en: `Target Language: English (Academic, pedagogical, authoritative).`,
+};
+
+/**
  * Direct call to Groq LPU API as high-speed resilient fallback
  */
 async function queryGroqDirectly({ userQuery, conversationHistory = [], language = "en" }) {
   if (!GROQ_API_KEY) return null;
 
+  const targetLang = detectLanguage(userQuery, language);
+  const langPromptRule = LANGUAGE_PROMPTS[targetLang] || LANGUAGE_PROMPTS.en;
+
   const systemPrompt = `You are QuantumLeap's expert Socratic AI Quantum Physics Tutor.
-Target Language: ${language === "hi" ? "Hindi (हिंदी)" : language === "hinglish" ? "Hinglish (Hindi written in English alphabets)" : "English"}.
+${langPromptRule}
 Explain concepts with scientific precision, physical intuition, and clear mathematics.
 Keep your explanation focused, comprehensive yet concise (under 250 words for vocal_prose_script).
 You MUST output valid, parseable JSON with NO commentary outside JSON.
@@ -397,6 +507,7 @@ Expected JSON format:
       // Extract and unmarshal clean fields from Groq response
       const extracted = parseQuantumAiResponse(rawContent, `Groq LPU (${model})`);
       if (extracted && extracted.vocal_prose_script) {
+        extracted.language_detected = targetLang;
         return extracted;
       }
     } catch (e) {
@@ -409,7 +520,7 @@ Expected JSON format:
 /**
  * Offline heuristic match
  */
-function getOfflineKnowledge(query) {
+function getOfflineKnowledge(query, language = "en") {
   const q = (query || "").toLowerCase();
   for (const [key, data] of Object.entries(OFFLINE_KNOWLEDGE)) {
     if (q.includes(key)) {
@@ -422,6 +533,7 @@ function getOfflineKnowledge(query) {
         sources: data.sources,
         model_used: "Gitwolves Deterministic Quantum Kernel",
         is_cached_fallback: true,
+        language_detected: language,
       };
     }
   }
@@ -446,6 +558,7 @@ print(qc.draw(output='text'))`,
     sources: ["Nielsen & Chuang - Quantum Computation and Quantum Information"],
     model_used: "Gitwolves Deterministic Quantum Kernel",
     is_cached_fallback: true,
+    language_detected: language,
   };
 }
 
@@ -463,6 +576,8 @@ export async function queryAiTutorSafe({
   generateDiagram = false,
   videoContext = undefined,
 }) {
+  const effectiveLang = detectLanguage(userQuery, language);
+
   // ─── Step 1: Attempt Backend API Call Safely ──────────────────────────────
   try {
     const backendUrl = `${API_BASE}/ai-tutor/query`;
@@ -475,7 +590,7 @@ export async function queryAiTutorSafe({
         current_topic: currentTopic,
         user_level: userLevel,
         conversation_history: conversationHistory,
-        language,
+        language: effectiveLang,
         model,
         generate_diagram: generateDiagram,
         video_context: videoContext,
@@ -488,6 +603,7 @@ export async function queryAiTutorSafe({
       if (rawText && rawText.trim().length > 0) {
         const parsed = safeJsonParse(rawText);
         if (parsed && parsed.success) {
+          parsed.language_detected = parsed.language_detected || effectiveLang;
           return parsed;
         }
       }
@@ -500,14 +616,15 @@ export async function queryAiTutorSafe({
   const groqResult = await queryGroqDirectly({
     userQuery,
     conversationHistory,
-    language,
+    language: effectiveLang,
   });
   if (groqResult) {
+    groqResult.language_detected = effectiveLang;
     return groqResult;
   }
 
   // ─── Step 3: Verified Offline Knowledge Fallback ──────────────────────────
-  return getOfflineKnowledge(userQuery);
+  return getOfflineKnowledge(userQuery, effectiveLang);
 }
 
 /**
@@ -521,6 +638,9 @@ export async function chatAiTutorSafe({
   conversationHistory = [],
   language = "en",
 }) {
+  const promptText = query || (messages.length ? messages[messages.length - 1].content : "");
+  const effectiveLang = detectLanguage(promptText, language);
+
   // ─── Step 1: Attempt Backend API Call Safely ──────────────────────────────
   try {
     const backendUrl = `${API_BASE}/ai-tutor/chat`;
@@ -533,7 +653,7 @@ export async function chatAiTutorSafe({
         topic,
         context,
         conversation_history: conversationHistory,
-        language,
+        language: effectiveLang,
       }),
     });
 
@@ -549,6 +669,7 @@ export async function chatAiTutorSafe({
             latex: parsed.latex || null,
             code: parsed.code || null,
             sources: parsed.sources || ["Gitwolves Neural Core"],
+            language_detected: parsed.language || effectiveLang,
           };
         }
       }
@@ -559,9 +680,9 @@ export async function chatAiTutorSafe({
 
   // ─── Step 2: Direct Groq Query ────────────────────────────────────────────
   const groqResult = await queryGroqDirectly({
-    userQuery: query || (messages.length ? messages[messages.length - 1].content : ""),
+    userQuery: promptText,
     conversationHistory: messages,
-    language,
+    language: effectiveLang,
   });
   if (groqResult) {
     return {
@@ -571,11 +692,12 @@ export async function chatAiTutorSafe({
       code: groqResult.qiskit_executable_code,
       sources: groqResult.sources,
       quiz: groqResult.quiz_generation_object,
+      language_detected: effectiveLang,
     };
   }
 
   // ─── Step 3: Offline Fallback ─────────────────────────────────────────────
-  const offline = getOfflineKnowledge(query || (messages.length ? messages[messages.length - 1].content : ""));
+  const offline = getOfflineKnowledge(promptText, effectiveLang);
   return {
     success: true,
     content: offline.vocal_prose_script,
@@ -583,5 +705,6 @@ export async function chatAiTutorSafe({
     code: offline.qiskit_executable_code,
     sources: offline.sources,
     quiz: offline.quiz_generation_object,
+    language_detected: effectiveLang,
   };
 }

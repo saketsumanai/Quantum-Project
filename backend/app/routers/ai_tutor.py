@@ -51,6 +51,7 @@ class ChatResponse(BaseModel):
     quiz: Optional[Dict[str, Any]] = None
     sources: Optional[List[str]] = None
     model: Optional[str] = None
+    language: Optional[str] = "en"
 
 # ─── Multi-turn chat endpoint ─────────────────────────────────────────────────
 @router.post("/chat", response_model=ChatResponse)
@@ -121,7 +122,8 @@ async def chat_endpoint(request: ChatRequest):
             code=result.qiskit_executable_code,
             quiz=quiz_dict,
             sources=result.sources,
-            model="Qwen-3.8-27B · RAG Grounded"
+            model="Qwen-3.8-27B · RAG Grounded",
+            language=result.language_detected or getattr(tutor_req, "language", "en")
         )
     except HTTPException:
         raise

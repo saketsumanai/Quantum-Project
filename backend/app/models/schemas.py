@@ -153,6 +153,7 @@ class AITutorQueryResponse(BaseModel):
     diagram: Optional[Dict[str, Any]] = None
     model_used: Optional[str] = None
     rag_metrics: Optional[RAGMetricsModel] = None
+    language_detected: Optional[str] = Field(default="en", description="Auto-detected or applied language code (en, hi, hinglish, ta, te, bn, mr, gu, kn, ml, pa, or)")
     reasoning_process: Optional[Union[str, Dict[str, Any], List[Any]]] = Field(
         default=None, description="Step-by-step chain-of-thought quantum reasoning and theorem verification"
     )

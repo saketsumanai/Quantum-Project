@@ -14,7 +14,7 @@ import QuantumStudio from './QuantumStudio';
 import { resolveCitationsForQuery, QUANTUM_TEXTBOOK_EXCERPTS } from '../data/quantumCitationsData';
 import { INDIAN_LANGUAGES, VIDEO_LECTURES } from '../data/videoLecturesData';
 import API_BASE from '../config/api';
-import { queryAiTutorSafe, parseQuantumAiResponse } from '../services/aiTutorClient';
+import { queryAiTutorSafe, parseQuantumAiResponse, detectLanguage } from '../services/aiTutorClient';
 
 const API = API_BASE;
 
@@ -1170,12 +1170,16 @@ export default function QuantumChatGPT({
         content: m.content || '',
       }));
 
+      const effectiveLang = (selectedLanguage && selectedLanguage !== 'en' && selectedLanguage !== 'all' && selectedLanguage !== 'auto')
+        ? selectedLanguage
+        : detectLanguage(text, selectedLanguage);
+
       const rawData = await queryAiTutorSafe({
         userQuery: text,
         circuitContext: {},
         currentTopic: '',
         conversationHistory: history,
-        language: selectedLanguage,
+        language: effectiveLang,
         model: selectedModel,
         generateDiagram,
       });
@@ -1194,7 +1198,7 @@ export default function QuantumChatGPT({
           sources: data.sources || [],
           model: data.model_used || (SUPPORTED_MODELS.find(m => m.id === selectedModel)?.name || 'GPT-OSS 120B'),
           ragActive: !data.is_cached_fallback,
-          language: selectedLanguage,
+          language: data.language_detected || effectiveLang,
           userQuery: text,
         };
 
@@ -1208,6 +1212,7 @@ export default function QuantumChatGPT({
       }
     } catch (err) {
       console.error('Chat error:', err);
+      const effectiveLangFallback = detectLanguage(text, selectedLanguage);
       const errorMsg = {
         role: 'assistant',
         id: Date.now() + 1,
@@ -1216,7 +1221,7 @@ export default function QuantumChatGPT({
         code: "from qiskit import QuantumCircuit\nqc = QuantumCircuit(2)\nqc.h(0)\nqc.cx(0, 1)\nprint(qc.draw(output='text'))",
         sources: ['Gitwolves Autonomous Quantum Core'],
         model: 'Autonomous Engine',
-        language: selectedLanguage,
+        language: effectiveLangFallback,
         userQuery: text,
       };
       setSessions(prev => prev.map(s => s.id === activeId ? {

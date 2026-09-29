@@ -161,8 +161,8 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           youtube_url: url || `https://www.youtube.com/watch?v=${videoId}`,
-          target_language: "hi",
-          voice: "hi-IN-MadhurNeural",
+          target_language: dubLanguage || "hi",
+          voice: undefined,
         }),
       });
       const data = await res.json();

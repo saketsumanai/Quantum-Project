@@ -88,7 +88,7 @@ async def dub_quantum_lecture_endpoint(
         video_id=video_id,
         youtube_url=request.youtube_url,
         target_language=target_lang,
-        voice=request.voice or "hi-IN-MadhurNeural",
+        voice=request.voice,
         custom_transcript=request.custom_transcript,
     )
 

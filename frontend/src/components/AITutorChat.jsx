@@ -10,7 +10,7 @@ import { VoiceInput } from './ui/voice-input';
 import { AIInputWithLoading } from './ui/ai-input-with-loading';
 import { useAuth } from '../context/AuthContext';
 import API_BASE from '../config/api';
-import { queryAiTutorSafe, parseQuantumAiResponse } from '../services/aiTutorClient';
+import { queryAiTutorSafe, parseQuantumAiResponse, detectLanguage } from '../services/aiTutorClient';
 
 const DEFAULT_AURA_MSG = {
   sender: 'aura',
@@ -358,8 +358,8 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
     setSpeakingMessageIdx(null);
   };
 
-  // Read Aloud / Speech Handler
-  const handleReadAloud = (text, idx) => {
+  // Read Aloud / Speech Handler with Multilingual & Indic Voice Routing
+  const handleReadAloud = (text, idx, messageLang) => {
     if (!('speechSynthesis' in window)) return;
     if (speakingMessageIdx === idx) {
       window.speechSynthesis.cancel();
@@ -385,8 +385,38 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
 
     if (!clean) return;
 
-    const utterance = new SpeechSynthesisUtterance(clean.slice(0, 1500));
-    utterance.rate = 1.0;
+    const utterance = new SpeechSynthesisUtterance(clean.slice(0, 1600));
+    
+    // Auto-detect language if not passed
+    const lang = messageLang || detectLanguage(clean);
+    const BCP47_MAP = {
+      hi: 'hi-IN',
+      hinglish: 'hi-IN',
+      ta: 'ta-IN',
+      te: 'te-IN',
+      bn: 'bn-IN',
+      mr: 'mr-IN',
+      gu: 'gu-IN',
+      kn: 'kn-IN',
+      ml: 'ml-IN',
+      pa: 'pa-IN',
+      en: 'en-US',
+    };
+    const targetLocale = BCP47_MAP[lang] || 'en-US';
+    utterance.lang = targetLocale;
+
+    // Pick matching voice
+    try {
+      const voices = window.speechSynthesis.getVoices() || [];
+      const match = voices.find(v => {
+        const vLang = (v.lang || '').replace('_', '-').toLowerCase();
+        return vLang === targetLocale.toLowerCase() || vLang.startsWith(targetLocale.split('-')[0]);
+      });
+      if (match) utterance.voice = match;
+    } catch (_) {}
+
+    utterance.rate = 0.98;
+    utterance.pitch = 1.0;
     utterance.onend = () => setSpeakingMessageIdx(null);
     utterance.onerror = () => setSpeakingMessageIdx(null);
     setSpeakingMessageIdx(idx);
@@ -422,9 +452,10 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
     if (!textToSend || !textToSend.trim() || isLoading) return;
 
     const vidCtx = overrideVideoContext !== undefined ? overrideVideoContext : activeVideoContext;
+    const detectedLang = detectLanguage(textToSend);
 
     // Add user message
-    const userMsg = { sender: 'user', text: textToSend };
+    const userMsg = { sender: 'user', text: textToSend, language: detectedLang };
     setMessages((prev) => [...prev, userMsg]);
     setInputQuery('');
     setIsLoading(true);
@@ -437,6 +468,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
         circuitContext,
         currentTopic: activeTopic,
         userLevel,
+        language: detectedLang,
         videoContext: vidCtx || undefined,
       });
 
@@ -459,6 +491,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
               total_latency_ms: 37.0,
             },
             user_level: data.user_level_applied || userLevel,
+            language: data.language_detected || detectedLang,
             isAlreadyStreamed: false,
           }
         ]);
@@ -472,6 +505,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
             code: "from qiskit import QuantumCircuit\nqc = QuantumCircuit(1)\nqc.h(0)\nprint(qc.draw(output='text'))",
             quiz: null,
             sources: ["Gitwolves Resilient Core"],
+            language: detectedLang,
             isAlreadyStreamed: true,
           }
         ]);
@@ -794,7 +828,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
                     {m.sender !== 'user' && (
                       <button
                         type="button"
-                        onClick={() => handleReadAloud(m.text, idx)}
+                        onClick={() => handleReadAloud(m.text, idx, m.language)}
                         title={speakingMessageIdx === idx ? "Stop Voice" : "Read Aloud"}
                         style={{
                           background: speakingMessageIdx === idx ? 'rgba(52, 211, 153, 0.18)' : 'rgba(255, 255, 255, 0.05)',
