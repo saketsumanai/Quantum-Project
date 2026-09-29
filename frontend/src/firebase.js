@@ -101,10 +101,15 @@ export async function signInWithGoogle(preferRedirect = false) {
       await signInWithRedirect(auth, googleProvider);
       return null;
     }
-    if (err.code === "auth/unauthorized-domain") {
+    const isUnauthorizedDomain =
+      err.code === "auth/unauthorized-domain" ||
+      (err.code && err.code.includes("unauthorized")) ||
+      (err.message && (err.message.includes("unauthorized") || err.message.includes("unauthor") || err.message.includes("authorized domain")));
+
+    if (isUnauthorizedDomain) {
       const currentHost = typeof window !== "undefined" ? window.location.hostname : "your Vercel domain";
       const domainErr = new Error(
-        `Firebase domain not authorized: '${currentHost}'. To use Google Sign-In on Vercel, please add '${currentHost}' in Firebase Console > Authentication > Settings > Authorized Domains. In the meantime, you can log in with Email or Demo Accounts!`
+        `Firebase domain not authorized: '${currentHost}'. To use Google Sign-In on Vercel, please add '${currentHost}' in Firebase Console > Authentication > Settings > Authorized Domains. In the meantime, you can log in instantly with the Demo Accounts or Email below!`
       );
       domainErr.code = "auth/unauthorized-domain";
       throw domainErr;

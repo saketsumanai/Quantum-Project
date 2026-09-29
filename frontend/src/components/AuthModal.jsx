@@ -361,22 +361,22 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* Error Message */}
           {displayError && (
             <div style={{
-              padding: "10px 12px", borderRadius: "8px",
-              background: displayError.includes("not authorized") ? "rgba(245, 158, 11, 0.12)" : "rgba(239, 68, 68, 0.12)",
-              border: displayError.includes("not authorized") ? "1px solid rgba(245, 158, 11, 0.35)" : "1px solid rgba(239, 68, 68, 0.3)",
-              color: displayError.includes("not authorized") ? "#fcd34d" : "#fca5a5",
-              fontSize: "0.76rem", display: "flex", flexDirection: "column", gap: "6px",
+              padding: "12px 14px", borderRadius: "8px",
+              background: (displayError.toLowerCase().includes("authoriz") || displayError.toLowerCase().includes("unauthor")) ? "rgba(245, 158, 11, 0.12)" : "rgba(239, 68, 68, 0.12)",
+              border: (displayError.toLowerCase().includes("authoriz") || displayError.toLowerCase().includes("unauthor")) ? "1px solid rgba(245, 158, 11, 0.35)" : "1px solid rgba(239, 68, 68, 0.3)",
+              color: (displayError.toLowerCase().includes("authoriz") || displayError.toLowerCase().includes("unauthor")) ? "#fcd34d" : "#fca5a5",
+              fontSize: "0.76rem", display: "flex", flexDirection: "column", gap: "8px",
             }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
                 <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
-                <span style={{ lineHeight: 1.4 }}>{displayError}</span>
+                <span style={{ lineHeight: 1.45 }}>{displayError}</span>
               </div>
               {displayError.toLowerCase().includes("popup") && (
                 <button
                   type="button"
                   onClick={() => handleGoogleSignIn(true)}
                   style={{
-                    alignSelf: "flex-start", marginTop: "4px", padding: "6px 12px",
+                    alignSelf: "flex-start", marginTop: "2px", padding: "6px 12px",
                     background: "rgba(59, 130, 246, 0.25)", border: "1px solid rgba(59, 130, 246, 0.5)",
                     borderRadius: "4px", color: "#dbeafe", fontSize: "0.74rem", fontWeight: 600,
                     cursor: "pointer",
@@ -385,19 +385,45 @@ export default function AuthModal({ isOpen, onClose }) {
                   ⚡ Open Google Sign-In via Full-Page (Bypasses Popup Blocker)
                 </button>
               )}
-              {displayError.includes("not authorized") && (
-                <button
-                  type="button"
-                  onClick={fillResearcherDemo}
-                  style={{
-                    alignSelf: "flex-start", marginTop: "4px", padding: "4px 10px",
-                    background: "rgba(245, 158, 11, 0.25)", border: "1px solid rgba(245, 158, 11, 0.5)",
-                    borderRadius: "4px", color: "#fef3c7", fontSize: "0.72rem", fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  ⚡ Click Here to Sign In via Demo Researcher Instead
-                </button>
+              {(displayError.toLowerCase().includes("authoriz") || displayError.toLowerCase().includes("unauthor")) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+                  <button
+                    type="button"
+                    onClick={fillResearcherDemo}
+                    style={{
+                      padding: "6px 10px",
+                      background: "rgba(245, 158, 11, 0.3)", border: "1px solid rgba(245, 158, 11, 0.6)",
+                      borderRadius: "4px", color: "#fef3c7", fontSize: "0.72rem", fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ⚡ Instant Login: Researcher Demo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={fillStudentDemo}
+                    style={{
+                      padding: "6px 10px",
+                      background: "rgba(59, 130, 246, 0.25)", border: "1px solid rgba(59, 130, 246, 0.5)",
+                      borderRadius: "4px", color: "#bfdbfe", fontSize: "0.72rem", fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ⚡ Instant Login: Student Demo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGuestExplore}
+                    style={{
+                      padding: "6px 10px",
+                      background: "rgba(255, 255, 255, 0.1)", border: "1px solid rgba(255, 255, 255, 0.2)",
+                      borderRadius: "4px", color: "#e2e8f0", fontSize: "0.72rem", fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Continue as Guest
+                  </button>
+                </div>
               )}
             </div>
           )}

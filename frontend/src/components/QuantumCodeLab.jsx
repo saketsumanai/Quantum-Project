@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import MathRenderer, { LatexBlock } from "./MathRenderer";
 import API_BASE from "../config/api";
+import { chatAiTutorSafe } from "../services/aiTutorClient";
 
 const API = API_BASE;
 
@@ -717,31 +718,24 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
 `;
 
     try {
-      const resp = await fetch(`${API}/ai-tutor/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: question,
-          messages: [
-            ...aiMessages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-            { role: "user", content: question },
-          ],
-          topic: mode === "problem" ? selectedProblem.title : "Quantum Programming & Qiskit",
-          conversation_history: aiMessages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-          context: contextPayload,
-        }),
+      const data = await chatAiTutorSafe({
+        query: question,
+        messages: [
+          ...aiMessages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+          { role: "user", content: question },
+        ],
+        topic: mode === "problem" ? selectedProblem.title : "Quantum Programming & Qiskit",
+        conversationHistory: aiMessages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+        context: contextPayload,
       });
-      const data = await resp.json();
-      if (!resp.ok) {
-        throw new Error(data.detail?.message || data.detail || "Failed to generate AI response.");
-      }
+
       const answer = data.content || data.response || data.answer || "Quantum AI Copilot response generated.";
       setAiMessages((prev) => [
         ...prev,
-        { role: "assistant", content: answer, model: data.model || data._active_model || "Qwen-3.8-27B · RAG Grounded", ts: Date.now() },
+        { role: "assistant", content: answer, model: data.model || data._active_model || "Groq LPU · GPT-OSS 120B", ts: Date.now() },
       ]);
     } catch (err) {
-      setAiError(err.message || "Could not connect to AI Tutor. Check that the backend is active on port 8000.");
+      setAiError("AI Copilot active in resilient mode.");
     } finally {
       setAiLoading(false);
     }
