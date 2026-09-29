@@ -53,8 +53,12 @@ export default function StudentDashboard({
     try {
       // 1. Backend assessment & curriculum stats
       const [statsRes, progressRes] = await Promise.all([
-        authFetch('/assessment/dashboard-stats').then((r) => r.json()).catch(() => ({})),
-        authFetch('/curriculum/progress').then((r) => r.json()).catch(() => ({})),
+        authFetch('/assessment/dashboard-stats')
+          .then((r) => (r.ok && (r.headers.get('content-type') || '').includes('application/json') ? r.json() : {}))
+          .catch(() => ({})),
+        authFetch('/curriculum/progress')
+          .then((r) => (r.ok && (r.headers.get('content-type') || '').includes('application/json') ? r.json() : {}))
+          .catch(() => ({})),
       ]);
 
       if (statsRes?.success) setStats(statsRes);

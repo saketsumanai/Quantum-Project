@@ -1097,7 +1097,7 @@ export default function LearningHub({ onSwitchToStudio, onSwitchToAssessment, on
   // Sync progress on mount from backend
   useEffect(() => {
     fetch(`${API_BASE}/curriculum/progress`)
-      .then((r) => r.json())
+      .then((r) => (r.ok && (r.headers.get("content-type") || "").includes("application/json") ? r.json() : null))
       .then((data) => {
         if (data && data.success) {
           if (data.total_xp) {
