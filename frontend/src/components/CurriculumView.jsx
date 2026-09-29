@@ -26,17 +26,43 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/curriculum/modules`)
-      .then((res) => res.json())
-      .then((data) => {
-        setModules(data);
-        if (data.length > 0 && data[0].lessons.length > 0) {
-          const firstLesson = data[0].lessons[0];
-          setActiveLesson(firstLesson);
-          loadDynamicQuizForLesson(firstLesson);
+    const loadModules = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/curriculum/modules`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setModules(data);
+            if (data[0].lessons?.length > 0) {
+              const firstLesson = data[0].lessons[0];
+              setActiveLesson(firstLesson);
+              loadDynamicQuizForLesson(firstLesson);
+            }
+            return;
+          }
         }
-      })
-      .catch((err) => console.error("Curriculum fetch error:", err));
+      } catch (e) {
+        console.warn("[CurriculumView] Backend modules API offline, loading static modules:", e);
+      }
+
+      // Static fallback for Vercel
+      try {
+        const staticRes = await fetch("/data/curriculum_modules.json");
+        const staticData = await staticRes.json();
+        if (Array.isArray(staticData) && staticData.length > 0) {
+          setModules(staticData);
+          if (staticData[0].lessons?.length > 0) {
+            const firstLesson = staticData[0].lessons[0];
+            setActiveLesson(firstLesson);
+            loadDynamicQuizForLesson(firstLesson);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading static curriculum modules:", err);
+      }
+    };
+
+    loadModules();
   }, []); // eslint-disable-line
 
   const loadDynamicQuizForLesson = useCallback(async (lesson) => {

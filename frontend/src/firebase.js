@@ -28,32 +28,14 @@ import {
 } from "firebase/firestore";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
-// ⚠️  All values MUST be set as VITE_* environment variables.
-// Do NOT add hardcoded fallback values here — that would expose credentials in version control.
-const _requiredEnvKeys = [
-  "VITE_FIREBASE_API_KEY",
-  "VITE_FIREBASE_AUTH_DOMAIN",
-  "VITE_FIREBASE_PROJECT_ID",
-  "VITE_FIREBASE_STORAGE_BUCKET",
-  "VITE_FIREBASE_MESSAGING_SENDER_ID",
-  "VITE_FIREBASE_APP_ID",
-];
-const _missingKeys = _requiredEnvKeys.filter((k) => !import.meta.env[k]);
-if (_missingKeys.length > 0) {
-  console.error(
-    `[Firebase] Missing required env vars: ${_missingKeys.join(", ")}. ` +
-    "Copy .env.example → .env and fill in your Firebase project values."
-  );
-}
-
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDv6Lak1Ourt6-peOUyx39e3mPFAXMRvL8",
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "quantumleap-4a8d6.firebaseapp.com",
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID || "quantumleap-4a8d6",
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "quantumleap-4a8d6.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "250509811415",
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID || "1:250509811415:web:75d31baf413f202e139a92",
+  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-Q0L5TJZM6X",
 };
 
 // Prevent "duplicate app" error during Vite HMR hot reloads

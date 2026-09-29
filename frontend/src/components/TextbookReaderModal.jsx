@@ -26,17 +26,38 @@ export default function TextbookReaderModal({ isOpen, onClose, initialSearch = "
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    fetch(`${API_BASE}/curriculum/library`)
-      .then((r) => r.json())
-      .then((data) => {
-        const bookList = Array.isArray(data) ? data : [];
+    const loadCatalog = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/curriculum/library`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setBooks(data);
+            if (!selectedBook) setSelectedBook(data[0]);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[TextbookReader] Backend library API offline, loading static catalog:", e);
+      }
+
+      // Static fallback catalog for Vercel
+      try {
+        const staticRes = await fetch("/data/quantum_library_150.json");
+        const staticData = await staticRes.json();
+        const bookList = staticData.library || staticData || [];
         setBooks(bookList);
         if (bookList.length > 0 && !selectedBook) {
           setSelectedBook(bookList[0]);
         }
-      })
-      .catch((err) => console.error("Error fetching library catalog:", err))
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error("Error fetching static library catalog:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCatalog();
   }, [isOpen]);
 
   useEffect(() => {
