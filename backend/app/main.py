@@ -116,6 +116,19 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+# ─── Startup Secrets Validation ───────────────────────────────────────────────
+_SECRET_KEY = os.getenv("SECRET_KEY", "")
+_INSECURE_DEFAULTS = {
+    "",
+    "change-me-in-production-quantum-leap-sih-2026",
+    "change-this-to-a-secure-random-secret-in-production",
+}
+if _SECRET_KEY in _INSECURE_DEFAULTS:
+    print(
+        "[SECURITY ⚠️ ] SECRET_KEY is not set or is using a default value. "
+        "Set a strong random SECRET_KEY in your .env file before deploying to production!"
+    )
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
     Enforces strict enterprise security headers on all incoming API requests:
@@ -155,6 +168,29 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+# ─── Global Rate Limiting Middleware ─────────────────────────────────────────
+from backend.app.core.rate_limiter import _general_limiter, _get_client_ip as _rl_get_ip
+
+class GlobalRateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Enforces a global rate limit of 60 requests per 60 seconds per IP
+    on all routes. Auth-specific limits (5/15 min) are handled separately
+    as FastAPI dependencies on the individual auth endpoints.
+    """
+    async def dispatch(self, request: Request, call_next):
+        ip = _rl_get_ip(request)
+        allowed, retry_after = _general_limiter.is_allowed(ip)
+        if not allowed:
+            return Response(
+                content=f'{{"error": "Too Many Requests", "detail": "Rate limit exceeded. Retry after {retry_after} seconds.", "retry_after": {retry_after}}}',
+                status_code=429,
+                media_type="application/json",
+                headers={"Retry-After": str(retry_after)},
+            )
+        return await call_next(request)
+
+app.add_middleware(GlobalRateLimitMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

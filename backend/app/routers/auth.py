@@ -6,7 +6,7 @@ POST /api/v1/auth/logout — Revokes session.
 """
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 import uuid
@@ -21,6 +21,15 @@ from backend.app.core.security import (
     hash_password,
     verify_password,
     ACCESS_TOKEN_EXPIRE_MINUTES,
+)
+from backend.app.core.rate_limiter import auth_rate_limit, reset_auth_limit_for_ip
+from backend.app.core.sanitize import (
+    sanitize_email,
+    validate_password,
+    sanitize_display_name,
+    sanitize_topic_name,
+    sanitize_text,
+    MAX_DISPLAY_NAME_LEN,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -141,20 +150,22 @@ def _seed_demo_users_if_needed(db: Session):
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.post("/login", response_model=AuthResponse)
-def login_with_credentials(request: LoginRequest, db: Session = Depends(get_db)):
+def login_with_credentials(
+    request: Request,
+    req_body: LoginRequest,
+    db: Session = Depends(get_db),
+    _rl: None = Depends(auth_rate_limit),
+):
     """
     Authenticates a user with email and password credentials.
     Returns a signed session JWT and user profile.
+    Rate-limited: max 5 attempts per 15 minutes per IP.
     """
     _seed_demo_users_if_needed(db)
-    email = request.email.strip().lower()
-    password = request.password.strip()
 
-    if not email or not password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email and password are required."
-        )
+    # ── Sanitize & validate inputs ───────────────────────────────────────────
+    email = sanitize_email(req_body.email)
+    password = validate_password(req_body.password)
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
@@ -178,6 +189,9 @@ def login_with_credentials(request: LoginRequest, db: Session = Depends(get_db))
     db.commit()
     db.refresh(user)
 
+    # Clear rate-limit counter for this IP after a successful login
+    reset_auth_limit_for_ip(request.client.host if request.client else "unknown")
+
     token_payload = {
         "sub": user.id,
         "email": user.email,
@@ -197,23 +211,27 @@ def login_with_credentials(request: LoginRequest, db: Session = Depends(get_db))
 
 
 @router.post("/register", response_model=AuthResponse)
-def register_with_credentials(request: RegisterRequest, db: Session = Depends(get_db)):
+def register_with_credentials(
+    request: Request,
+    req_body: RegisterRequest,
+    db: Session = Depends(get_db),
+    _rl: None = Depends(auth_rate_limit),
+):
     """
     Registers a new student or researcher account with email, password, and optional age.
+    Rate-limited: max 5 attempts per 15 minutes per IP.
     """
-    email = request.email.strip().lower()
-    password = request.password.strip()
-    display_name = (request.display_name or "").strip() or email.split("@")[0]
+    # ── Sanitize & validate inputs ───────────────────────────────────────────
+    email = sanitize_email(req_body.email)
+    password = validate_password(req_body.password)
+    raw_name = sanitize_display_name(req_body.display_name or "")
+    display_name = raw_name or email.split("@")[0]
 
-    if not email or "@" not in email:
+    # Validate age
+    if req_body.age is not None and (req_body.age < 5 or req_body.age > 120):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A valid email address is required."
-        )
-    if len(password) < 6:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 6 characters long."
+            detail="Age must be between 5 and 120.",
         )
 
     existing = db.query(User).filter(User.email == email).first()
@@ -228,7 +246,7 @@ def register_with_credentials(request: RegisterRequest, db: Session = Depends(ge
         email=email,
         display_name=display_name,
         password_hash=hash_password(password),
-        age=request.age,
+        age=req_body.age,
         provider="email",
         role="student",
         topics_covered="[]",
@@ -258,12 +276,26 @@ def register_with_credentials(request: RegisterRequest, db: Session = Depends(ge
 
 
 @router.post("/google", response_model=AuthResponse)
-def authenticate_with_google(request: GoogleAuthRequest, db: Session = Depends(get_db)):
+def authenticate_with_google(
+    request: Request,
+    req_body: GoogleAuthRequest,
+    db: Session = Depends(get_db),
+    _rl: None = Depends(auth_rate_limit),
+):
     """
     Verifies a Firebase Google ID token and returns a signed internal session JWT.
     Creates or updates the user record in the local SQLite database.
+    Rate-limited: max 5 attempts per 15 minutes per IP.
     """
-    claims = verify_firebase_token(request.firebase_id_token)
+    # Validate token is not empty / suspiciously short
+    token = (req_body.firebase_id_token or "").strip()
+    if len(token) < 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token format.",
+        )
+
+    claims = verify_firebase_token(token)
     if not claims:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -272,7 +304,9 @@ def authenticate_with_google(request: GoogleAuthRequest, db: Session = Depends(g
 
     uid = claims.get("uid") or claims.get("user_id")
     email = claims.get("email", "")
-    display_name = claims.get("name", email.split("@")[0])
+    raw_name = claims.get("name", email.split("@")[0])
+    # Sanitize name coming from external token claims
+    display_name = sanitize_display_name(raw_name)[:MAX_DISPLAY_NAME_LEN]
     photo_url = claims.get("picture", None)
 
     user = db.query(User).filter(User.id == uid).first()
