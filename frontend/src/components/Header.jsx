@@ -45,7 +45,13 @@ export default function Header({ activeTab, setActiveTab, onOpenAuth }) {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.id !== "landing" && !user && !isGuest) {
+                      if (typeof onOpenAuth === "function") onOpenAuth();
+                      return;
+                    }
+                    setActiveTab(item.id);
+                  }}
                   className={`relative cursor-pointer h-[34px] sm:h-[36px] px-3 sm:px-4 md:px-4.5 rounded-full transition-all duration-150 flex items-center justify-center gap-2 outline-none leading-none shrink-0 ${
                     isActive ? "text-white font-semibold" : "text-zinc-400 hover:text-zinc-200 font-medium"
                   }`}

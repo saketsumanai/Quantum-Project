@@ -21,10 +21,46 @@ const API = API_BASE;
 
 // ─── Main Application ─────────────────────────────────────────────────────────
 function QuantumLeapApp() {
+  const { user, isGuest } = useAuth();
+  const isAuthenticated = Boolean(user || isGuest);
+  const [pendingTab, setPendingTab] = useState(null);
+
   const [activeTab, setActiveTab] = useState(() => {
     const hash = (typeof window !== "undefined" ? window.location.hash.replace("#", "") : "");
-    return ["landing", "chat", "videos", "learning", "assessment", "gateway", "studio", "dashboard", "codelab"].includes(hash) ? hash : "landing";
+    const initial = ["landing", "chat", "videos", "learning", "assessment", "gateway", "studio", "dashboard", "codelab"].includes(hash) ? hash : "landing";
+    // If not authenticated and attempting a protected tab, default to landing
+    return initial;
   });
+
+  // Protected tab navigation: prompts unauthenticated users to sign in first
+  const handleNavigateTab = (tabId) => {
+    if (tabId !== "landing" && !isAuthenticated) {
+      setPendingTab(tabId);
+      setIsAuthOpen(true);
+      return;
+    }
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      window.location.hash = tabId === "landing" ? "" : tabId;
+    }
+  };
+
+  // If user signs in and had a pending destination, automatically transition them
+  useEffect(() => {
+    if (isAuthenticated && pendingTab) {
+      setActiveTab(pendingTab);
+      setPendingTab(null);
+    }
+  }, [isAuthenticated, pendingTab]);
+
+  // If user is not authenticated and on a protected tab, reset to home page
+  useEffect(() => {
+    if (!isAuthenticated && activeTab !== "landing") {
+      setActiveTab("landing");
+      setIsAuthOpen(true);
+    }
+  }, [isAuthenticated, activeTab]);
+
   const [chatParams, setChatParams] = useState({ query: "", language: "en" });
   const [numQubits, setNumQubits] = useState(2);
   const [instructions, setInstructions] = useState([
@@ -139,7 +175,7 @@ function QuantumLeapApp() {
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", gap: "0", paddingTop: activeTab === "landing" ? "0" : "56px" }}>
       <Header
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleNavigateTab}
         onOpenExport={() => setIsExportOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
         backendStatus={backendStatus}
@@ -149,7 +185,7 @@ function QuantumLeapApp() {
 
       {/* ── Landing Page (Overview) ── */}
       {activeTab === "landing" ? (
-        <LandingPage onNavigate={setActiveTab} onOpenAuth={() => setIsAuthOpen(true)} />
+        <LandingPage onNavigate={handleNavigateTab} onOpenAuth={() => setIsAuthOpen(true)} />
 
       /* ── AI Tutor (full-page ChatGPT) ── */
       ) : activeTab === "chat" ? (
@@ -159,14 +195,14 @@ function QuantumLeapApp() {
           onToggleTheme={toggleTheme}
           initialQuery={chatParams.query}
           initialLanguage={chatParams.language}
-          onNavigate={setActiveTab}
+          onNavigate={handleNavigateTab}
           onLoadCircuitIntoStudio={(circuit) => {
             if (circuit?.num_qubits) setNumQubits(circuit.num_qubits);
             if (circuit?.instructions) {
               setInstructions(circuit.instructions);
               setHasSimulated(false);
             }
-            setActiveTab("studio");
+            handleNavigateTab("studio");
           }}
         />
 
@@ -175,10 +211,10 @@ function QuantumLeapApp() {
         <VideoLecturesHub
           onSwitchToChat={(params) => {
             setChatParams(params);
-            setActiveTab("chat");
+            handleNavigateTab("chat");
           }}
           onSwitchToAssessment={(topic) => {
-            setActiveTab("assessment");
+            handleNavigateTab("assessment");
           }}
         />
 
@@ -187,17 +223,17 @@ function QuantumLeapApp() {
         <LearningHub
           onSwitchToStudio={(presetKey) => {
             if (presetKey) handleLoadPreset(presetKey);
-            setActiveTab("studio");
+            handleNavigateTab("studio");
           }}
-          onSwitchToAssessment={() => setActiveTab("assessment")}
-          onSwitchToVideos={() => setActiveTab("videos")}
+          onSwitchToAssessment={() => handleNavigateTab("assessment")}
+          onSwitchToVideos={() => handleNavigateTab("videos")}
         />
 
       /* ── Assessment Center ── */
       ) : activeTab === "assessment" ? (
         <AssessmentCenter
-          onSwitchToStudio={() => setActiveTab("studio")}
-          onSwitchToLearning={() => setActiveTab("learning")}
+          onSwitchToStudio={() => handleNavigateTab("studio")}
+          onSwitchToLearning={() => handleNavigateTab("learning")}
         />
 
       /* ── Gateway Flow ── */
@@ -317,8 +353,8 @@ function QuantumLeapApp() {
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
-      {/* Global Floating Quantum AI Tutor Drawer (Accessible on pages except CodeLab which has its own IDE copilot) */}
-      {activeTab !== "codelab" && (
+      {/* Global Floating Quantum AI Tutor Drawer (Only accessible after sign in) */}
+      {isAuthenticated && activeTab !== "codelab" && (
         <AITutorChat
           circuitContext={{ num_qubits: numQubits, gates_applied: instructions.map((i) => i.gate) }}
           activeTopic="entanglement"
@@ -330,8 +366,7 @@ function QuantumLeapApp() {
 
 // ─── Auth Gate ─────────────────────────────────────────────────────────────────
 function AuthGate() {
-  const { firebaseUser, isGuest, isLoading, continueAsGuest } = useAuth();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -349,23 +384,6 @@ function AuthGate() {
         <div style={{ fontSize: "0.95rem", fontWeight: 600, color: "#f3f4f6" }}>Quantum Leap</div>
         <div style={{ color: "#9ca3af", fontSize: "0.8rem" }}>Initializing quantum session…</div>
       </div>
-    );
-  }
-
-  if (!firebaseUser && !isGuest) {
-    return (
-      <>
-        <LandingPage
-          onNavigate={() => {
-            continueAsGuest();
-          }}
-          onOpenAuth={() => setAuthModalOpen(true)}
-        />
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={() => setAuthModalOpen(false)}
-        />
-      </>
     );
   }
 

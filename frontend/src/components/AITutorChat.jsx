@@ -8,7 +8,7 @@ import MathRenderer, { LatexBlock } from './MathRenderer';
 import MathBlock from './MathBlock';
 import { VoiceInput } from './ui/voice-input';
 import { AIInputWithLoading } from './ui/ai-input-with-loading';
-import { InteractiveHoverButton } from './ui/interactive-hover-button';
+import { useAuth } from '../context/AuthContext';
 import API_BASE from '../config/api';
 import { queryAiTutorSafe } from '../services/aiTutorClient';
 
