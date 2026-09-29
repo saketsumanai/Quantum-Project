@@ -14,7 +14,7 @@ import QuantumStudio from './QuantumStudio';
 import { resolveCitationsForQuery, QUANTUM_TEXTBOOK_EXCERPTS } from '../data/quantumCitationsData';
 import { INDIAN_LANGUAGES, VIDEO_LECTURES } from '../data/videoLecturesData';
 import API_BASE from '../config/api';
-import { queryAiTutorSafe } from '../services/aiTutorClient';
+import { queryAiTutorSafe, parseQuantumAiResponse } from '../services/aiTutorClient';
 
 const API = API_BASE;
 
@@ -1170,7 +1170,7 @@ export default function QuantumChatGPT({
         content: m.content || '',
       }));
 
-      const data = await queryAiTutorSafe({
+      const rawData = await queryAiTutorSafe({
         userQuery: text,
         circuitContext: {},
         currentTopic: '',
@@ -1180,11 +1180,13 @@ export default function QuantumChatGPT({
         generateDiagram,
       });
 
-      if (data?.success || data?.vocal_prose_script) {
+      const data = parseQuantumAiResponse(rawData, SUPPORTED_MODELS.find(m => m.id === selectedModel)?.name || 'GPT-OSS 120B');
+
+      if (data?.vocal_prose_script) {
         const assistantMsg = {
           role: 'assistant',
           id: Date.now() + 1,
-          content: data.vocal_prose_script || 'I have analyzed your quantum question.',
+          content: data.vocal_prose_script,
           latex: data.mathematical_latex_formula || null,
           code: data.qiskit_executable_code || null,
           diagram: data.diagram || null,
