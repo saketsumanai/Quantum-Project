@@ -13,8 +13,9 @@ import CitationProjector from './CitationProjector';
 import QuantumStudio from './QuantumStudio';
 import { resolveCitationsForQuery, QUANTUM_TEXTBOOK_EXCERPTS } from '../data/quantumCitationsData';
 import { INDIAN_LANGUAGES, VIDEO_LECTURES } from '../data/videoLecturesData';
+import API_BASE from '../config/api';
 
-const API = 'http://localhost:8000/api/v1';
+const API = API_BASE;
 
 // ── Models Supported ─────────────────────────────────────────────────────────
 const SUPPORTED_MODELS = [

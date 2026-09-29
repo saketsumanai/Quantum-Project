@@ -4,6 +4,7 @@ import MathRenderer, { LatexBlock } from "./MathRenderer";
 import { useAuth } from "../context/AuthContext";
 import TextbookReaderModal from "./TextbookReaderModal";
 import MathBlock from "./MathBlock";
+import API_BASE from "../config/api";
 
 // ─── Dirac Quantum Competency Badges Catalog ──────────────────────────────────
 const DIRAC_BADGES_CATALOG = [
@@ -1095,7 +1096,7 @@ export default function LearningHub({ onSwitchToStudio, onSwitchToAssessment, on
 
   // Sync progress on mount from backend
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/curriculum/progress")
+    fetch(`${API_BASE}/curriculum/progress`)
       .then((r) => r.json())
       .then((data) => {
         if (data && data.success) {
@@ -1128,7 +1129,7 @@ export default function LearningHub({ onSwitchToStudio, onSwitchToAssessment, on
       return next;
     });
 
-    fetch("http://localhost:8000/api/v1/curriculum/progress/complete", {
+    fetch(`${API_BASE}/curriculum/progress/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lesson_id: lessonId, module_id: moduleId || "course", score_delta: scoreDelta })

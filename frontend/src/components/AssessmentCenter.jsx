@@ -34,8 +34,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import MathRenderer, { LatexBlock } from "./MathRenderer";
+import API_BASE from "../config/api";
 
-const API = "http://localhost:8000/api/v1";
+const API = API_BASE;
 
 const TOPIC_PRESETS = [
   { id: "Quantum Gates & Circuit Basics", label: "Quantum Gates & Circuits", description: "Pauli X/Y/Z, Hadamard, Phase, CNOT & Reversibility" },

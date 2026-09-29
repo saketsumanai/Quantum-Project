@@ -365,3 +365,41 @@ class BookEntry(BaseModel):
     key_concepts: List[str] = []
     training_vector_summary: Optional[str] = None
 
+
+# --- Quantum Code Lab IDE Schemas ---
+class CodeExecutionRequest(BaseModel):
+    code: str
+    framework: Optional[str] = "qiskit"
+    shots: Optional[int] = 1024
+    timeout_seconds: Optional[int] = 12
+
+class CodeExecutionResponse(BaseModel):
+    success: bool
+    stdout: str = ""
+    stderr: str = ""
+    counts: Dict[str, int] = {}
+    shots: int = 1024
+    num_qubits: int = 0
+    circuit_depth: int = 0
+    gate_counts: Dict[str, int] = {}
+    circuit_diagram: str = ""
+    error: Optional[str] = None
+    execution_time_ms: float = 0.0
+
+class CodeCheckRequest(BaseModel):
+    code: str
+    problem_id: Optional[str] = None
+    framework: Optional[str] = "qiskit"
+
+class CodeCheckResponse(BaseModel):
+    passed: bool
+    score: int
+    status: str
+    summary: str
+    diagnostics: List[Dict[str, Any]] = []
+    circuit_telemetry: Dict[str, Any] = {}
+    test_results: List[Dict[str, Any]] = []
+    stdout: str = ""
+    diagram: str = ""
+    counts: Dict[str, int] = {}
+

@@ -12,6 +12,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import MathBlock, { LaTeXText } from './MathBlock';
+import API_BASE from '../config/api';
 
 export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }) {
   const { authFetch } = useAuth();
@@ -25,7 +26,7 @@ export default function CurriculumView({ onLoadCircuitPreset, onSwitchToStudio }
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/curriculum/modules')
+    fetch(`${API_BASE}/curriculum/modules`)
       .then((res) => res.json())
       .then((data) => {
         setModules(data);

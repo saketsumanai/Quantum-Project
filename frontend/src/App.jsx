@@ -14,14 +14,16 @@ import QuantumChatGPT from "./components/QuantumChatGPT";
 import VideoLecturesHub from "./components/VideoLecturesHub";
 import StudentDashboard from "./components/StudentDashboard";
 import GatewayFlow from "./components/ui/gateway-flow";
+import QuantumCodeLab from "./components/QuantumCodeLab";
+import API_BASE from "./config/api";
 
-const API = "http://localhost:8000/api/v1";
+const API = API_BASE;
 
 // ─── Main Application ─────────────────────────────────────────────────────────
 function QuantumLeapApp() {
   const [activeTab, setActiveTab] = useState(() => {
     const hash = (typeof window !== "undefined" ? window.location.hash.replace("#", "") : "");
-    return ["landing", "chat", "videos", "learning", "assessment", "gateway", "studio", "dashboard"].includes(hash) ? hash : "landing";
+    return ["landing", "chat", "videos", "learning", "assessment", "gateway", "studio", "dashboard", "codelab"].includes(hash) ? hash : "landing";
   });
   const [chatParams, setChatParams] = useState({ query: "", language: "en" });
   const [numQubits, setNumQubits] = useState(2);
@@ -281,6 +283,19 @@ function QuantumLeapApp() {
             setActiveTab("chat");
           }}
           onLoadCircuitIntoStudio={(circuit) => {
+            if (circuit?.num_qubits) setNumQubits(circuit.num_qubits);
+            if (circuit?.instructions) {
+              setInstructions(circuit.instructions);
+              setHasSimulated(false);
+            }
+            setActiveTab("studio");
+          }}
+        />
+
+      /* ── Quantum Code Lab ── */
+      ) : activeTab === "codelab" ? (
+        <QuantumCodeLab
+          onNavigateToStudio={(circuit) => {
             if (circuit?.num_qubits) setNumQubits(circuit.num_qubits);
             if (circuit?.instructions) {
               setInstructions(circuit.instructions);

@@ -13,9 +13,9 @@ import {
 } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
-const AuthContext = createContext(null);
+import API_BASE from "../config/api";
 
-const API_BASE = "http://localhost:8000/api/v1";
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {

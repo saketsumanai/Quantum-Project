@@ -4,6 +4,7 @@ import { animate, stagger } from "animejs";
 import WhyUsMetricsSection from "./WhyUsMetricsSection";
 import { ContainerScroll, CardsContainer, CardTransformed, useContainerScrollContext } from "./ui/animated-cards-stack";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import API_BASE from "../config/api";
 
 function PrinciplesScrollTracker({ onProgress }) {
   const { scrollYProgress } = useContainerScrollContext();
@@ -38,7 +39,7 @@ export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => 
 
   // Fetch live RAG benchmark metrics on mount
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/ai-tutor/metrics")
+    fetch(`${API_BASE}/ai-tutor/metrics`)
       .then((res) => {
         if (res.ok) return res.json();
         throw new Error("Failed to fetch metrics");

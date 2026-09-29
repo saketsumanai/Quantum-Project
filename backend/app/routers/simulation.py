@@ -16,6 +16,10 @@ from backend.app.models.schemas import (
     ReportGenerateRequest,
     AICircuitDebugRequest,
     AICircuitDebugResponse,
+    CodeExecutionRequest,
+    CodeExecutionResponse,
+    CodeCheckRequest,
+    CodeCheckResponse,
 )
 from backend.app.services.quantum.engine import QuantumSimulationEngine
 from backend.app.services.quantum.multi_engine import MultiFrameworkQuantumEngine
@@ -23,6 +27,7 @@ from backend.app.services.quantum.transpiler import QuantumTranspiler
 from backend.app.services.quantum.noise_engine import QuantumNoiseEngine
 from backend.app.services.quantum.report_generator import QuantumReportGenerator
 from backend.app.services.quantum.debugger import QuantumCircuitDebugger
+from backend.app.services.quantum.code_runner import QuantumCodeRunner, QuantumCodeChecker
 
 router = APIRouter(prefix="/simulation", tags=["Quantum Simulation"])
 engine = QuantumSimulationEngine(max_qubits=16)
@@ -224,3 +229,42 @@ async def debug_circuit_endpoint(request: AICircuitDebugRequest):
         return debug_result
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error_code": "DEBUGGER_ERROR", "message": str(e)})
+
+
+@router.post("/execute-code", response_model=CodeExecutionResponse)
+async def execute_quantum_code_endpoint(request: CodeExecutionRequest):
+    """
+    Executes user-written Python/Qiskit/Cirq code in a secure isolated subprocess.
+    Captures stdout/stderr, extracts QuantumCircuit objects, draws ASCII diagrams,
+    and returns measurement counts.
+    """
+    try:
+        shots = request.shots or 1024
+        result = QuantumCodeRunner.execute_code(
+            code=request.code,
+            framework=request.framework or "qiskit",
+            shots=shots,
+            timeout_seconds=request.timeout_seconds or 12,
+        )
+        return CodeExecutionResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error_code": "EXECUTION_ERROR", "message": str(e)})
+
+
+@router.post("/check-code", response_model=CodeCheckResponse)
+async def check_quantum_code_endpoint(request: CodeCheckRequest):
+    """
+    Comprehensive quantum code checker:
+    - Syntax & AST check
+    - Deprecation analysis (Qiskit 1.0+ standards)
+    - Circuit simulation & telemetry extraction
+    - Problem test-case grading & leakage detection
+    """
+    try:
+        result = QuantumCodeChecker.check_code(
+            code=request.code,
+            problem_id=request.problem_id,
+        )
+        return CodeCheckResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error_code": "CHECK_ERROR", "message": str(e)})

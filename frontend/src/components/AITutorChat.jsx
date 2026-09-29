@@ -10,6 +10,7 @@ import { VoiceInput } from './ui/voice-input';
 import { AIInputWithLoading } from './ui/ai-input-with-loading';
 import { InteractiveHoverButton } from './ui/interactive-hover-button';
 import { useAuth } from '../context/AuthContext';
+import API_BASE from '../config/api';
 
 const DEFAULT_AURA_MSG = {
   sender: 'aura',
@@ -428,7 +429,7 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
     setQuizFeedback(null);
 
     try {
-      const resp = await fetch('http://localhost:8000/api/v1/ai-tutor/query', {
+      const resp = await fetch(`${API_BASE}/ai-tutor/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

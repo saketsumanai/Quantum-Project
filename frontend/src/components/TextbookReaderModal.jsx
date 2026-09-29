@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BookOpen, Search, ExternalLink, PlayCircle, X, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import API_BASE from '../config/api';
 
 const CATEGORY_CIRCUIT_MAP = {
   "Qubit States, Superposition & Bloch Sphere": "superposition",
@@ -25,7 +26,7 @@ export default function TextbookReaderModal({ isOpen, onClose, initialSearch = "
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    fetch("http://localhost:8000/api/v1/curriculum/library")
+    fetch(`${API_BASE}/curriculum/library`)
       .then((r) => r.json())
       .then((data) => {
         const bookList = Array.isArray(data) ? data : [];

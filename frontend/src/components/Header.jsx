@@ -72,6 +72,7 @@ export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAu
           { id: "learning", label: "Learning Hub" },
           { id: "videos", label: "Video Lectures" },
           { id: "assessment", label: "Assessments" },
+          { id: "codelab", label: "Code Lab" },
           { id: "gateway", label: "Gateway Flow" },
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}

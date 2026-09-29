@@ -30,6 +30,7 @@ import {
   Check,
 } from "lucide-react";
 import { INDIAN_LANGUAGES, VIDEO_TOPICS, VIDEO_LECTURES } from "../data/videoLecturesData";
+import { API_BASE, BACKEND_URL } from "../config/api";
 
 export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment }) {
   const [selectedLanguage, setSelectedLanguage] = useState("all");
@@ -121,7 +122,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
     let isMounted = true;
     const checkPreRendered = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/dubbing/status/${activeVideo.youtubeId}`);
+        const res = await fetch(`${API_BASE}/dubbing/status/${activeVideo.youtubeId}`);
         if (res.ok && isMounted) {
           const data = await res.json();
           if (data.status === "completed" && data.watch_url) {
@@ -130,8 +131,8 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
               progress: 100,
               step: "completed",
               message: "Dubbed in Hindi (Quantum Glossary preserved)",
-              watchUrl: `http://localhost:8000${data.watch_url}`,
-              audioUrl: `http://localhost:8000${data.audio_url}`,
+              watchUrl: `${BACKEND_URL}${data.watch_url}`,
+              audioUrl: `${BACKEND_URL}${data.audio_url}`,
               preservedTerms: data.glossary_terms_preserved || ["qubit", "superposition", "entanglement"],
               playerMode: "youtube",
             });
@@ -155,7 +156,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
     }));
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/dubbing/dub-quantum-lecture", {
+      const res = await fetch(`${API_BASE}/dubbing/dub-quantum-lecture`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -171,8 +172,8 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
           progress: 100,
           step: "completed",
           message: "Dubbed lecture ready for playback!",
-          watchUrl: `http://localhost:8000${data.watch_url}`,
-          audioUrl: `http://localhost:8000${data.audio_url}`,
+          watchUrl: `${BACKEND_URL}${data.watch_url}`,
+          audioUrl: `${BACKEND_URL}${data.audio_url}`,
           preservedTerms: data.glossary_terms_preserved || ["Qubit", "Superposition", "Entanglement"],
           playerMode: "dubbed",
         });
@@ -188,7 +189,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
   const pollQuantumDubbingStatus = (videoId) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/dubbing/status/${videoId}`);
+        const res = await fetch(`${API_BASE}/dubbing/status/${videoId}`);
         if (!res.ok) return;
         const data = await res.json();
         setQuantumDubState(prev => ({
@@ -197,8 +198,8 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
           step: data.step || prev.step,
           message: data.message || prev.message,
           preservedTerms: data.glossary_terms_preserved || prev.preservedTerms,
-          watchUrl: data.watch_url ? `http://localhost:8000${data.watch_url}` : prev.watchUrl,
-          audioUrl: data.audio_url ? `http://localhost:8000${data.audio_url}` : prev.audioUrl,
+          watchUrl: data.watch_url ? `${BACKEND_URL}${data.watch_url}` : prev.watchUrl,
+          audioUrl: data.audio_url ? `${BACKEND_URL}${data.audio_url}` : prev.audioUrl,
         }));
 
         if (data.status === "completed") {
@@ -325,7 +326,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
   const handleGenerateDub = async () => {
     setIsGeneratingDub(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/ai-tutor/dub-lecture", {
+      const res = await fetch(`${API_BASE}/ai-tutor/dub-lecture`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -360,7 +361,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
 
     // Try Sarvam AI neural voice via backend proxy first
     try {
-      const res = await fetch("http://localhost:8000/api/v1/ai-tutor/tts-sarvam", {
+      const res = await fetch(`${API_BASE}/ai-tutor/tts-sarvam`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
