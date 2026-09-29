@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import {
   auth,
   signInWithGoogle as firebaseSignInWithGoogle,
+  checkRedirectAuthResult,
   signUpWithFirebaseEmail,
   logInWithFirebaseEmail,
   firebaseSignOut,
@@ -252,14 +253,33 @@ export function AuthProvider({ children }) {
     return () => unsub();
   }, [exchangeToken, setPersistedUser]);
 
-  // Google Sign-In
-  const signInWithGoogle = async () => {
+  // Handle Google redirect auth return on mount (bypasses all browser popup blockers)
+  useEffect(() => {
+    checkRedirectAuthResult()
+      .then(async (credential) => {
+        if (credential?.user) {
+          try {
+            const idToken = await credential.user.getIdToken(true);
+            await exchangeToken(idToken, credential.user);
+          } catch (e) {
+            console.warn("[Firebase] Error exchanging token after redirect:", e);
+          }
+        }
+      })
+      .catch((e) => console.warn("[Firebase] Redirect result check notice:", e));
+  }, [exchangeToken]);
+
+  // Google Sign-In (Supports both popup & seamless full-page redirect fallback)
+  const signInWithGoogle = async (preferRedirect = false) => {
     setAuthError(null);
     setIsLoading(true);
     try {
-      const credential = await firebaseSignInWithGoogle();
-      const idToken = await credential.user.getIdToken();
-      await exchangeToken(idToken, credential.user);
+      const credential = await firebaseSignInWithGoogle(preferRedirect);
+      if (credential?.user) {
+        const idToken = await credential.user.getIdToken();
+        await exchangeToken(idToken, credential.user);
+      }
+      // If credential is null, redirect flow is taking over and page will navigate to Google
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") {
         setAuthError(err.message);

@@ -10,6 +10,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -69,9 +71,14 @@ if (app) {
 
 // ─── Authentication Functions ─────────────────────────────────────────────────
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(preferRedirect = false) {
   if (!auth) {
     throw new Error("Firebase Auth is unavailable. Please check network connection or use Guest Mode.");
+  }
+  // Direct redirect mode (bypasses popup blockers completely)
+  if (preferRedirect) {
+    await signInWithRedirect(auth, googleProvider);
+    return null;
   }
   try {
     const credential = await signInWithPopup(auth, googleProvider);
@@ -88,6 +95,12 @@ export async function signInWithGoogle() {
     }
     return credential;
   } catch (err) {
+    if (err.code === "auth/popup-blocked") {
+      console.warn("[Firebase Auth] Popup blocked by browser. Automatically falling back to redirect flow...");
+      // Seamlessly fall back to full page redirect so the user is never stranded
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
     if (err.code === "auth/unauthorized-domain") {
       const currentHost = typeof window !== "undefined" ? window.location.hostname : "your Vercel domain";
       const domainErr = new Error(
@@ -96,16 +109,35 @@ export async function signInWithGoogle() {
       domainErr.code = "auth/unauthorized-domain";
       throw domainErr;
     }
-    if (err.code === "auth/popup-blocked") {
-      const popupErr = new Error("Google Sign-In popup was blocked by your browser. Please allow popups for this site and try again.");
-      popupErr.code = "auth/popup-blocked";
-      throw popupErr;
-    }
     if (err.code === "auth/popup-closed-by-user") {
       throw err;
     }
     throw err;
   }
+}
+
+/**
+ * Checks for incoming redirect auth credential upon page return.
+ */
+export async function checkRedirectAuthResult() {
+  if (!auth) return null;
+  try {
+    const credential = await getRedirectResult(auth);
+    if (credential?.user) {
+      saveUserProfileToFirestore(credential.user.uid, {
+        uid: credential.user.uid,
+        displayName: credential.user.displayName || credential.user.email?.split("@")[0] || "Quantum Explorer",
+        email: credential.user.email,
+        photoUrl: credential.user.photoURL || null,
+        provider: "google",
+        lastLogin: new Date().toISOString(),
+      }).catch((e) => console.warn("[Firebase] Firestore profile sync notice:", e));
+      return credential;
+    }
+  } catch (err) {
+    console.warn("[Firebase] checkRedirectAuthResult notice:", err);
+  }
+  return null;
 }
 
 /**

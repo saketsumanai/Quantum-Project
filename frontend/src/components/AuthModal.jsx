@@ -70,11 +70,11 @@ export default function AuthModal({ isOpen, onClose }) {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (preferRedirect = false) => {
     setLocalError(null);
     setIsSubmitting(true);
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(preferRedirect);
       handleClose();
     } catch (err) {
       setLocalError(err.message || "Google authentication could not be completed.");
@@ -371,6 +371,20 @@ export default function AuthModal({ isOpen, onClose }) {
                 <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
                 <span style={{ lineHeight: 1.4 }}>{displayError}</span>
               </div>
+              {displayError.toLowerCase().includes("popup") && (
+                <button
+                  type="button"
+                  onClick={() => handleGoogleSignIn(true)}
+                  style={{
+                    alignSelf: "flex-start", marginTop: "4px", padding: "6px 12px",
+                    background: "rgba(59, 130, 246, 0.25)", border: "1px solid rgba(59, 130, 246, 0.5)",
+                    borderRadius: "4px", color: "#dbeafe", fontSize: "0.74rem", fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  ⚡ Open Google Sign-In via Full-Page (Bypasses Popup Blocker)
+                </button>
+              )}
               {displayError.includes("not authorized") && (
                 <button
                   type="button"
