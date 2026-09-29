@@ -69,23 +69,43 @@ if (app) {
 
 // ─── Authentication Functions ─────────────────────────────────────────────────
 
-/**
- * Opens a Google Sign-In popup and returns the Firebase user credential.
- */
 export async function signInWithGoogle() {
-  const credential = await signInWithPopup(auth, googleProvider);
-  if (credential?.user) {
-    // Auto sync user base info to Firestore
-    await saveUserProfileToFirestore(credential.user.uid, {
-      uid: credential.user.uid,
-      displayName: credential.user.displayName || credential.user.email?.split("@")[0] || "Quantum Explorer",
-      email: credential.user.email,
-      photoUrl: credential.user.photoURL || null,
-      provider: "google",
-      lastLogin: new Date().toISOString(),
-    });
+  if (!auth) {
+    throw new Error("Firebase Auth is unavailable. Please check network connection or use Guest Mode.");
   }
-  return credential;
+  try {
+    const credential = await signInWithPopup(auth, googleProvider);
+    if (credential?.user) {
+      // Auto sync user base info to Firestore (non-blocking)
+      saveUserProfileToFirestore(credential.user.uid, {
+        uid: credential.user.uid,
+        displayName: credential.user.displayName || credential.user.email?.split("@")[0] || "Quantum Explorer",
+        email: credential.user.email,
+        photoUrl: credential.user.photoURL || null,
+        provider: "google",
+        lastLogin: new Date().toISOString(),
+      }).catch((e) => console.warn("[Firebase] Firestore profile sync notice:", e));
+    }
+    return credential;
+  } catch (err) {
+    if (err.code === "auth/unauthorized-domain") {
+      const currentHost = typeof window !== "undefined" ? window.location.hostname : "your Vercel domain";
+      const domainErr = new Error(
+        `Firebase domain not authorized: '${currentHost}'. To use Google Sign-In on Vercel, please add '${currentHost}' in Firebase Console > Authentication > Settings > Authorized Domains. In the meantime, you can log in with Email or Demo Accounts!`
+      );
+      domainErr.code = "auth/unauthorized-domain";
+      throw domainErr;
+    }
+    if (err.code === "auth/popup-blocked") {
+      const popupErr = new Error("Google Sign-In popup was blocked by your browser. Please allow popups for this site and try again.");
+      popupErr.code = "auth/popup-blocked";
+      throw popupErr;
+    }
+    if (err.code === "auth/popup-closed-by-user") {
+      throw err;
+    }
+    throw err;
+  }
 }
 
 /**
@@ -93,6 +113,9 @@ export async function signInWithGoogle() {
  * sets the display name, and creates the complete user document in Firestore with age.
  */
 export async function signUpWithFirebaseEmail(email, password, displayName = "", age = null) {
+  if (!auth) {
+    throw new Error("Firebase Auth is unavailable. Using local account registration.");
+  }
   const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
   const name = displayName.trim() || email.split("@")[0];
 
@@ -105,7 +128,7 @@ export async function signUpWithFirebaseEmail(email, password, displayName = "",
   }
 
   // Create initial user document in Firestore with age, email, name, topics, tests
-  await saveUserProfileToFirestore(cred.user.uid, {
+  saveUserProfileToFirestore(cred.user.uid, {
     uid: cred.user.uid,
     displayName: name,
     email: email.trim(),
@@ -119,7 +142,7 @@ export async function signUpWithFirebaseEmail(email, password, displayName = "",
     testsHistory: [],
     createdAt: new Date().toISOString(),
     lastLogin: new Date().toISOString(),
-  });
+  }).catch((e) => console.warn("[Firebase] Firestore doc save notice:", e));
 
   return cred;
 }
@@ -128,13 +151,16 @@ export async function signUpWithFirebaseEmail(email, password, displayName = "",
  * Signs in with Email and Password via Firebase Auth.
  */
 export async function logInWithFirebaseEmail(email, password) {
+  if (!auth) {
+    throw new Error("Firebase Auth is unavailable. Using local credential verification.");
+  }
   const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
   if (cred?.user) {
-    await saveUserProfileToFirestore(cred.user.uid, {
+    saveUserProfileToFirestore(cred.user.uid, {
       uid: cred.user.uid,
       email: cred.user.email,
       lastLogin: new Date().toISOString(),
-    });
+    }).catch((e) => console.warn("[Firebase] Firestore login timestamp notice:", e));
   }
   return cred;
 }
@@ -143,6 +169,7 @@ export async function logInWithFirebaseEmail(email, password) {
  * Signs out the current Firebase user.
  */
 export async function firebaseSignOut() {
+  if (!auth) return;
   return signOut(auth);
 }
 

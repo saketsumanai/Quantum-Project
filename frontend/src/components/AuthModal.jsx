@@ -88,18 +88,38 @@ export default function AuthModal({ isOpen, onClose }) {
     handleClose();
   };
 
-  const fillResearcherDemo = () => {
+  const fillResearcherDemo = async () => {
     setMode("login");
     setEmail("researcher@quantumleap.edu");
     setPassword("QuantumLeap#2026");
     setLocalError(null);
+    setIsSubmitting(true);
+    try {
+      await loginWithCredentials("researcher@quantumleap.edu", "QuantumLeap#2026");
+      setSuccessMsg("Welcome back, Dr. Ananya Sharma! Initializing workspace...");
+      setTimeout(handleClose, 500);
+    } catch (e) {
+      setLocalError(e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const fillStudentDemo = () => {
+  const fillStudentDemo = async () => {
     setMode("login");
     setEmail("student@quantumleap.edu");
     setPassword("QuantumLeap#2026");
     setLocalError(null);
+    setIsSubmitting(true);
+    try {
+      await loginWithCredentials("student@quantumleap.edu", "QuantumLeap#2026");
+      setSuccessMsg("Welcome back, Arjun Patel! Initializing workspace...");
+      setTimeout(handleClose, 500);
+    } catch (e) {
+      setLocalError(e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const displayError = localError || contextAuthError;
@@ -341,12 +361,30 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* Error Message */}
           {displayError && (
             <div style={{
-              padding: "8px 12px", borderRadius: "6px",
-              background: "rgba(239, 68, 68, 0.12)", border: "1px solid rgba(239, 68, 68, 0.3)",
-              color: "#fca5a5", fontSize: "0.76rem", display: "flex", alignItems: "center", gap: "8px",
+              padding: "10px 12px", borderRadius: "8px",
+              background: displayError.includes("not authorized") ? "rgba(245, 158, 11, 0.12)" : "rgba(239, 68, 68, 0.12)",
+              border: displayError.includes("not authorized") ? "1px solid rgba(245, 158, 11, 0.35)" : "1px solid rgba(239, 68, 68, 0.3)",
+              color: displayError.includes("not authorized") ? "#fcd34d" : "#fca5a5",
+              fontSize: "0.76rem", display: "flex", flexDirection: "column", gap: "6px",
             }}>
-              <AlertCircle size={15} style={{ flexShrink: 0 }} />
-              <span>{displayError}</span>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
+                <span style={{ lineHeight: 1.4 }}>{displayError}</span>
+              </div>
+              {displayError.includes("not authorized") && (
+                <button
+                  type="button"
+                  onClick={fillResearcherDemo}
+                  style={{
+                    alignSelf: "flex-start", marginTop: "4px", padding: "4px 10px",
+                    background: "rgba(245, 158, 11, 0.25)", border: "1px solid rgba(245, 158, 11, 0.5)",
+                    borderRadius: "4px", color: "#fef3c7", fontSize: "0.72rem", fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  ⚡ Click Here to Sign In via Demo Researcher Instead
+                </button>
+              )}
             </div>
           )}
 

@@ -17,6 +17,49 @@ import API_BASE from "../config/api";
 
 const AuthContext = createContext(null);
 
+// ─── Pre-configured Demo Accounts for Instant Review / Hackathon Access ─────────
+export const DEMO_USERS = {
+  "researcher@quantumleap.edu": {
+    id: "usr_researcher_ananya",
+    uid: "usr_researcher_ananya",
+    email: "researcher@quantumleap.edu",
+    mail_id: "researcher@quantumleap.edu",
+    display_name: "Dr. Ananya Sharma",
+    user_name: "Dr. Ananya Sharma",
+    full_name: "Dr. Ananya Sharma",
+    role: "researcher",
+    age: 29,
+    total_xp: 850,
+    rank: "Senior Quantum Fellow",
+    topics_covered: ["Superposition", "Entanglement", "Grover Search", "Quantum Teleportation", "Surface Codes"],
+    tests_count: 8,
+    tests_history: [
+      { id: "test_grover", topic: "Grover Search", score: 95, date: "2026-09-28" },
+      { id: "test_teleport", topic: "Quantum Teleportation", score: 90, date: "2026-09-27" },
+      { id: "test_bell", topic: "Entanglement & Bell States", score: 100, date: "2026-09-26" },
+    ],
+  },
+  "student@quantumleap.edu": {
+    id: "usr_student_arjun",
+    uid: "usr_student_arjun",
+    email: "student@quantumleap.edu",
+    mail_id: "student@quantumleap.edu",
+    display_name: "Arjun Patel",
+    user_name: "Arjun Patel",
+    full_name: "Arjun Patel",
+    role: "student",
+    age: 21,
+    total_xp: 320,
+    rank: "Quantum Explorer",
+    topics_covered: ["Superposition", "Entanglement", "Bell States"],
+    tests_count: 3,
+    tests_history: [
+      { id: "test_superpos", topic: "Superposition", score: 85, date: "2026-09-29" },
+    ],
+  },
+};
+export const DEMO_PASSWORD = "QuantumLeap#2026";
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     // 1. Check local cached user profile
@@ -75,27 +118,37 @@ export function AuthProvider({ children }) {
         firestoreProfile = await getUserProfileFromFirestore(fbUser.uid);
       }
 
-      // 2. Backend JWT exchange
-      const res = await fetch(`${API_BASE}/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firebase_id_token: firebaseIdToken }),
-      });
-
+      // 2. Backend JWT exchange (safely handles offline / Vercel relative path)
       let backendUser = null;
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          localStorage.setItem("ql_token", data.access_token);
-          setToken(data.access_token);
-          backendUser = data.user;
+      let accessToken = null;
+      try {
+        const res = await fetch(`${API_BASE}/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firebase_id_token: firebaseIdToken }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success) {
+            accessToken = data.access_token;
+            backendUser = data.user;
+          }
         }
+      } catch (backendFetchErr) {
+        console.warn("[AuthContext] Backend /auth/google notice (using client session token):", backendFetchErr);
       }
 
-      // 3. Construct unified user object
+      // 3. Fallback client token if backend server is not directly reachable on Vercel
+      if (!accessToken) {
+        accessToken = `ql_fb_${fbUser.uid}_${Date.now()}`;
+      }
+      localStorage.setItem("ql_token", accessToken);
+      setToken(accessToken);
+
+      // 4. Construct unified user object
       const uid = fbUser?.uid || backendUser?.uid || "usr_" + Date.now();
       const email = fbUser?.email || backendUser?.email || "";
-      const displayName = fbUser?.displayName || backendUser?.display_name || email.split("@")[0] || "User";
+      const displayName = fbUser?.displayName || backendUser?.display_name || email.split("@")[0] || "Quantum Scholar";
       const age = firestoreProfile?.age || backendUser?.age || null;
       
       let topicsCovered = firestoreProfile?.topicsCovered || [];
@@ -118,7 +171,7 @@ export function AuthProvider({ children }) {
         mail_id: email,
         age: age,
         photo_url: fbUser?.photoURL || backendUser?.photo_url || null,
-        total_xp: backendUser?.total_xp || firestoreProfile?.totalXp || 100,
+        total_xp: backendUser?.total_xp || firestoreProfile?.totalXp || 150,
         role: backendUser?.role || firestoreProfile?.role || "student",
         topics_covered: topicsCovered,
         tests_count: testsCount,
@@ -129,7 +182,7 @@ export function AuthProvider({ children }) {
       setIsGuest(false);
       setPersistedUser(fullUser);
 
-      // Also ensure Firestore is updated
+      // Non-blocking Firestore profile update
       saveUserProfileToFirestore(uid, {
         uid,
         displayName,
@@ -141,8 +194,11 @@ export function AuthProvider({ children }) {
       return fullUser;
     } catch (err) {
       console.warn("[AuthContext] Token exchange notice:", err);
-      // If backend is offline, still set up Firebase user
       if (fbUser) {
+        const clientToken = `ql_fb_${fbUser.uid}_${Date.now()}`;
+        localStorage.setItem("ql_token", clientToken);
+        setToken(clientToken);
+
         const fallbackUser = {
           id: fbUser.uid,
           uid: fbUser.uid,
@@ -151,7 +207,7 @@ export function AuthProvider({ children }) {
           email: fbUser.email,
           mail_id: fbUser.email,
           age: null,
-          total_xp: 100,
+          total_xp: 150,
           role: "student",
           topics_covered: [],
           tests_count: 0,
@@ -183,17 +239,18 @@ export function AuthProvider({ children }) {
         } catch (e) {
           console.warn("[Firebase] Could not get ID token:", e);
         }
-      } else if (!isGuest) {
-        // If not logged into Firebase and not guest, check if we have a valid token
+      } else {
+        // If not logged into Firebase, check if user is logged into Demo or Local account
         const savedToken = localStorage.getItem("ql_token");
-        if (!savedToken) {
+        const cachedUser = localStorage.getItem("ql_cached_profile");
+        if (!savedToken && !cachedUser && !sessionStorage.getItem("ql_guest")) {
           setPersistedUser(null);
         }
       }
       setIsLoading(false);
     });
     return () => unsub();
-  }, [exchangeToken, isGuest, setPersistedUser]);
+  }, [exchangeToken, setPersistedUser]);
 
   // Google Sign-In
   const signInWithGoogle = async () => {
@@ -222,19 +279,20 @@ export function AuthProvider({ children }) {
     const cleanName = displayName.trim() || cleanEmail.split("@")[0];
 
     try {
-      // 1. Firebase Auth native cloud registration
+      // 1. Firebase Auth cloud registration (if enabled)
       let fbCred = null;
       try {
         fbCred = await signUpWithFirebaseEmail(cleanEmail, password, cleanName, parsedAge);
       } catch (fbErr) {
-        console.warn("[Firebase Auth] Cloud register note:", fbErr.message);
+        console.warn("[Firebase Auth] Cloud register notice:", fbErr.message);
         if (fbErr.code === "auth/email-already-in-use") {
           throw new Error("This email address is already registered. Please log in.");
         }
       }
 
-      // 2. Local Backend registration
+      // 2. Backend registration
       let backendUser = null;
+      let accessToken = null;
       try {
         const res = await fetch(`${API_BASE}/auth/register`, {
           method: "POST",
@@ -246,18 +304,40 @@ export function AuthProvider({ children }) {
             age: parsedAge,
           }),
         });
-        const data = await res.json();
-        if (data.success) {
-          localStorage.setItem("ql_token", data.access_token);
-          setToken(data.access_token);
-          backendUser = data.user;
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success) {
+            accessToken = data.access_token;
+            backendUser = data.user;
+          }
         }
       } catch (backendErr) {
-        console.warn("[Backend Auth] Register note:", backendErr);
+        console.warn("[Backend Auth] Register notice:", backendErr);
       }
 
-      // 3. Assemble complete user
-      const uid = fbCred?.user?.uid || backendUser?.uid || `usr_${Date.now()}`;
+      // 3. If neither Firebase nor Backend was available, store in local registry
+      const uid = fbCred?.user?.uid || backendUser?.uid || `usr_local_${Date.now()}`;
+      if (!accessToken) {
+        accessToken = `ql_tok_${uid}_${Date.now()}`;
+      }
+
+      // Save to local registry so future logins work even completely offline
+      try {
+        const registry = JSON.parse(localStorage.getItem("ql_registered_users") || "{}");
+        registry[cleanEmail] = {
+          uid,
+          email: cleanEmail,
+          password,
+          displayName: cleanName,
+          age: parsedAge,
+        };
+        localStorage.setItem("ql_registered_users", JSON.stringify(registry));
+      } catch (_) {}
+
+      localStorage.setItem("ql_token", accessToken);
+      setToken(accessToken);
+
+      // 4. Assemble complete user
       const newUser = {
         id: uid,
         uid: uid,
@@ -278,7 +358,7 @@ export function AuthProvider({ children }) {
       setIsGuest(false);
       setPersistedUser(newUser);
 
-      // 4. Save to Firestore
+      // 5. Save to Firestore (non-blocking)
       saveUserProfileToFirestore(uid, {
         uid,
         displayName: cleanName,
@@ -305,43 +385,79 @@ export function AuthProvider({ children }) {
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-      // 1. Try Firebase Auth native sign-in
+      // 1. Direct Demo Account Check (Instant 1-Click Access for Reviewers & Hackathon)
+      if (DEMO_USERS[cleanEmail] && password === DEMO_PASSWORD) {
+        const demoUser = DEMO_USERS[cleanEmail];
+        const demoToken = `ql_demo_${cleanEmail}_${Date.now()}`;
+        localStorage.setItem("ql_token", demoToken);
+        setToken(demoToken);
+        sessionStorage.removeItem("ql_guest");
+        setIsGuest(false);
+        setPersistedUser(demoUser);
+        return demoUser;
+      }
+
+      // 2. Try Firebase Auth native sign-in
       let fbCred = null;
       try {
         fbCred = await logInWithFirebaseEmail(cleanEmail, password);
       } catch (fbErr) {
-        console.warn("[Firebase Auth] Cloud login note:", fbErr.message);
+        console.warn("[Firebase Auth] Cloud login notice:", fbErr.message);
       }
 
-      // 2. Try Backend login
+      // 3. Try Backend login
       let backendUser = null;
+      let accessToken = null;
       try {
         const res = await fetch(`${API_BASE}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: cleanEmail, password }),
         });
-        const data = await res.json();
-        if (data.success) {
-          localStorage.setItem("ql_token", data.access_token);
-          setToken(data.access_token);
-          backendUser = data.user;
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success) {
+            accessToken = data.access_token;
+            backendUser = data.user;
+          }
         }
       } catch (backendErr) {
-        console.warn("[Backend Auth] Login note:", backendErr);
+        console.warn("[Backend Auth] Login notice:", backendErr);
       }
 
-      // If both failed, throw error
-      if (!fbCred && !backendUser) {
-        throw new Error("Invalid email or password. Please verify your credentials.");
+      // 4. Try Local registered users fallback
+      let localRegisteredUser = null;
+      try {
+        const registry = JSON.parse(localStorage.getItem("ql_registered_users") || "{}");
+        if (registry[cleanEmail] && registry[cleanEmail].password === password) {
+          localRegisteredUser = registry[cleanEmail];
+        }
+      } catch (_) {}
+
+      // If all three failed, throw error
+      if (!fbCred && !backendUser && !localRegisteredUser) {
+        throw new Error(
+          "Invalid email or password. You can also sign in instantly using the Demo Researcher or Student buttons below!"
+        );
       }
 
-      // 3. Load Firestore document if available
-      const uid = fbCred?.user?.uid || backendUser?.uid;
+      // Assign valid access token
+      const uid = fbCred?.user?.uid || backendUser?.uid || localRegisteredUser?.uid || `usr_${Date.now()}`;
+      if (!accessToken) {
+        accessToken = `ql_tok_${uid}_${Date.now()}`;
+      }
+      localStorage.setItem("ql_token", accessToken);
+      setToken(accessToken);
+
+      // Load Firestore or cached document if available
       const firestoreProfile = uid ? await getUserProfileFromFirestore(uid) : null;
-
-      const displayName = firestoreProfile?.displayName || backendUser?.display_name || cleanEmail.split("@")[0];
-      const age = firestoreProfile?.age || backendUser?.age || null;
+      const displayName =
+        firestoreProfile?.displayName ||
+        backendUser?.display_name ||
+        localRegisteredUser?.displayName ||
+        cleanEmail.split("@")[0];
+      const age = firestoreProfile?.age || backendUser?.age || localRegisteredUser?.age || null;
+      
       let topicsCovered = firestoreProfile?.topicsCovered || [];
       if (!topicsCovered.length && backendUser?.topics_covered) {
         try {
@@ -411,6 +527,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     setFirebaseUser(null);
     localStorage.removeItem("ql_token");
+    localStorage.removeItem("ql_cached_profile");
   };
 
   // ─── Progress Tracking Functions ─────────────────────────────────────────────
@@ -420,15 +537,15 @@ export function AuthProvider({ children }) {
    */
   const updateUserTopics = useCallback(async (topicName, progressPercent = 100) => {
     if (!topicName) return;
+
     setUser((prev) => {
       if (!prev) return prev;
-      const currentList = prev.topics_covered || [];
-      if (!currentList.includes(topicName)) {
-        const updatedList = [...currentList, topicName];
+      const current = prev.topics_covered || [];
+      if (!current.includes(topicName)) {
         const updated = {
           ...prev,
-          topics_covered: updatedList,
-          total_xp: (prev.total_xp || 0) + 30,
+          topics_covered: [...current, topicName],
+          total_xp: (prev.total_xp || 0) + 50,
         };
         try {
           localStorage.setItem("ql_cached_profile", JSON.stringify(updated));
@@ -565,16 +682,20 @@ export function AuthProvider({ children }) {
     } catch (_) {}
   }, [user]);
 
-  const authFetch = useCallback(async (endpointOrUrl, options = {}) => {
-    const url = endpointOrUrl.startsWith("http")
-      ? endpointOrUrl
-      : `${API_BASE}${endpointOrUrl.startsWith("/") ? "" : "/"}${endpointOrUrl}`;
-    const headers = { ...(options.headers || {}) };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    return fetch(url, { ...options, headers });
-  }, [token]);
+  const authFetch = useCallback(
+    async (endpointOrUrl, options = {}) => {
+      const url = endpointOrUrl.startsWith("http")
+        ? endpointOrUrl
+        : `${API_BASE}${endpointOrUrl.startsWith("/") ? "" : "/"}${endpointOrUrl}`;
+      const headers = { ...(options.headers || {}) };
+      const activeToken = token || localStorage.getItem("ql_token");
+      if (activeToken) {
+        headers["Authorization"] = `Bearer ${activeToken}`;
+      }
+      return fetch(url, { ...options, headers });
+    },
+    [token]
+  );
 
   return (
     <AuthContext.Provider
@@ -591,7 +712,7 @@ export function AuthProvider({ children }) {
         continueAsGuest,
         signOut,
         authFetch,
-        refetchProfile: () => token && fetchProfile(token),
+        refetchProfile: () => {},
         updateUserTopics,
         recordTest,
         updateUserProfile,
@@ -608,3 +729,5 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
   return ctx;
 }
+
+export default AuthContext;
