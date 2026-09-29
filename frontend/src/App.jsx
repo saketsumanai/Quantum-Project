@@ -136,7 +136,7 @@ function QuantumLeapApp() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", gap: "0" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", gap: "0", paddingTop: activeTab === "landing" ? "0" : "56px" }}>
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -149,7 +149,7 @@ function QuantumLeapApp() {
 
       {/* ── Landing Page (Overview) ── */}
       {activeTab === "landing" ? (
-        <LandingPage onNavigate={setActiveTab} />
+        <LandingPage onNavigate={setActiveTab} onOpenAuth={() => setIsAuthOpen(true)} />
 
       /* ── AI Tutor (full-page ChatGPT) ── */
       ) : activeTab === "chat" ? (

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Cpu, GraduationCap, BookOpen, ArrowRight, ChevronRight, ChevronLeft, Zap, Globe, Activity, Layers, Award, Sparkles, Quote, Terminal, CheckCircle2 } from "lucide-react";
+import { Cpu, GraduationCap, BookOpen, ArrowRight, ChevronRight, ChevronLeft, Zap, Globe, Activity, Layers, Award, Sparkles, Quote, Terminal, CheckCircle2, LogOut, User } from "lucide-react";
 import { animate, stagger } from "animejs";
 import WhyUsMetricsSection from "./WhyUsMetricsSection";
 import { ContainerScroll, CardsContainer, CardTransformed, useContainerScrollContext } from "./ui/animated-cards-stack";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import API_BASE from "../config/api";
+import { useAuth } from "../context/AuthContext";
 
 function PrinciplesScrollTracker({ onProgress }) {
   const { scrollYProgress } = useContainerScrollContext();
@@ -17,6 +18,8 @@ function PrinciplesScrollTracker({ onProgress }) {
 }
 
 export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => {} }) {
+  const { user, signOut, isGuest } = useAuth();
+  const isLoggedIn = Boolean(user || isGuest);
   const titleRef = useRef(null);
   const quoteRef = useRef(null);
   const canvasRef = useRef(null);
@@ -383,18 +386,23 @@ export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => 
             An engineering framework for quantum algorithm synthesis, statevector simulation, and RAG-guided quantum theory.
           </p>
 
-          {/* Primary Action Button (Monochrome Black & Grey Pill) */}
+          {/* Primary Action Button (Sign In / Sign Out) */}
           <div style={{ display: "flex", gap: "16px", marginTop: "12px", flexWrap: "wrap", justifyContent: "center" }}>
             <button
               onClick={() => {
-                if (typeof onNavigate === 'function') onNavigate("studio");
-                else if (typeof onOpenAuth === 'function') onOpenAuth();
+                if (isLoggedIn) {
+                  signOut();
+                } else if (typeof onOpenAuth === 'function') {
+                  onOpenAuth();
+                } else if (typeof onNavigate === 'function') {
+                  onNavigate("chat");
+                }
               }}
               style={{
                 padding: "16px 38px",
-                background: "linear-gradient(135deg, #27272a 0%, #18181b 100%)",
-                color: "#ffffff",
-                border: "1px solid rgba(255, 255, 255, 0.25)",
+                background: isLoggedIn ? "rgba(244, 63, 94, 0.12)" : "linear-gradient(135deg, #27272a 0%, #18181b 100%)",
+                color: isLoggedIn ? "#fda4af" : "#ffffff",
+                border: isLoggedIn ? "1px solid rgba(244, 63, 94, 0.35)" : "1px solid rgba(255, 255, 255, 0.25)",
                 borderRadius: "9999px",
                 fontSize: "0.88rem",
                 fontWeight: 600,
@@ -408,21 +416,43 @@ export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => 
                 boxShadow: "0 0 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.2)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#ffffff";
-                e.currentTarget.style.background = "#ffffff";
-                e.currentTarget.style.color = "#000000";
-                e.currentTarget.style.boxShadow = "0 0 30px rgba(255, 255, 255, 0.25)";
+                if (isLoggedIn) {
+                  e.currentTarget.style.borderColor = "#f43f5e";
+                  e.currentTarget.style.background = "#f43f5e";
+                  e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.boxShadow = "0 0 30px rgba(244, 63, 94, 0.4)";
+                } else {
+                  e.currentTarget.style.borderColor = "#ffffff";
+                  e.currentTarget.style.background = "#ffffff";
+                  e.currentTarget.style.color = "#000000";
+                  e.currentTarget.style.boxShadow = "0 0 30px rgba(255, 255, 255, 0.25)";
+                }
                 e.currentTarget.style.transform = "translateY(-2px)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-                e.currentTarget.style.background = "linear-gradient(135deg, #27272a 0%, #18181b 100%)";
-                e.currentTarget.style.color = "#ffffff";
-                e.currentTarget.style.boxShadow = "0 0 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.2)";
+                if (isLoggedIn) {
+                  e.currentTarget.style.borderColor = "rgba(244, 63, 94, 0.35)";
+                  e.currentTarget.style.background = "rgba(244, 63, 94, 0.12)";
+                  e.currentTarget.style.color = "#fda4af";
+                  e.currentTarget.style.boxShadow = "0 0 20px rgba(0, 0, 0, 0.6)";
+                } else {
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
+                  e.currentTarget.style.background = "linear-gradient(135deg, #27272a 0%, #18181b 100%)";
+                  e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.boxShadow = "0 0 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.2)";
+                }
                 e.currentTarget.style.transform = "translateY(0)";
               }}
             >
-              Get Started <ArrowRight size={16} />
+              {isLoggedIn ? (
+                <>
+                  Sign Out <LogOut size={16} />
+                </>
+              ) : (
+                <>
+                  Sign In <ArrowRight size={16} />
+                </>
+              )}
             </button>
 
             <button
