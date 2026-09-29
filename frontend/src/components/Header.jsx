@@ -1,217 +1,145 @@
 import React, { useState } from "react";
-import { ChevronDown, LogOut, Sun, Moon, User } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  Home,
+  Bot,
+  Cpu,
+  BookOpen,
+  Video,
+  FileText,
+  Terminal,
+  LayoutDashboard,
+  LogOut,
+  User,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import UserProfileModal from "./UserProfileModal";
 
-export default function Header({ activeTab, setActiveTab, onOpenExport, onOpenAuth, backendStatus, theme, onToggleTheme }) {
+export default function Header({ activeTab, setActiveTab, onOpenAuth }) {
   const { user, signOut, isLoading, isGuest } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const isDark = theme === 'dark';
 
-  const tabStyle = (id) => ({
-    padding: "6px 12px",
-    fontSize: "0.74rem",
-    fontWeight: 600,
-    cursor: "pointer",
-    borderRadius: "6px",
-    border: "1px solid",
-    background: activeTab === id ? (isDark ? "rgba(255,255,255,0.10)" : "rgba(15,98,254,0.1)") : "transparent",
-    borderColor: activeTab === id ? (isDark ? "rgba(255,255,255,0.22)" : "rgba(15,98,254,0.3)") : "transparent",
-    color: activeTab === id ? (isDark ? "#ffffff" : "#0f62fe") : "var(--text-secondary)",
-    transition: "all 0.15s ease",
-    fontFamily: "var(--font-mono)",
-    letterSpacing: "0.07em",
-    textTransform: "uppercase",
-  });
+  const navItems = [
+    { id: "landing", name: "Home", icon: Home },
+    { id: "chat", name: "AI Tutor", icon: Bot },
+    { id: "studio", name: "Circuit Studio", icon: Cpu },
+    { id: "learning", name: "Learning Hub", icon: BookOpen },
+    { id: "videos", name: "Video Lectures", icon: Video },
+    { id: "assessment", name: "Assessments", icon: FileText },
+    { id: "codelab", name: "Code Lab", icon: Terminal },
+    { id: "dashboard", name: "Dashboard", icon: LayoutDashboard },
+  ];
 
   return (
-    <header style={{
-      padding: "12px 28px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-      background: "rgba(8, 8, 10, 0.90)",
-      backdropFilter: "blur(14px)",
-      position: "sticky",
-      top: 0,
-      zIndex: 100,
-    }}>
-      {/* Brand */}
-      <div
-        onClick={() => setActiveTab("landing")}
-        style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
-        title="Go to Quantum Leap Overview"
-      >
-        <span style={{ fontSize: "1.08rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.035em" }}>
-          Quantum Leap
-        </span>
-        <span style={{
-          fontSize: "0.68rem",
-          fontFamily: "var(--font-mono)",
-          color: "var(--text-muted)",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          background: "rgba(255, 255, 255, 0.04)",
-          border: "1px solid var(--border-subtle)",
-          padding: "2px 8px",
-          borderRadius: "9999px",
-        }}>
-          AI Quantum Studio
-        </span>
-      </div>
-
-      {/* Navigation */}
-      <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-        {[
-          { id: "landing", label: "Overview" },
-          { id: "chat", label: "AI Tutor" },
-          { id: "studio", label: "Circuit Studio" },
-          { id: "dashboard", label: "Dashboard" },
-          { id: "learning", label: "Learning Hub" },
-          { id: "videos", label: "Video Lectures" },
-          { id: "assessment", label: "Assessments" },
-          { id: "codelab", label: "Code Lab" },
-          { id: "gateway", label: "Gateway Flow" },
-        ].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={tabStyle(tab.id)}
-            onMouseEnter={e => { if (activeTab !== tab.id) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-surface-elevated)'; }}}
-            onMouseLeave={e => { if (activeTab !== tab.id) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
-      {/* Right Controls */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        {/* Backend status */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          fontSize: "0.72rem",
-          fontFamily: "var(--font-mono)",
-          color: "var(--text-muted)",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          padding: "3px 8px",
-          background: "rgba(255, 255, 255, 0.03)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: "9999px",
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: backendStatus ? "#10b981" : "#eab308", display: "inline-block" }} />
-          <span>{backendStatus ? "QPU Live" : "Connecting"}</span>
-        </div>
-
-        {/* Theme toggle */}
-        <button onClick={onToggleTheme} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 32, height: 32, borderRadius: "6px",
-            background: "var(--bg-surface-elevated)", border: "1px solid var(--border-subtle)",
-            cursor: "pointer", color: "var(--text-muted)", transition: "all 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.color = "var(--text-primary)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.color = "var(--text-muted)"; }}
-        >
-          {isDark ? <Sun size={14} /> : <Moon size={14} />}
-        </button>
-
-        {/* Export */}
-        <button onClick={onOpenExport} style={{
-          padding: "6px 14px",
-          fontSize: "0.76rem",
-          fontWeight: 600,
-          borderRadius: "6px",
-          fontFamily: "var(--font-sans)",
-          letterSpacing: "0.06em",
-          textTransform: "uppercase",
-          background: "var(--bg-surface-elevated)",
-          border: "1px solid var(--border-subtle)",
-          color: "var(--text-secondary)",
-          cursor: "pointer",
-          transition: "all 0.15s",
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-default)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
-        >
-          Export
-        </button>
-
-        {/* Auth */}
+    <>
+      {/* ── Right-Most Top Circular User/Guest Button (Away from Navbar) ── */}
+      <div className="fixed top-2.5 right-4 sm:right-6 z-50 select-none">
         {isLoading ? (
-          <div style={{ width: 28, height: 28, borderRadius: "4px", background: "var(--bg-surface-elevated)" }} />
-        ) : user ? (
-          <div style={{ position: "relative" }}>
-            <button onClick={() => setShowUserMenu((v) => !v)} style={{
-              display: "flex", alignItems: "center", gap: "7px",
-              background: "transparent", border: "1px solid var(--border-subtle)",
-              borderRadius: "6px", padding: "5px 12px", cursor: "pointer",
-              color: "var(--text-secondary)", fontSize: "0.76rem", fontWeight: 600,
-              fontFamily: "var(--font-sans)", letterSpacing: "0.06em", textTransform: "uppercase",
-              transition: "all 0.15s",
-            }}>
-              <span>{isGuest ? "Guest" : (user.display_name || user.full_name || "Account")}</span>
-              <ChevronDown size={12} />
+          <div className="w-9 h-9 rounded-full bg-[#18181b] animate-pulse border border-white/10" />
+        ) : (
+          <div className="relative">
+            <button
+              onClick={() => {
+                if (user || isGuest) {
+                  setShowUserMenu((v) => !v);
+                } else if (onOpenAuth) {
+                  onOpenAuth();
+                }
+              }}
+              className="w-9 h-9 rounded-full bg-[#0e0e14]/90 border border-white/[0.18] backdrop-blur-2xl flex items-center justify-center text-white hover:border-white/35 hover:bg-[#1a1a22] transition-all cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.6)] group"
+              title={user ? (user.display_name || user.full_name || user.email) : isGuest ? "Guest Session" : "Sign In"}
+            >
+              <User size={16} className="text-zinc-300 group-hover:text-white transition-colors" />
             </button>
-            {showUserMenu && (
-              <div style={{
-                position: "absolute", top: "calc(100% + 6px)", right: 0, width: 180,
-                padding: "6px", zIndex: 50, background: "var(--bg-surface)",
-                border: "1px solid var(--border-default)", borderRadius: "6px",
-                boxShadow: "var(--shadow-lg)",
-              }}>
-                <div style={{ padding: "6px 8px", borderBottom: "1px solid var(--border-subtle)", marginBottom: "4px" }}>
-                  <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                    {isGuest ? "Guest Session" : (user.display_name || user.full_name || "User")}
+
+            {/* Dropdown Menu when circle is clicked */}
+            {showUserMenu && (user || isGuest) && (
+              <div className="absolute top-[calc(100%+8px)] right-0 w-56 p-2.5 z-50 bg-[#0e0e12] border border-white/[0.14] rounded-2xl shadow-2xl backdrop-blur-2xl">
+                <div className="p-2.5 border-b border-white/[0.08] mb-1">
+                  <div className="text-xs font-bold text-white font-mono">
+                    {isGuest ? "Guest Session" : (user?.display_name || user?.full_name || "User")}
                   </div>
-                  <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>{user.email || "Offline"}</div>
+                  <div className="text-[11px] text-zinc-500 truncate mt-0.5 font-mono">{user?.email || "Offline"}</div>
                 </div>
                 <button
                   onClick={() => {
                     setShowProfileModal(true);
                     setShowUserMenu(false);
                   }}
-                  style={{
-                    width: "100%", textAlign: "left", padding: "6px 8px", fontSize: "0.76rem",
-                    background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: "6px", borderRadius: "4px",
-                    marginBottom: "2px",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-surface-elevated)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                  className="w-full text-left p-2.5 text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-lg flex items-center gap-2.5 cursor-pointer transition-colors font-mono"
                 >
-                  <User size={12} color="#60a5fa" /> Profile & Progress
+                  <User size={14} className="text-zinc-400" /> Profile & Progress
                 </button>
-                <button onClick={() => { signOut(); setShowUserMenu(false); }} style={{
-                  width: "100%", textAlign: "left", padding: "6px 8px", fontSize: "0.76rem",
-                  background: "none", border: "none", color: "var(--quantum-rose)", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: "6px", borderRadius: "4px",
-                }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                <button
+                  onClick={() => {
+                    signOut();
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full text-left p-2.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg flex items-center gap-2.5 cursor-pointer transition-colors font-mono"
                 >
-                  <LogOut size={12} /> {isGuest ? "Exit Guest Mode" : "Sign Out"}
+                  <LogOut size={14} /> {isGuest ? "Exit Guest Mode" : "Sign Out"}
                 </button>
               </div>
             )}
           </div>
-        ) : (
-          <button onClick={onOpenAuth} style={{
-            padding: "5px 14px", fontSize: "0.78rem", fontWeight: 500, borderRadius: "4px",
-            background: "#0f62fe", border: "1px solid #0f62fe", color: "#fff", cursor: "pointer",
-          }}>
-            Sign In
-          </button>
         )}
       </div>
 
-      <UserProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-      />
-    </header>
+      {/* ── Floating Centered Navbar (VigilOps Style - Pure Navigation Tabs) ── */}
+      <header className="sticky top-0 z-40 w-full py-2 px-4 sm:px-8 flex justify-center bg-transparent pointer-events-none select-none">
+        <div className="pointer-events-auto w-full max-w-[1360px] h-[48px] sm:h-[50px] flex items-center justify-center bg-[#0e0e14]/92 border border-white/[0.14] backdrop-blur-2xl px-4 sm:px-8 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
+          <nav className="flex items-center justify-between sm:justify-evenly w-full gap-2 sm:gap-4 md:gap-6 lg:gap-8 flex-1 overflow-x-auto no-scrollbar">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveTab(item.id)}
+                  className={`relative cursor-pointer h-[34px] sm:h-[36px] px-3 sm:px-4 md:px-4.5 rounded-full transition-all duration-150 flex items-center justify-center gap-2 outline-none leading-none ${
+                    isActive ? "text-white font-semibold" : "text-zinc-400 hover:text-zinc-200 font-medium"
+                  }`}
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: "0.72rem",
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <Icon size={14} strokeWidth={2.2} className={`shrink-0 ${isActive ? "text-white" : "text-zinc-400"}`} />
+                  <span className="whitespace-nowrap">
+                    {item.name}
+                  </span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="tubelight-lamp"
+                      className="absolute inset-0 w-full h-full bg-white/[0.10] border border-white/[0.14] rounded-full -z-10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]"
+                      initial={false}
+                      transition={{
+                        type: "spring",
+                        stiffness: 350,
+                        damping: 30,
+                      }}
+                    >
+                      <div className="absolute -top-[2px] left-1/2 -translate-x-1/2 w-8 sm:w-10 h-[2px] bg-white rounded-t-full shadow-[0_0_12px_rgba(255,255,255,1)]">
+                        <div className="absolute w-12 h-4 bg-white/25 rounded-full blur-sm -top-2 -left-2" />
+                        <div className="absolute w-8 h-3 bg-white/35 rounded-full blur-[1px] -top-1" />
+                      </div>
+                    </motion.div>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        <UserProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+        />
+      </header>
+    </>
   );
 }

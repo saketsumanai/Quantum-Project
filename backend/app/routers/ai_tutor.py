@@ -33,9 +33,15 @@ class ChatMessage(BaseModel):
     content: str
 
 class ChatRequest(BaseModel):
-    messages: List[ChatMessage]
+    messages: Optional[List[ChatMessage]] = None
+    query: Optional[str] = None
     topic: Optional[str] = ""
     circuit_context: Optional[Dict[str, Any]] = None
+    context: Optional[str] = None
+    conversation_history: Optional[List[Dict[str, Any]]] = None
+    preferred_model: Optional[str] = None
+    language: Optional[str] = "en"
+    enable_rag: Optional[bool] = True
 
 class ChatResponse(BaseModel):
     success: bool
@@ -54,32 +60,48 @@ async def chat_endpoint(request: ChatRequest):
     Uses the last user message as the primary query, with conversation history as context.
     """
     try:
-        # Extract last user message
-        user_messages = [m for m in request.messages if m.role == "user"]
-        if not user_messages:
-            raise HTTPException(status_code=400, detail="No user message found")
-        
-        last_user_msg = user_messages[-1].content
-        
-        # Build conversation context summary for history
+        last_user_msg = ""
         history_ctx = ""
-        if len(request.messages) > 1:
-            history_pairs = []
-            for i, msg in enumerate(request.messages[:-1]):
-                if msg.role == "user":
-                    history_pairs.append(f"User: {msg.content[:200]}")
-                elif msg.role == "assistant":
-                    history_pairs.append(f"Assistant: {msg.content[:200]}")
-            if history_pairs:
-                history_ctx = "Previous conversation:\n" + "\n".join(history_pairs[-6:])
-        
+
+        if request.messages:
+            user_messages = [m for m in request.messages if m.role == "user"]
+            if user_messages:
+                last_user_msg = user_messages[-1].content
+            if len(request.messages) > 1:
+                history_pairs = []
+                for msg in request.messages[:-1]:
+                    if msg.role == "user":
+                        history_pairs.append(f"User: {msg.content[:250]}")
+                    elif msg.role == "assistant":
+                        history_pairs.append(f"Assistant: {msg.content[:250]}")
+                if history_pairs:
+                    history_ctx = "Previous conversation:\n" + "\n".join(history_pairs[-6:])
+        elif request.query:
+            last_user_msg = request.query
+            if request.conversation_history:
+                history_pairs = []
+                for msg in request.conversation_history:
+                    r = msg.get("role", "User")
+                    c = str(msg.get("content", ""))[:250]
+                    history_pairs.append(f"{r.capitalize()}: {c}")
+                if history_pairs:
+                    history_ctx = "Previous conversation:\n" + "\n".join(history_pairs[-6:])
+
+        if not last_user_msg:
+            raise HTTPException(status_code=400, detail="No user message found in query or messages.")
+
+        if request.context:
+            history_ctx = (history_ctx + f"\n\nContext:\n{request.context}").strip()
+
         full_query = f"{history_ctx}\n\nCurrent question: {last_user_msg}" if history_ctx else last_user_msg
-        
+
         # Use the existing tutor service
         tutor_req = AITutorQueryRequest(
             user_query=full_query,
             active_circuit_context=request.circuit_context or {},
-            current_topic=request.topic or ""
+            current_topic=request.topic or "",
+            language=request.language or "en",
+            preferred_model=request.preferred_model or "openai/gpt-oss-20b"
         )
         result = await tutor_service.query(tutor_req)
         
@@ -105,6 +127,12 @@ async def chat_endpoint(request: ChatRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ─── Alias Router (/tutor/chat & /tutor/query) ─────────────────────────────────
+tutor_alias_router = APIRouter(prefix="/tutor", tags=["AI Quantum Tutor (Alias)"])
+tutor_alias_router.add_api_route("/chat", chat_endpoint, methods=["POST"], response_model=ChatResponse)
+tutor_alias_router.add_api_route("/query", query_ai_tutor_endpoint, methods=["POST"], response_model=AITutorQueryResponse)
+
 
 # ─── Quiz from image/PDF schemas ──────────────────────────────────────────────
 class QuizFromImageRequest(BaseModel):

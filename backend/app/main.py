@@ -166,12 +166,13 @@ app.add_middleware(
 )
 
 # ─── Routers ──────────────────────────────────────────────────────────────────
-app.include_router(auth.router,       prefix="/api/v1")
-app.include_router(simulation.router, prefix="/api/v1")
-app.include_router(ai_tutor.router,   prefix="/api/v1")
-app.include_router(curriculum.router, prefix="/api/v1")
-app.include_router(assessment.router, prefix="/api/v1")
-app.include_router(dubbing.router,    prefix="/api/v1")
+app.include_router(auth.router,                    prefix="/api/v1")
+app.include_router(simulation.router,              prefix="/api/v1")
+app.include_router(ai_tutor.router,                prefix="/api/v1")
+app.include_router(ai_tutor.tutor_alias_router,    prefix="/api/v1")
+app.include_router(curriculum.router,              prefix="/api/v1")
+app.include_router(assessment.router,              prefix="/api/v1")
+app.include_router(dubbing.router,                 prefix="/api/v1")
 
 # ─── Static files for dubbed video lectures ───────────────────────────────────
 _dubs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../platform_dubs"))

@@ -17,6 +17,12 @@ import time
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 load_dotenv()
 load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.env")))
 

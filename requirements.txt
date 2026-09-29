@@ -14,8 +14,10 @@ httpx==0.28.1
 
 # --- Math & Quantum Simulation ---
 numpy==2.0.2
-scipy==1.13.1
+scipy>=1.14.0
 sympy==1.14.0
+qiskit>=1.0.0
+qiskit-aer>=0.14.0
 
 # --- Database (SQLite / PostgreSQL) ---
 sqlalchemy==2.0.52

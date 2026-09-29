@@ -24,6 +24,11 @@ import io
 import json
 import traceback
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 stdout_capture = io.StringIO()
 sys_stdout_orig = sys.stdout
 sys.stdout = stdout_capture
@@ -168,6 +173,7 @@ class QuantumCodeRunner:
                     "LANG": "en_US.UTF-8",
                     "LC_ALL": "en_US.UTF-8",
                     "QISKIT_SETTINGS_DIR": tmpdir,
+                    "PYTHONIOENCODING": "utf-8",
                     "HOME": tmpdir,
                     "TMPDIR": tmpdir,
                     "TEMP": tmpdir,
@@ -177,6 +183,8 @@ class QuantumCodeRunner:
                     [PYTHON_EXE, runner_script_path],
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                     timeout=timeout_seconds,
                     cwd=tmpdir,
                     env=clean_env,

@@ -317,11 +317,13 @@ function QuantumLeapApp() {
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
-      {/* Global Floating Quantum AI Tutor Drawer (Accessible on ALL pages) */}
-      <AITutorChat
-        circuitContext={{ num_qubits: numQubits, gates_applied: instructions.map((i) => i.gate) }}
-        activeTopic="entanglement"
-      />
+      {/* Global Floating Quantum AI Tutor Drawer (Accessible on pages except CodeLab which has its own IDE copilot) */}
+      {activeTab !== "codelab" && (
+        <AITutorChat
+          circuitContext={{ num_qubits: numQubits, gates_applied: instructions.map((i) => i.gate) }}
+          activeTopic="entanglement"
+        />
+      )}
     </div>
   );
 }

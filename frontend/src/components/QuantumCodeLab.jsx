@@ -5,9 +5,9 @@ import {
   Code2, Brain, CheckCircle, XCircle, Lightbulb, Copy,
   Check, Terminal, BookOpen, Zap, BarChart2, AlertTriangle,
   Loader2, Download, Maximize2, Minimize2, Settings2, Sparkles,
-  Layers, Plus, Trash2, Cpu, FileCode, HelpCircle, ShieldCheck
+  Layers, Plus, Trash2, Cpu, FileCode, HelpCircle, ShieldCheck, Send
 } from "lucide-react";
-import MathRenderer from "./MathRenderer";
+import MathRenderer, { LatexBlock } from "./MathRenderer";
 import API_BASE from "../config/api";
 
 const API = API_BASE;
@@ -414,8 +414,8 @@ print(f"Bernstein-Vazirani secret string '{secret}' will be retrieved in 1 shot!
 function ResultsHistogram({ counts, shots = 1024 }) {
   if (!counts || Object.keys(counts).length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "30px 20px", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-        No measurement counts available yet. Click <strong>▶ Run Code</strong> to simulate.
+      <div style={{ textAlign: "center", padding: "30px 20px", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+        No measurement counts available yet. Click <strong>Run Code</strong> to simulate.
       </div>
     );
   }
@@ -424,20 +424,20 @@ function ResultsHistogram({ counts, shots = 1024 }) {
   const max = Math.max(...entries.map(([, v]) => v));
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 0" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "8px 0" }}>
       {entries.map(([state, count]) => {
         const pct = ((count / total) * 100).toFixed(1);
         const barW = (count / max) * 100;
         return (
-          <div key={state} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div key={state} style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <span
               style={{
                 fontFamily: "var(--font-mono, monospace)",
-                fontSize: "0.8rem",
-                color: "#60a5fa",
-                width: 65,
+                fontSize: "0.85rem",
+                color: "#ffffff",
+                width: 70,
                 textAlign: "right",
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
               |{state}⟩
@@ -445,11 +445,11 @@ function ResultsHistogram({ counts, shots = 1024 }) {
             <div
               style={{
                 flex: 1,
-                height: 24,
-                background: "rgba(255,255,255,0.05)",
+                height: 26,
+                background: "rgba(255, 255, 255, 0.04)",
                 borderRadius: 4,
                 overflow: "hidden",
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255, 255, 255, 0.10)",
                 position: "relative",
               }}
             >
@@ -457,17 +457,17 @@ function ResultsHistogram({ counts, shots = 1024 }) {
                 style={{
                   height: "100%",
                   width: `${barW}%`,
-                  background: "linear-gradient(90deg, #0f62fe 0%, #00f2fe 100%)",
+                  background: "linear-gradient(90deg, #27272a 0%, #52525b 100%)",
                   borderRadius: 3,
-                  transition: "width 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+                  transition: "width 0.4s ease",
                   display: "flex",
                   alignItems: "center",
-                  paddingLeft: 8,
+                  paddingLeft: 10,
                 }}
               >
                 {barW > 25 && (
-                  <span style={{ fontSize: "0.7rem", color: "#fff", fontFamily: "var(--font-mono, monospace)", fontWeight: 800 }}>
-                    {pct}%
+                  <span style={{ fontSize: "0.78rem", color: "#ffffff", fontFamily: "var(--font-mono, monospace)", fontWeight: 700 }}>
+                    {pct}% ({count})
                   </span>
                 )}
               </div>
@@ -478,26 +478,16 @@ function ResultsHistogram({ counts, shots = 1024 }) {
                     left: `${barW + 2}%`,
                     top: "50%",
                     transform: "translateY(-50%)",
-                    fontSize: "0.68rem",
-                    color: "#94a3b8",
+                    fontSize: "0.78rem",
+                    color: "#a1a1aa",
                     fontFamily: "var(--font-mono, monospace)",
+                    fontWeight: 600,
                   }}
                 >
-                  {pct}%
+                  {pct}% ({count})
                 </span>
               )}
             </div>
-            <span
-              style={{
-                fontSize: "0.75rem",
-                color: "var(--text-secondary)",
-                fontFamily: "var(--font-mono, monospace)",
-                width: 75,
-                textAlign: "right",
-              }}
-            >
-              {count} / {total}
-            </span>
           </div>
         );
       })}
@@ -691,7 +681,7 @@ export default function QuantumCodeLab({ onNavigateToStudio }) {
           ...prev,
           {
             role: "assistant",
-            content: `🔍 **Quantum Code Checker Alert** (Score: ${data.score}/100)\n\n${data.summary}\n\n**Failing checks:**\n${failureDetails || "Circuit logic error"}\n\nWould you like me to inspect your code and show how to fix it?`,
+            content: `**Quantum Code Checker Notice** (Score: ${data.score}/100)\n\n${data.summary}\n\n**Failing checks:**\n${failureDetails || "Circuit logic error"}\n\nWould you like me to inspect your code and show how to fix it?`,
             ts: Date.now(),
           },
         ]);
@@ -727,28 +717,31 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
 `;
 
     try {
-      const resp = await fetch(`${API}/tutor/chat`, {
+      const resp = await fetch(`${API}/ai-tutor/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: question,
+          messages: [
+            ...aiMessages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+            { role: "user", content: question },
+          ],
           topic: mode === "problem" ? selectedProblem.title : "Quantum Programming & Qiskit",
-          difficulty: mode === "problem" ? selectedProblem.difficulty.toLowerCase() : "intermediate",
           conversation_history: aiMessages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-          preferred_model: "openai/gpt-oss-20b",
-          language: "en",
-          enable_rag: true,
           context: contextPayload,
         }),
       });
       const data = await resp.json();
-      const answer = data.response || data.answer || data.content || "I couldn't process that query. Please try again.";
+      if (!resp.ok) {
+        throw new Error(data.detail?.message || data.detail || "Failed to generate AI response.");
+      }
+      const answer = data.content || data.response || data.answer || "Quantum AI Copilot response generated.";
       setAiMessages((prev) => [
         ...prev,
-        { role: "assistant", content: answer, model: data._active_model, ts: Date.now() },
+        { role: "assistant", content: answer, model: data.model || data._active_model || "Qwen-3.8-27B · RAG Grounded", ts: Date.now() },
       ]);
-    } catch {
-      setAiError("Could not connect to AI Tutor. Check that the backend is active on port 8000.");
+    } catch (err) {
+      setAiError(err.message || "Could not connect to AI Tutor. Check that the backend is active on port 8000.");
     } finally {
       setAiLoading(false);
     }
@@ -894,7 +887,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
         display: "grid",
         gridTemplateColumns: `${leftNavCollapsed ? "48px" : "280px"} 1fr ${aiDrawerOpen ? "360px" : "48px"}`,
         height: "calc(100vh - 56px)",
-        background: "#080c14",
+        background: "#08080a",
         color: "var(--text-primary)",
         overflow: "hidden",
         fontFamily: "var(--font-sans, system-ui, sans-serif)",
@@ -906,8 +899,8 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
       ═════════════════════════════════════════════════════════════════════════ */}
       <div
         style={{
-          borderRight: "1px solid rgba(255,255,255,0.08)",
-          background: "#0b101b",
+          borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "#0e0e12",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -916,26 +909,24 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
         {/* Left Header */}
         <div
           style={{
-            padding: "12px 14px",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            padding: leftNavCollapsed ? "12px 8px" : "12px 14px",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: leftNavCollapsed ? "center" : "space-between",
           }}
         >
           {!leftNavCollapsed && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Cpu size={16} color="#00f2fe" />
+              <Cpu size={16} color="#ffffff" />
               <span
                 style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
+                  fontSize: "0.82rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
                   textTransform: "uppercase",
                   fontFamily: "var(--font-mono, monospace)",
-                  background: "linear-gradient(90deg, #00f2fe, #4589ff)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  color: "#ffffff",
                 }}
               >
                 Quantum Lab
@@ -947,7 +938,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
             style={{
               background: "none",
               border: "none",
-              color: "var(--text-muted)",
+              color: "#a1a1aa",
               cursor: "pointer",
               padding: 4,
               borderRadius: 4,
@@ -960,6 +951,45 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
           </button>
         </div>
 
+        {leftNavCollapsed && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "16px 0", flex: 1 }}>
+            <button
+              onClick={() => {
+                setMode("problem");
+                setLeftNavCollapsed(false);
+              }}
+              style={{
+                background: mode === "problem" ? "#18181b" : "transparent",
+                border: "none",
+                color: mode === "problem" ? "#ffffff" : "#71717a",
+                cursor: "pointer",
+                padding: "8px",
+                borderRadius: 4,
+              }}
+              title="Problems"
+            >
+              <BookOpen size={16} />
+            </button>
+            <button
+              onClick={() => {
+                setMode("playground");
+                setLeftNavCollapsed(false);
+              }}
+              style={{
+                background: mode === "playground" ? "#18181b" : "transparent",
+                border: "none",
+                color: mode === "playground" ? "#ffffff" : "#71717a",
+                cursor: "pointer",
+                padding: "8px",
+                borderRadius: 4,
+              }}
+              title="Playground"
+            >
+              <Zap size={16} />
+            </button>
+          </div>
+        )}
+
         {!leftNavCollapsed && (
           <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
             {/* Top Switcher: Problems vs Custom Playground */}
@@ -968,27 +998,27 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
                 padding: "6px 8px",
-                gap: 4,
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-                background: "rgba(0,0,0,0.2)",
+                gap: 6,
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(0,0,0,0.3)",
               }}
             >
               <button
                 onClick={() => setMode("problem")}
                 style={{
                   padding: "6px 10px",
-                  borderRadius: 5,
-                  border: "none",
-                  background: mode === "problem" ? "rgba(15, 98, 254, 0.25)" : "transparent",
-                  color: mode === "problem" ? "#60a5fa" : "var(--text-muted)",
-                  fontWeight: mode === "problem" ? 700 : 500,
-                  fontSize: "0.72rem",
+                  borderRadius: 6,
+                  border: mode === "problem" ? "1px solid rgba(255,255,255,0.16)" : "1px solid transparent",
+                  background: mode === "problem" ? "#27272a" : "transparent",
+                  color: mode === "problem" ? "#ffffff" : "#a1a1aa",
+                  fontWeight: mode === "problem" ? 600 : 500,
+                  fontSize: "0.78rem",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 6,
-                  transition: "all 0.2s",
+                  transition: "all 0.15s",
                 }}
               >
                 <BookOpen size={13} />
@@ -1003,18 +1033,18 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 }}
                 style={{
                   padding: "6px 10px",
-                  borderRadius: 5,
-                  border: "none",
-                  background: mode === "playground" ? "rgba(0, 242, 254, 0.18)" : "transparent",
-                  color: mode === "playground" ? "#00f2fe" : "var(--text-muted)",
-                  fontWeight: mode === "playground" ? 700 : 500,
-                  fontSize: "0.72rem",
+                  borderRadius: 6,
+                  border: mode === "playground" ? "1px solid rgba(255,255,255,0.16)" : "1px solid transparent",
+                  background: mode === "playground" ? "#27272a" : "transparent",
+                  color: mode === "playground" ? "#ffffff" : "#a1a1aa",
+                  fontWeight: mode === "playground" ? 600 : 500,
+                  fontSize: "0.78rem",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 6,
-                  transition: "all 0.2s",
+                  transition: "all 0.15s",
                 }}
               >
                 <Zap size={13} />
@@ -1036,17 +1066,17 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                         marginBottom: 6,
                         borderRadius: 6,
                         cursor: "pointer",
-                        background: isSelected ? "rgba(15, 98, 254, 0.15)" : "rgba(255,255,255,0.02)",
-                        border: isSelected ? "1px solid rgba(15, 98, 254, 0.45)" : "1px solid rgba(255,255,255,0.04)",
+                        background: isSelected ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.02)",
+                        border: isSelected ? "1px solid rgba(255, 255, 255, 0.22)" : "1px solid rgba(255, 255, 255, 0.05)",
                         transition: "all 0.15s ease",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
                         <span
                           style={{
-                            fontSize: "0.78rem",
+                            fontSize: "0.8rem",
                             fontWeight: isSelected ? 700 : 600,
-                            color: isSelected ? "#fff" : "var(--text-secondary)",
+                            color: isSelected ? "#ffffff" : "#a1a1aa",
                           }}
                         >
                           {p.title}
@@ -1055,13 +1085,14 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         <span
                           style={{
-                            fontSize: "0.62rem",
-                            fontWeight: 700,
-                            color: p.diffColor,
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
+                            color: "#d4d4d8",
                             fontFamily: "var(--font-mono, monospace)",
-                            background: "rgba(0,0,0,0.3)",
+                            background: "#18181b",
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
                             padding: "1px 6px",
-                            borderRadius: 3,
+                            borderRadius: 4,
                           }}
                         >
                           {p.difficulty}
@@ -1070,8 +1101,8 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                           <span
                             key={tag}
                             style={{
-                              fontSize: "0.6rem",
-                              color: "var(--text-muted)",
+                              fontSize: "0.65rem",
+                              color: "#71717a",
                               fontFamily: "var(--font-mono, monospace)",
                             }}
                           >
@@ -1086,7 +1117,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
             ) : (
               <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px 10px" }}>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
+                  <span style={{ fontSize: "0.72rem", color: "#71717a", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
                     My Quantum Files
                   </span>
                   <button
@@ -1095,16 +1126,17 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
-                      fontSize: "0.68rem",
-                      background: "rgba(0, 242, 254, 0.15)",
-                      border: "1px solid rgba(0, 242, 254, 0.3)",
-                      color: "#00f2fe",
-                      padding: "3px 8px",
+                      fontSize: "0.72rem",
+                      background: "#18181b",
+                      border: "1px solid rgba(255, 255, 255, 0.16)",
+                      color: "#ffffff",
+                      padding: "4px 9px",
                       borderRadius: 4,
                       cursor: "pointer",
+                      fontWeight: 600,
                     }}
                   >
-                    <Plus size={11} /> New File
+                    <Plus size={12} /> New File
                   </button>
                 </div>
 
@@ -1119,16 +1151,16 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                         marginBottom: 6,
                         borderRadius: 6,
                         cursor: "pointer",
-                        background: isActive ? "rgba(0, 242, 254, 0.1)" : "rgba(255,255,255,0.02)",
-                        border: isActive ? "1px solid rgba(0, 242, 254, 0.35)" : "1px solid rgba(255,255,255,0.04)",
+                        background: isActive ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.02)",
+                        border: isActive ? "1px solid rgba(255, 255, 255, 0.22)" : "1px solid rgba(255, 255, 255, 0.05)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <FileCode size={13} color={isActive ? "#00f2fe" : "#94a3b8"} />
-                        <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono, monospace)", color: isActive ? "#fff" : "var(--text-secondary)" }}>
+                        <FileCode size={13} color={isActive ? "#ffffff" : "#71717a"} />
+                        <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono, monospace)", color: isActive ? "#ffffff" : "#a1a1aa" }}>
                           {tab.name}
                         </span>
                       </div>
@@ -1145,7 +1177,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                           style={{
                             background: "none",
                             border: "none",
-                            color: "var(--text-muted)",
+                            color: "#71717a",
                             cursor: "pointer",
                             padding: 2,
                           }}
@@ -1158,8 +1190,8 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 })}
 
                 {/* Templates Section */}
-                <div style={{ marginTop: 18, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12 }}>
-                  <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginBottom: 8, paddingLeft: 4 }}>
+                <div style={{ marginTop: 18, borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: 12 }}>
+                  <div style={{ fontSize: "0.7rem", color: "#71717a", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginBottom: 8, paddingLeft: 4 }}>
                     Quick-Load Templates
                   </div>
                   {PLAYGROUND_TEMPLATES.map((tmpl) => (
@@ -1172,20 +1204,20 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                         padding: "7px 9px",
                         marginBottom: 4,
                         borderRadius: 5,
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.04)",
-                        color: "var(--text-secondary)",
-                        fontSize: "0.72rem",
+                        background: "rgba(255, 255, 255, 0.02)",
+                        border: "1px solid rgba(255, 255, 255, 0.04)",
+                        color: "#a1a1aa",
+                        fontSize: "0.74rem",
                         cursor: "pointer",
                         transition: "all 0.15s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                        e.currentTarget.style.color = "#00f2fe";
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+                        e.currentTarget.style.color = "#ffffff";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "rgba(255,255,255,0.02)";
-                        e.currentTarget.style.color = "var(--text-secondary)";
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                        e.currentTarget.style.color = "#a1a1aa";
                       }}
                     >
                       {tmpl.name}
@@ -1199,24 +1231,25 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
             {mode === "problem" && (
               <div
                 style={{
-                  borderTop: "1px solid rgba(255,255,255,0.08)",
+                  borderTop: "1px solid rgba(255, 255, 255, 0.08)",
                   padding: "12px",
-                  background: "rgba(0,0,0,0.25)",
-                  maxHeight: "38%",
+                  background: "#0a0a0d",
+                  maxHeight: "40%",
                   overflowY: "auto",
                 }}
               >
-                <div style={{ display: "flex", gap: 12, marginBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: 6 }}>
+                <div style={{ display: "flex", gap: 14, marginBottom: 10, borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: 6 }}>
                   <button
                     onClick={() => setActiveLeftTab("guide")}
                     style={{
                       background: "none",
                       border: "none",
-                      fontSize: "0.72rem",
+                      borderBottom: activeLeftTab === "guide" ? "2px solid #ffffff" : "2px solid transparent",
+                      fontSize: "0.78rem",
                       fontWeight: activeLeftTab === "guide" ? 700 : 500,
-                      color: activeLeftTab === "guide" ? "#60a5fa" : "var(--text-muted)",
+                      color: activeLeftTab === "guide" ? "#ffffff" : "#71717a",
                       cursor: "pointer",
-                      padding: 0,
+                      paddingBottom: 4,
                     }}
                   >
                     Instructions
@@ -1226,11 +1259,12 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                     style={{
                       background: "none",
                       border: "none",
-                      fontSize: "0.72rem",
+                      borderBottom: activeLeftTab === "theory" ? "2px solid #ffffff" : "2px solid transparent",
+                      fontSize: "0.78rem",
                       fontWeight: activeLeftTab === "theory" ? 700 : 500,
-                      color: activeLeftTab === "theory" ? "#60a5fa" : "var(--text-muted)",
+                      color: activeLeftTab === "theory" ? "#ffffff" : "#71717a",
                       cursor: "pointer",
-                      padding: 0,
+                      paddingBottom: 4,
                     }}
                   >
                     Physics Theory
@@ -1239,20 +1273,21 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
 
                 {activeLeftTab === "guide" ? (
                   <div>
-                    <p style={{ fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.5, margin: "0 0 10px 0" }}>
+                    <p style={{ fontSize: "0.78rem", color: "#a1a1aa", lineHeight: 1.55, margin: "0 0 10px 0" }}>
                       {selectedProblem.description}
                     </p>
                     {selectedProblem.formula && (
                       <div
                         style={{
-                          background: "rgba(255,255,255,0.03)",
-                          padding: "6px 8px",
-                          borderRadius: 4,
+                          background: "#141418",
+                          border: "1px solid rgba(255, 255, 255, 0.08)",
+                          padding: "8px 10px",
+                          borderRadius: 5,
                           marginBottom: 10,
                           textAlign: "center",
                         }}
                       >
-                        <MathRenderer math={selectedProblem.formula} block />
+                        <LatexBlock tex={selectedProblem.formula} display={true} />
                       </div>
                     )}
                     {/* Hints Accordion */}
@@ -1264,30 +1299,30 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                           alignItems: "center",
                           gap: 6,
                           width: "100%",
-                          background: "rgba(245, 158, 11, 0.1)",
-                          border: "1px solid rgba(245, 158, 11, 0.25)",
-                          color: "#f59e0b",
-                          padding: "5px 8px",
+                          background: "#18181b",
+                          border: "1px solid rgba(255, 255, 255, 0.14)",
+                          color: "#e4e4e7",
+                          padding: "6px 10px",
                           borderRadius: 4,
                           cursor: "pointer",
-                          fontSize: "0.7rem",
+                          fontSize: "0.75rem",
                           fontWeight: 600,
                         }}
                       >
-                        <Lightbulb size={12} />
+                        <Lightbulb size={13} color="#ffffff" />
                         {showHint ? "Hide Step-by-Step Hint" : "Need a Hint?"}
                       </button>
                       {showHint && (
                         <div
                           style={{
-                            background: "rgba(0,0,0,0.3)",
-                            border: "1px solid rgba(245, 158, 11, 0.2)",
+                            background: "#141418",
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
                             borderRadius: 4,
-                            padding: "8px",
+                            padding: "10px",
                             marginTop: 6,
                           }}
                         >
-                          <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.45, marginBottom: 8 }}>
+                          <div style={{ fontSize: "0.76rem", color: "#a1a1aa", lineHeight: 1.5, marginBottom: 8 }}>
                             {selectedProblem.hints[hintIndex]}
                           </div>
                           {selectedProblem.hints.length > 1 && (
@@ -1298,14 +1333,14 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                                 style={{
                                   background: "none",
                                   border: "none",
-                                  color: hintIndex === 0 ? "rgba(255,255,255,0.2)" : "#f59e0b",
+                                  color: hintIndex === 0 ? "rgba(255, 255, 255, 0.25)" : "#ffffff",
                                   cursor: hintIndex === 0 ? "default" : "pointer",
-                                  fontSize: "0.68rem",
+                                  fontSize: "0.72rem",
                                 }}
                               >
                                 ← Prev
                               </button>
-                              <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                              <span style={{ fontSize: "0.68rem", color: "#71717a", fontFamily: "var(--font-mono, monospace)" }}>
                                 {hintIndex + 1} / {selectedProblem.hints.length}
                               </span>
                               <button
@@ -1314,9 +1349,9 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                                 style={{
                                   background: "none",
                                   border: "none",
-                                  color: hintIndex === selectedProblem.hints.length - 1 ? "rgba(255,255,255,0.2)" : "#f59e0b",
+                                  color: hintIndex === selectedProblem.hints.length - 1 ? "rgba(255, 255, 255, 0.25)" : "#ffffff",
                                   cursor: hintIndex === selectedProblem.hints.length - 1 ? "default" : "pointer",
-                                  fontSize: "0.68rem",
+                                  fontSize: "0.72rem",
                                 }}
                               >
                                 Next →
@@ -1328,7 +1363,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                     </div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                  <div style={{ fontSize: "0.78rem", color: "#a1a1aa", lineHeight: 1.6 }}>
                     {selectedProblem.theory}
                   </div>
                 )}
@@ -1341,13 +1376,13 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
       {/* ═════════════════════════════════════════════════════════════════════════
           CENTER PANEL: Monaco Editor + Toolbar + Resizable Output Deck
       ═════════════════════════════════════════════════════════════════════════ */}
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", background: "#0a0f1d" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", background: "#08080a" }}>
         {/* Editor Top Control Bar */}
         <div
           style={{
             padding: "8px 16px",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
-            background: "#0c1322",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#0e0e12",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -1362,11 +1397,11 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 fontFamily: "var(--font-mono, monospace)",
                 fontSize: "0.78rem",
                 fontWeight: 700,
-                color: "#60a5fa",
-                background: "rgba(15, 98, 254, 0.15)",
-                padding: "3px 8px",
+                color: "#ffffff",
+                background: "#18181b",
+                padding: "3px 9px",
                 borderRadius: 4,
-                border: "1px solid rgba(15, 98, 254, 0.3)",
+                border: "1px solid rgba(255, 255, 255, 0.14)",
               }}
             >
               {mode === "problem" ? `${selectedProblem.id}.py` : "playground.py"}
@@ -1374,42 +1409,42 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
 
             <span
               style={{
-                fontSize: "0.65rem",
-                color: "#10b981",
+                fontSize: "0.7rem",
+                color: "#a1a1aa",
                 display: "flex",
                 alignItems: "center",
-                gap: 4,
+                gap: 5,
                 fontFamily: "var(--font-mono, monospace)",
               }}
             >
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
-              Qiskit 2.2 · Python 3.9
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#71717a", display: "inline-block" }} />
+              Qiskit 2.2 · Python 3.10
             </span>
           </div>
 
           {/* Action Buttons: Run Code, Check Code, Shots, Settings */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {/* Shots Selector */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.04)", padding: "3px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
-              <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>Shots:</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#18181b", padding: "3px 8px", borderRadius: 4, border: "1px solid rgba(255, 255, 255, 0.12)" }}>
+              <span style={{ fontSize: "0.7rem", color: "#71717a", fontFamily: "var(--font-mono, monospace)" }}>Shots:</span>
               <select
                 value={shots}
                 onChange={(e) => setShots(Number(e.target.value))}
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: "#fff",
-                  fontSize: "0.7rem",
+                  color: "#ffffff",
+                  fontSize: "0.72rem",
                   fontFamily: "var(--font-mono, monospace)",
                   cursor: "pointer",
                   outline: "none",
                 }}
               >
-                <option value={100} style={{ background: "#0a0f1d" }}>100</option>
-                <option value={512} style={{ background: "#0a0f1d" }}>512</option>
-                <option value={1024} style={{ background: "#0a0f1d" }}>1024</option>
-                <option value={4096} style={{ background: "#0a0f1d" }}>4096</option>
-                <option value={8192} style={{ background: "#0a0f1d" }}>8192</option>
+                <option value={100} style={{ background: "#18181b" }}>100</option>
+                <option value={512} style={{ background: "#18181b" }}>512</option>
+                <option value={1024} style={{ background: "#18181b" }}>1024</option>
+                <option value={4096} style={{ background: "#18181b" }}>4096</option>
+                <option value={8192} style={{ background: "#18181b" }}>8192</option>
               </select>
             </div>
 
@@ -1418,22 +1453,22 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
               onClick={handleCheckCode}
               disabled={isChecking || isRunning}
               style={{
-                background: "linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.35))",
-                border: "1px solid rgba(16, 185, 129, 0.5)",
-                color: "#34d399",
-                padding: "6px 13px",
+                background: "#18181b",
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                color: "#ffffff",
+                padding: "6px 14px",
                 borderRadius: 5,
-                fontSize: "0.75rem",
-                fontWeight: 700,
+                fontSize: "0.8rem",
+                fontWeight: 600,
                 cursor: isChecking ? "wait" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                boxShadow: "0 0 12px rgba(16, 185, 129, 0.2)",
+                transition: "all 0.15s ease",
               }}
               title="Runs static linting, quantum analysis, and grades against problem test-cases (Ctrl+Shift+Enter)"
             >
-              {isChecking ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={14} />}
+              {isChecking ? <Loader2 size={13} className="animate-spin" color="#ffffff" /> : <ShieldCheck size={14} color="#ffffff" />}
               {isChecking ? "Checking..." : "Check Code"}
             </button>
 
@@ -1442,71 +1477,72 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
               onClick={handleRunCode}
               disabled={isRunning || isChecking}
               style={{
-                background: "linear-gradient(135deg, #0f62fe 0%, #00f2fe 100%)",
+                background: "#ffffff",
                 border: "none",
-                color: "#fff",
-                padding: "6px 15px",
+                color: "#000000",
+                padding: "6px 16px",
                 borderRadius: 5,
-                fontSize: "0.75rem",
-                fontWeight: 800,
+                fontSize: "0.8rem",
+                fontWeight: 700,
                 cursor: isRunning ? "wait" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                boxShadow: "0 0 15px rgba(15, 98, 254, 0.4)",
+                transition: "all 0.15s ease",
               }}
               title="Runs your code on the Python Qiskit engine and measures quantum states (Ctrl+Enter)"
             >
-              {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={13} fill="#fff" />}
+              {isRunning ? <Loader2 size={14} className="animate-spin" color="#000000" /> : <Play size={13} fill="#000000" color="#000000" />}
               {isRunning ? "Simulating..." : "Run Code"}
             </button>
 
             {/* Utility icons: Copy, Download, Studio */}
-            <div style={{ display: "flex", alignItems: "center", gap: 3, borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, borderLeft: "1px solid rgba(255, 255, 255, 0.1)", paddingLeft: 6 }}>
               <button
                 onClick={handleCopyCode}
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: copied ? "#10b981" : "var(--text-muted)",
-                  padding: 5,
+                  background: "#18181b",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  color: copied ? "#ffffff" : "#a1a1aa",
+                  padding: "5px 7px",
                   borderRadius: 4,
                   cursor: "pointer",
                 }}
                 title={copied ? "Copied!" : "Copy Code"}
               >
-                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? <Check size={13} /> : <Copy size={13} />}
               </button>
 
               <button
                 onClick={handleDownload}
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--text-muted)",
-                  padding: 5,
+                  background: "#18181b",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  color: "#a1a1aa",
+                  padding: "5px 7px",
                   borderRadius: 4,
                   cursor: "pointer",
                 }}
                 title="Download .py file"
               >
-                <Download size={14} />
+                <Download size={13} />
               </button>
 
               {onNavigateToStudio && (
                 <button
                   onClick={() => onNavigateToStudio()}
                   style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "var(--text-secondary)",
-                    padding: "4px 8px",
+                    background: "#18181b",
+                    border: "1px solid rgba(255, 255, 255, 0.14)",
+                    color: "#ffffff",
+                    padding: "5px 9px",
                     borderRadius: 4,
-                    fontSize: "0.68rem",
+                    fontSize: "0.72rem",
+                    fontWeight: 600,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    gap: 4,
+                    gap: 5,
                   }}
                   title="Open visual drag-and-drop circuit studio"
                 >
@@ -1552,8 +1588,8 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
         <div
           style={{
             flex: "1 1 50%",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            background: "#080c14",
+            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#08080a",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
@@ -1563,8 +1599,8 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
           <div
             style={{
               padding: "0 12px",
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
-              background: "#0c1220",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+              background: "#0e0e12",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -1578,11 +1614,11 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 style={{
                   height: "100%",
                   padding: "0 12px",
-                  background: activeConsoleTab === "histogram" ? "rgba(15, 98, 254, 0.15)" : "transparent",
+                  background: activeConsoleTab === "histogram" ? "rgba(255, 255, 255, 0.06)" : "transparent",
                   border: "none",
-                  borderBottom: activeConsoleTab === "histogram" ? "2px solid #0f62fe" : "2px solid transparent",
-                  color: activeConsoleTab === "histogram" ? "#fff" : "var(--text-muted)",
-                  fontSize: "0.72rem",
+                  borderBottom: activeConsoleTab === "histogram" ? "2px solid #ffffff" : "2px solid transparent",
+                  color: activeConsoleTab === "histogram" ? "#ffffff" : "#71717a",
+                  fontSize: "0.78rem",
                   fontWeight: activeConsoleTab === "histogram" ? 700 : 500,
                   cursor: "pointer",
                   display: "flex",
@@ -1590,14 +1626,15 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                   gap: 6,
                 }}
               >
-                <BarChart2 size={13} color="#00f2fe" />
+                <BarChart2 size={13} color={activeConsoleTab === "histogram" ? "#ffffff" : "#71717a"} />
                 Measurement Histogram
                 {runResult?.counts && (
                   <span
                     style={{
-                      background: "rgba(0, 242, 254, 0.18)",
-                      color: "#00f2fe",
-                      fontSize: "0.6rem",
+                      background: "#18181b",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      color: "#e4e4e7",
+                      fontSize: "0.62rem",
                       padding: "1px 5px",
                       borderRadius: 3,
                       fontFamily: "var(--font-mono, monospace)",
@@ -1614,11 +1651,11 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 style={{
                   height: "100%",
                   padding: "0 12px",
-                  background: activeConsoleTab === "diagram" ? "rgba(15, 98, 254, 0.15)" : "transparent",
+                  background: activeConsoleTab === "diagram" ? "rgba(255, 255, 255, 0.06)" : "transparent",
                   border: "none",
-                  borderBottom: activeConsoleTab === "diagram" ? "2px solid #0f62fe" : "2px solid transparent",
-                  color: activeConsoleTab === "diagram" ? "#fff" : "var(--text-muted)",
-                  fontSize: "0.72rem",
+                  borderBottom: activeConsoleTab === "diagram" ? "2px solid #ffffff" : "2px solid transparent",
+                  color: activeConsoleTab === "diagram" ? "#ffffff" : "#71717a",
+                  fontSize: "0.78rem",
                   fontWeight: activeConsoleTab === "diagram" ? 700 : 500,
                   cursor: "pointer",
                   display: "flex",
@@ -1626,7 +1663,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                   gap: 6,
                 }}
               >
-                <Code2 size={13} color="#a855f7" />
+                <Code2 size={13} color={activeConsoleTab === "diagram" ? "#ffffff" : "#71717a"} />
                 Circuit Diagram
               </button>
 
@@ -1636,11 +1673,11 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 style={{
                   height: "100%",
                   padding: "0 12px",
-                  background: activeConsoleTab === "checks" ? "rgba(16, 185, 129, 0.15)" : "transparent",
+                  background: activeConsoleTab === "checks" ? "rgba(255, 255, 255, 0.06)" : "transparent",
                   border: "none",
-                  borderBottom: activeConsoleTab === "checks" ? "2px solid #10b981" : "2px solid transparent",
-                  color: activeConsoleTab === "checks" ? "#fff" : "var(--text-muted)",
-                  fontSize: "0.72rem",
+                  borderBottom: activeConsoleTab === "checks" ? "2px solid #ffffff" : "2px solid transparent",
+                  color: activeConsoleTab === "checks" ? "#ffffff" : "#71717a",
+                  fontSize: "0.78rem",
                   fontWeight: activeConsoleTab === "checks" ? 700 : 500,
                   cursor: "pointer",
                   display: "flex",
@@ -1648,13 +1685,14 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                   gap: 6,
                 }}
               >
-                <ShieldCheck size={13} color="#10b981" />
+                <ShieldCheck size={13} color={activeConsoleTab === "checks" ? "#ffffff" : "#71717a"} />
                 Check & Tests
                 {checkResult && (
                   <span
                     style={{
-                      background: checkResult.passed ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)",
-                      color: checkResult.passed ? "#34d399" : "#f87171",
+                      background: "#18181b",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      color: "#e4e4e7",
                       fontSize: "0.62rem",
                       fontWeight: 700,
                       padding: "1px 6px",
@@ -1673,11 +1711,11 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 style={{
                   height: "100%",
                   padding: "0 12px",
-                  background: activeConsoleTab === "terminal" ? "rgba(255,255,255,0.06)" : "transparent",
+                  background: activeConsoleTab === "terminal" ? "rgba(255, 255, 255, 0.06)" : "transparent",
                   border: "none",
-                  borderBottom: activeConsoleTab === "terminal" ? "2px solid #fff" : "2px solid transparent",
-                  color: activeConsoleTab === "terminal" ? "#fff" : "var(--text-muted)",
-                  fontSize: "0.72rem",
+                  borderBottom: activeConsoleTab === "terminal" ? "2px solid #ffffff" : "2px solid transparent",
+                  color: activeConsoleTab === "terminal" ? "#ffffff" : "#71717a",
+                  fontSize: "0.78rem",
                   fontWeight: activeConsoleTab === "terminal" ? 700 : 500,
                   cursor: "pointer",
                   display: "flex",
@@ -1685,7 +1723,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                   gap: 6,
                 }}
               >
-                <Terminal size={13} />
+                <Terminal size={13} color={activeConsoleTab === "terminal" ? "#ffffff" : "#71717a"} />
                 Terminal & Logs
                 {runError && (
                   <span
@@ -1703,10 +1741,10 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
 
             {/* Execution Telemetry Badge */}
             {runResult && (
-              <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: "0.68rem", color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
-                {runResult.num_qubits > 0 && <span>Qubits: <strong>{runResult.num_qubits}</strong></span>}
-                {runResult.circuit_depth > 0 && <span>Depth: <strong>{runResult.circuit_depth}</strong></span>}
-                {runResult.execution_time_ms > 0 && <span>Time: <strong>{runResult.execution_time_ms}ms</strong></span>}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: "0.7rem", color: "#71717a", fontFamily: "var(--font-mono, monospace)" }}>
+                {runResult.num_qubits > 0 && <span>Qubits: <strong style={{ color: "#e4e4e7" }}>{runResult.num_qubits}</strong></span>}
+                {runResult.circuit_depth > 0 && <span>Depth: <strong style={{ color: "#e4e4e7" }}>{runResult.circuit_depth}</strong></span>}
+                {runResult.execution_time_ms > 0 && <span>Time: <strong style={{ color: "#e4e4e7" }}>{runResult.execution_time_ms}ms</strong></span>}
               </div>
             )}
           </div>
@@ -1719,14 +1757,14 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 {runResult?.counts ? (
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>
+                      <span style={{ fontSize: "0.78rem", color: "#a1a1aa", fontWeight: 600 }}>
                         Statistical Measurement Distribution ({shots} shots simulated)
                       </span>
                     </div>
                     <ResultsHistogram counts={runResult.counts} shots={shots} />
                   </div>
                 ) : (
-                  <div style={{ textAlign: "center", padding: "35px 20px", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                  <div style={{ textAlign: "center", padding: "35px 20px", color: "#71717a", fontSize: "0.82rem" }}>
                     Run your circuit to view measurement probabilities and state counts.
                   </div>
                 )}
@@ -1739,7 +1777,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 {runResult?.circuit_diagram ? (
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
+                      <span style={{ fontSize: "0.72rem", color: "#71717a", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
                         Qiskit Text Circuit Representation
                       </span>
                       <button
@@ -1747,11 +1785,11 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                           navigator.clipboard.writeText(runResult.circuit_diagram);
                         }}
                         style={{
-                          background: "rgba(255,255,255,0.06)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          color: "var(--text-secondary)",
-                          fontSize: "0.68rem",
-                          padding: "3px 8px",
+                          background: "#18181b",
+                          border: "1px solid rgba(255, 255, 255, 0.12)",
+                          color: "#a1a1aa",
+                          fontSize: "0.7rem",
+                          padding: "4px 9px",
                           borderRadius: 4,
                           cursor: "pointer",
                           display: "flex",
@@ -1765,14 +1803,14 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                     <pre
                       style={{
                         margin: 0,
-                        background: "#050811",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "#0a0a0d",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
                         borderRadius: 6,
                         padding: "16px",
                         fontFamily: "var(--font-mono, JetBrains Mono, monospace)",
                         fontSize: "0.8rem",
                         lineHeight: 1.4,
-                        color: "#38bdf8",
+                        color: "#e4e4e7",
                         overflowX: "auto",
                         whiteSpace: "pre",
                       }}
@@ -1781,7 +1819,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                     </pre>
                   </div>
                 ) : (
-                  <div style={{ textAlign: "center", padding: "35px 20px", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                  <div style={{ textAlign: "center", padding: "35px 20px", color: "#71717a", fontSize: "0.82rem" }}>
                     No circuit diagram available. Define a <code>QuantumCircuit</code> and run your code.
                   </div>
                 )}
@@ -1801,22 +1839,22 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                         justifyContent: "space-between",
                         padding: "12px 16px",
                         borderRadius: 6,
-                        background: checkResult.passed ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
-                        border: `1px solid ${checkResult.passed ? "rgba(16, 185, 129, 0.35)" : "rgba(239, 68, 68, 0.35)"}`,
+                        background: "#141418",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
                         marginBottom: 14,
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         {checkResult.passed ? (
-                          <CheckCircle size={20} color="#10b981" />
+                          <CheckCircle size={18} color="#ffffff" />
                         ) : (
-                          <XCircle size={20} color="#ef4444" />
+                          <XCircle size={18} color="#71717a" />
                         )}
                         <div>
-                          <div style={{ fontSize: "0.82rem", fontWeight: 700, color: checkResult.passed ? "#34d399" : "#f87171" }}>
+                          <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#ffffff" }}>
                             {checkResult.summary}
                           </div>
-                          <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                          <div style={{ fontSize: "0.72rem", color: "#71717a" }}>
                             {checkResult.passed ? "All quantum requirements verified." : "Some test assertions or quantum checks did not pass."}
                           </div>
                         </div>
@@ -1827,7 +1865,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                             fontSize: "1.2rem",
                             fontWeight: 900,
                             fontFamily: "var(--font-mono, monospace)",
-                            color: checkResult.passed ? "#10b981" : "#ef4444",
+                            color: "#ffffff",
                           }}
                         >
                           {checkResult.score}%
@@ -1843,20 +1881,20 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                           style={{
                             padding: "8px 12px",
                             borderRadius: 5,
-                            background: "rgba(255,255,255,0.02)",
-                            border: "1px solid rgba(255,255,255,0.06)",
+                            background: "#141418",
+                            border: "1px solid rgba(255, 255, 255, 0.06)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            {t.passed ? <CheckCircle size={14} color="#10b981" /> : <XCircle size={14} color="#ef4444" />}
-                            <span style={{ fontSize: "0.75rem", fontWeight: 600, color: t.passed ? "#e2e8f0" : "#f87171" }}>
+                            {t.passed ? <CheckCircle size={14} color="#ffffff" /> : <XCircle size={14} color="#71717a" />}
+                            <span style={{ fontSize: "0.76rem", fontWeight: 600, color: t.passed ? "#e4e4e7" : "#a1a1aa" }}>
                               {t.test}
                             </span>
                           </div>
-                          <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                          <span style={{ fontSize: "0.72rem", color: "#71717a", fontFamily: "var(--font-mono, monospace)" }}>
                             {t.detail}
                           </span>
                         </div>
@@ -1865,9 +1903,9 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
 
                     {/* Diagnostics / Deprecations */}
                     {checkResult.diagnostics?.length > 0 && (
-                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 12 }}>
-                        <div style={{ fontSize: "0.72rem", color: "#f59e0b", fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                          <AlertTriangle size={13} />
+                      <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: 12 }}>
+                        <div style={{ fontSize: "0.74rem", color: "#e4e4e7", fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                          <AlertTriangle size={13} color="#a1a1aa" />
                           Quantum Code Diagnostics & Suggestions
                         </div>
                         {checkResult.diagnostics.map((d, i) => (
@@ -1876,16 +1914,16 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                             style={{
                               padding: "8px 10px",
                               borderRadius: 4,
-                              background: "rgba(245, 158, 11, 0.08)",
-                              border: "1px solid rgba(245, 158, 11, 0.2)",
+                              background: "#141418",
+                              border: "1px solid rgba(255, 255, 255, 0.1)",
                               marginBottom: 6,
-                              fontSize: "0.72rem",
-                              color: "var(--text-secondary)",
+                              fontSize: "0.74rem",
+                              color: "#a1a1aa",
                             }}
                           >
                             <div>{d.message}</div>
                             {d.suggestion && (
-                              <pre style={{ margin: "6px 0 0 0", color: "#38bdf8", fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem" }}>
+                              <pre style={{ margin: "6px 0 0 0", color: "#e4e4e7", fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem" }}>
                                 {d.suggestion}
                               </pre>
                             )}
@@ -1895,8 +1933,8 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                     )}
                   </div>
                 ) : (
-                  <div style={{ textAlign: "center", padding: "35px 20px", color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                    Click <strong>✓ Check Code</strong> to run the quantum linter, verify problem test-cases, and score your algorithm.
+                  <div style={{ textAlign: "center", padding: "35px 20px", color: "#71717a", fontSize: "0.82rem" }}>
+                    Click <strong>Check Code</strong> to run the quantum linter, verify problem test-cases, and score your algorithm.
                   </div>
                 )}
               </div>
@@ -1907,31 +1945,31 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
               <div>
                 <div
                   style={{
-                    background: "#050811",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "#0a0a0d",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: 6,
                     padding: "14px",
                     fontFamily: "var(--font-mono, JetBrains Mono, monospace)",
                     fontSize: "0.78rem",
-                    color: "#f1f5f9",
+                    color: "#e4e4e7",
                     minHeight: 140,
                   }}
                 >
-                  <div style={{ color: "#64748b", marginBottom: 8 }}>
+                  <div style={{ color: "#71717a", marginBottom: 8 }}>
                     $ python user_quantum_code.py --shots {shots}
                   </div>
                   {runResult?.stdout && (
-                    <div style={{ whiteSpace: "pre-wrap", color: "#e2e8f0", marginBottom: 8 }}>
+                    <div style={{ whiteSpace: "pre-wrap", color: "#e4e4e7", marginBottom: 8 }}>
                       {runResult.stdout}
                     </div>
                   )}
                   {runError && (
-                    <div style={{ whiteSpace: "pre-wrap", color: "#f87171", background: "rgba(239,68,68,0.1)", padding: 8, borderRadius: 4, marginTop: 8 }}>
+                    <div style={{ whiteSpace: "pre-wrap", color: "#f87171", background: "#18181b", border: "1px solid rgba(255, 255, 255, 0.15)", padding: 8, borderRadius: 4, marginTop: 8 }}>
                       [Error] {runError}
                     </div>
                   )}
                   {!runResult && !runError && (
-                    <div style={{ color: "#475569" }}>
+                    <div style={{ color: "#71717a" }}>
                       Ready. Run your code to stream terminal standard output and logs.
                     </div>
                   )}
@@ -1947,8 +1985,8 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
       ═════════════════════════════════════════════════════════════════════════ */}
       <div
         style={{
-          borderLeft: "1px solid rgba(255,255,255,0.08)",
-          background: "#0a0f1c",
+          borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "#0e0e12",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -1957,50 +1995,102 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
         {/* AI Header */}
         <div
           style={{
-            padding: "12px 14px",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            padding: aiDrawerOpen ? "12px 14px" : "12px 8px",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: aiDrawerOpen ? "space-between" : "center",
+            background: "#0e0e12",
           }}
         >
           {aiDrawerOpen ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Brain size={16} color="#00f2fe" />
-              <span style={{ fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#e2e8f0" }}>
-                Quantum AI Copilot
-              </span>
-              <span style={{ fontSize: "0.6rem", background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>
-                RAG Active
-              </span>
-            </div>
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Brain size={16} color="#ffffff" />
+                <span style={{ fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#ffffff" }}>
+                  Quantum AI Copilot
+                </span>
+                <span style={{ fontSize: "0.65rem", background: "#18181b", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#a1a1aa", padding: "2px 6px", borderRadius: 3, fontWeight: 600 }}>
+                  RAG Active
+                </span>
+              </div>
+              <button
+                onClick={() => setAiDrawerOpen(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#a1a1aa",
+                  cursor: "pointer",
+                  padding: 4,
+                  borderRadius: 4,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                title="Collapse AI Panel"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </>
           ) : (
-            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-              <Brain size={16} color="#00f2fe" />
-            </div>
+            <button
+              onClick={() => setAiDrawerOpen(true)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#ffffff",
+                cursor: "pointer",
+                padding: "4px",
+                borderRadius: 4,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+              }}
+              title="Open AI Copilot"
+            >
+              <Brain size={18} color="#ffffff" />
+              <ChevronLeft size={14} color="#a1a1aa" />
+            </button>
           )}
-          <button
-            onClick={() => setAiDrawerOpen(!aiDrawerOpen)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              padding: 4,
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-            }}
-            title={aiDrawerOpen ? "Collapse AI Panel" : "Expand AI Panel"}
-          >
-            {aiDrawerOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
         </div>
+
+        {!aiDrawerOpen && (
+          <div
+            onClick={() => setAiDrawerOpen(true)}
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              padding: "12px 0",
+              color: "#71717a",
+            }}
+            title="Click to open AI Copilot"
+          >
+            <span
+              style={{
+                writingMode: "vertical-rl",
+                textOrientation: "mixed",
+                transform: "rotate(180deg)",
+                fontSize: "0.72rem",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                fontFamily: "var(--font-mono, monospace)",
+                fontWeight: 600,
+                color: "#71717a",
+              }}
+            >
+              AI Copilot
+            </span>
+          </div>
+        )}
 
         {aiDrawerOpen && (
           <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
             {/* Quick Prompt Suggestions */}
-            <div style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexWrap: "wrap", gap: 5, background: "rgba(0,0,0,0.15)" }}>
+            <div style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255, 255, 255, 0.06)", display: "flex", flexWrap: "wrap", gap: 5, background: "#0a0a0d" }}>
               {[
                 "Why did my circuit fail?",
                 "How to add CNOT gate?",
@@ -2011,22 +2101,24 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                   key={pill}
                   onClick={() => askAI(pill)}
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    color: "var(--text-secondary)",
-                    padding: "3px 8px",
+                    background: "#18181b",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "#a1a1aa",
+                    padding: "3px 9px",
                     borderRadius: 12,
-                    fontSize: "0.65rem",
+                    fontSize: "0.7rem",
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#00f2fe";
-                    e.currentTarget.style.color = "#00f2fe";
+                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.3)";
+                    e.currentTarget.style.color = "#ffffff";
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                    e.currentTarget.style.color = "#a1a1aa";
+                    e.currentTarget.style.background = "#18181b";
                   }}
                 >
                   {pill}
@@ -2037,12 +2129,12 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
             {/* Chat Messages */}
             <div style={{ flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: 10 }}>
               {aiMessages.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px 10px", color: "var(--text-muted)" }}>
-                  <Sparkles size={24} color="#00f2fe" style={{ margin: "0 auto 8px" }} />
-                  <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: 4 }}>
+                <div style={{ textAlign: "center", padding: "30px 10px", color: "#71717a" }}>
+                  <Sparkles size={22} color="#a1a1aa" style={{ margin: "0 auto 8px" }} />
+                  <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#ffffff", marginBottom: 4 }}>
                     AI Doubt Solver Ready
                   </div>
-                  <div style={{ fontSize: "0.7rem", lineHeight: 1.45 }}>
+                  <div style={{ fontSize: "0.76rem", lineHeight: 1.5, color: "#71717a" }}>
                     Ask anything about your quantum circuit, Qiskit syntax, gates, or algorithm theory.
                   </div>
                 </div>
@@ -2053,18 +2145,18 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                     style={{
                       alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
                       maxWidth: "92%",
-                      background: msg.role === "user" ? "#0f62fe" : "rgba(255,255,255,0.05)",
-                      border: msg.role === "user" ? "none" : "1px solid rgba(255,255,255,0.08)",
+                      background: msg.role === "user" ? "#27272a" : "#141418",
+                      border: msg.role === "user" ? "1px solid rgba(255, 255, 255, 0.14)" : "1px solid rgba(255, 255, 255, 0.08)",
                       borderRadius: 8,
-                      padding: "8px 12px",
-                      fontSize: "0.75rem",
+                      padding: "9px 13px",
+                      fontSize: "0.8rem",
                       lineHeight: 1.5,
-                      color: "#fff",
+                      color: msg.role === "user" ? "#ffffff" : "#e4e4e7",
                     }}
                   >
                     <div style={{ whiteSpace: "pre-wrap" }}>{msg.content}</div>
                     {msg.model && (
-                      <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.4)", marginTop: 4, textAlign: "right" }}>
+                      <div style={{ fontSize: "0.62rem", color: "#71717a", marginTop: 4, textAlign: "right" }}>
                         {msg.model}
                       </div>
                     )}
@@ -2072,12 +2164,12 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 ))
               )}
               {aiLoading && (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#00f2fe", fontSize: "0.72rem", padding: "6px" }}>
-                  <Loader2 size={13} className="animate-spin" /> Analyzing quantum state & retrieving textbook knowledge...
+                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#a1a1aa", fontSize: "0.76rem", padding: "6px" }}>
+                  <Loader2 size={13} className="animate-spin" color="#ffffff" /> Analyzing quantum state & retrieving knowledge...
                 </div>
               )}
               {aiError && (
-                <div style={{ color: "#ef4444", fontSize: "0.7rem", background: "rgba(239,68,68,0.1)", padding: "6px 8px", borderRadius: 4 }}>
+                <div style={{ color: "#f87171", fontSize: "0.75rem", background: "#18181b", border: "1px solid rgba(255, 255, 255, 0.12)", padding: "7px 10px", borderRadius: 4 }}>
                   {aiError}
                 </div>
               )}
@@ -2085,7 +2177,7 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
             </div>
 
             {/* Input Bar */}
-            <div style={{ padding: "10px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 6 }}>
+            <div style={{ padding: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", gap: 6, background: "#0e0e12" }}>
               <input
                 type="text"
                 value={aiQuestion}
@@ -2094,12 +2186,12 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 placeholder="Ask about your code or quantum algorithm..."
                 style={{
                   flex: 1,
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "#141418",
+                  border: "1px solid rgba(255, 255, 255, 0.14)",
                   borderRadius: 5,
-                  padding: "7px 10px",
-                  color: "#fff",
-                  fontSize: "0.75rem",
+                  padding: "8px 12px",
+                  color: "#ffffff",
+                  fontSize: "0.8rem",
                   outline: "none",
                 }}
               />
@@ -2107,18 +2199,20 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                 onClick={() => askAI()}
                 disabled={aiLoading || !aiQuestion.trim()}
                 style={{
-                  background: "#0f62fe",
+                  background: "#ffffff",
                   border: "none",
                   borderRadius: 5,
-                  color: "#fff",
-                  padding: "0 10px",
+                  color: "#000000",
+                  padding: "0 12px",
                   cursor: aiLoading || !aiQuestion.trim() ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  opacity: aiLoading || !aiQuestion.trim() ? 0.4 : 1,
+                  transition: "all 0.15s ease",
                 }}
               >
-                <Send size={14} />
+                <Send size={14} color="#000000" />
               </button>
             </div>
           </div>

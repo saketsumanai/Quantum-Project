@@ -273,47 +273,7 @@ export default function LandingPage({ onNavigate = () => {}, onOpenAuth = () => 
         backgroundSize: "2px 2px",
       }} />
 
-      {/* Top Header Navigation */}
-      <header style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        padding: "20px 32px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        zIndex: 50,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{
-            width: "32px", height: "32px", borderRadius: "8px",
-            background: "linear-gradient(135deg, #0f62fe 0%, #8a3ffc 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontWeight: 800, fontSize: "0.9rem", color: "#fff",
-          }}>Q</div>
-          <span style={{ fontSize: "0.9rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Quantum Leap</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button
-            onClick={() => (typeof onOpenAuth === 'function' ? onOpenAuth() : (typeof onNavigate === 'function' && onNavigate('studio')))}
-            style={{
-              padding: "7px 18px",
-              background: "#0f62fe",
-              border: "1px solid #0f62fe",
-              color: "#fff",
-              borderRadius: "9999px",
-              fontSize: "0.78rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-            }}
-          >
-            Sign In
-          </button>
-        </div>
-      </header>
+
       {/* ── Section 1: Hero Container (Monochrome Gateway Flow) ── */}
       <div style={{
         position: "relative",

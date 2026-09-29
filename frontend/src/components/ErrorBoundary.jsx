@@ -60,10 +60,32 @@ export default class ErrorBoundary extends React.Component {
             color: '#a1a1aa',
             maxWidth: '500px',
             lineHeight: 1.6,
-            marginBottom: '24px',
+            marginBottom: '16px',
           }}>
             An unexpected render issue occurred. Click reload to refresh your simulation state.
           </p>
+
+          {this.state.error && (
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '8px',
+              padding: '14px 18px',
+              maxWidth: '750px',
+              width: '90%',
+              textAlign: 'left',
+              fontFamily: 'monospace',
+              fontSize: '0.82rem',
+              color: '#f87171',
+              whiteSpace: 'pre-wrap',
+              marginBottom: '20px',
+              maxHeight: '220px',
+              overflow: 'auto',
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>{this.state.error?.toString()}</div>
+              <div>{this.state.error?.stack}</div>
+            </div>
+          )}
 
           <button
             onClick={() => window.location.reload()}
