@@ -160,17 +160,26 @@ class QuantumCodeRunner:
                 f.write(wrapper_code)
 
             try:
+                # Clean, isolated environment — strictly prevent secret keys or DB URLs leakage
+                clean_env = {
+                    "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+                    "VIRTUAL_ENV": os.environ.get("VIRTUAL_ENV", ""),
+                    "PYTHONPATH": ".",
+                    "LANG": "en_US.UTF-8",
+                    "LC_ALL": "en_US.UTF-8",
+                    "QISKIT_SETTINGS_DIR": tmpdir,
+                    "HOME": tmpdir,
+                    "TMPDIR": tmpdir,
+                    "TEMP": tmpdir,
+                }
+
                 proc = subprocess.run(
                     [PYTHON_EXE, runner_script_path],
                     capture_output=True,
                     text=True,
                     timeout=timeout_seconds,
                     cwd=tmpdir,
-                    env={
-                        **os.environ,
-                        "PYTHONPATH": ".",
-                        "QISKIT_SETTINGS_DIR": tmpdir,
-                    },
+                    env=clean_env,
                 )
                 duration_ms = round((time.time() - start_time) * 1000, 2)
                 raw_out = proc.stdout

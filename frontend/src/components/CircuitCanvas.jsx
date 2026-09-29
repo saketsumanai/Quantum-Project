@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Play, RotateCcw, Plus, Minus, Info, Download, FileText, FileJson, Cpu, Share2, Sparkles, CheckCircle2, AlertTriangle, X, Copy, Check, ArrowRight } from 'lucide-react';
 import GateTooltip from './GateTooltip';
 import { InteractiveHoverButton } from './ui/interactive-hover-button';
+import { API_BASE } from '../config/api';
 
 const GATE_CATEGORIES = [
   {
@@ -191,7 +192,7 @@ export default function CircuitCanvas({
   const handleDownloadPdf = async () => {
     setDownloadingPdf(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/report/pdf', {
+      const res = await fetch(`${API_BASE}/simulation/report/pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -222,7 +223,7 @@ export default function CircuitCanvas({
   const handleDownloadJson = async () => {
     setDownloadingJson(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/report/json', {
+      const res = await fetch(`${API_BASE}/simulation/report/json`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -255,7 +256,7 @@ export default function CircuitCanvas({
     setIsDebugging(true);
     setIsDebugOpen(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/debug', {
+      const res = await fetch(`${API_BASE}/simulation/debug`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

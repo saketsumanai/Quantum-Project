@@ -108,10 +108,9 @@ app = FastAPI(
 # ─── CORS ─────────────────────────────────────────────────────────────────────
 cors_origins_env = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000",
+    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000,https://frontend-gray-eta-0nacb694qn.vercel.app",
 )
 origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
-origins.append("*")
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -143,7 +142,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
-        # CSP allowing required external services (YouTube, Firebase, KaTeX, Google Fonts)
+        # CSP allowing required external services (YouTube, Firebase, KaTeX, Google Fonts, Vercel)
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com; "
@@ -151,7 +150,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.firebaseapp.com; "
             "img-src 'self' data: blob: https: https://img.youtube.com https://lh3.googleusercontent.com; "
-            "connect-src 'self' http://localhost:* http://127.0.0.1:* https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://api.groq.com https://api.sarvam.ai https://api.elevenlabs.io;"
+            "connect-src 'self' http://localhost:* http://127.0.0.1:* https://*.vercel.app https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://api.groq.com https://api.sarvam.ai https://api.elevenlabs.io;"
         )
         return response
 
@@ -160,6 +159,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"^https://.*\.vercel\.app$|^http://localhost(:\d+)?$|^http://127\.0\.0\.1(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

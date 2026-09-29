@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Copy, Check, Terminal, Download, Cpu, Layers, Sliders } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
 export default function ExportModal({ isOpen, onClose, circuit, qasmExport }) {
   const [activeLang, setActiveLang] = useState('qiskit');
@@ -15,7 +16,7 @@ export default function ExportModal({ isOpen, onClose, circuit, qasmExport }) {
     const fetchTranspiled = async () => {
       setLoading(true);
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/v1/simulation/transpile', {
+        const res = await fetch(`${API_BASE}/simulation/transpile`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

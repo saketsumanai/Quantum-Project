@@ -112,6 +112,11 @@ DIRAC_BADGES_DEFINITIONS = [
     },
 ]
 
+@router.get("/badges", response_model=List[DiracBadge])
+async def get_badges_endpoint():
+    """Returns all available Dirac badges and milestone definitions."""
+    return [DiracBadge(**b) for b in DIRAC_BADGES_DEFINITIONS]
+
 @router.get("/modules", response_model=List[CurriculumModule])
 async def get_modules_endpoint():
     return get_all_modules()
