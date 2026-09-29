@@ -110,36 +110,229 @@ print(qc.draw(output='text'))`,
 };
 
 /**
- * Robustly parses text into JSON without throwing.
+ * Safely extracts a string field value from potentially malformed or truncated JSON text.
+ * Correctly handles escaped quotes (\"), single quotes (\'), newlines (\n), backslashes (\\), etc.
  */
-function safeJsonParse(text) {
+function safeExtractString(text, key) {
   if (!text || typeof text !== "string") return null;
-  const trimmed = text.trim();
-  if (!trimmed) return null;
+  const pattern = new RegExp(`"${key}"\\s*:\\s*"`, "i");
+  const match = text.search(pattern);
+  if (match === -1) return null;
 
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    // Attempt markdown code block extraction
-    try {
-      if (trimmed.includes("```json")) {
-        const inner = trimmed.split("```json")[1].split("```")[0].trim();
-        return JSON.parse(inner);
-      }
-      if (trimmed.includes("```")) {
-        const inner = trimmed.split("```")[1].split("```")[0].trim();
-        return JSON.parse(inner);
-      }
-      // Regex match outermost curly braces
-      const match = trimmed.match(/\{[\s\S]*\}/);
-      if (match) {
-        return JSON.parse(match[0]);
-      }
-    } catch {
-      return null;
+  const start = match + text.match(pattern)[0].length;
+  let result = "";
+  let escaped = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escaped) {
+      if (ch === "n") result += "\n";
+      else if (ch === "t") result += "\t";
+      else if (ch === "r") result += "\r";
+      else if (ch === '"') result += '"';
+      else if (ch === "\\") result += "\\";
+      else if (ch === "'") result += "'";
+      else result += ch;
+      escaped = false;
+    } else if (ch === "\\") {
+      escaped = true;
+    } else if (ch === '"') {
+      return result;
+    } else {
+      result += ch;
     }
   }
+  return result.trim() ? result : null;
+}
+
+/**
+ * Extracts a quiz object from text, returning both schema variants:
+ * { question, question_string, options, options_array, answer, valid_index_pointer, explanation }
+ */
+function extractQuizObject(text) {
+  if (!text || typeof text !== "string") return null;
+  const qStart = text.search(/"quiz(?:_generation_object)?"\s*:\s*\{/i);
+  if (qStart === -1) return null;
+  const slice = text.slice(qStart);
+
+  const question = safeExtractString(slice, "question") || safeExtractString(slice, "question_string");
+
+  let options = [];
+  const optMatch = slice.match(/"(?:options|options_array)"\s*:\s*\[([\s\S]*?)(\]|$)/);
+  if (optMatch && optMatch[1]) {
+    const items = optMatch[1].match(/"((?:[^"\\]|\\.)*)"/g);
+    if (items) {
+      options = items.map((s) =>
+        s.slice(1, -1).replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\n/g, "\n")
+      );
+    }
+  }
+
+  const ansMatch = slice.match(/"(?:answer|valid_index_pointer)"\s*:\s*(\d+)/);
+  const answer = ansMatch ? parseInt(ansMatch[1], 10) : 0;
+  const explanation = safeExtractString(slice, "explanation");
+
+  if (question || options.length > 0) {
+    return {
+      question: question || "Quantum Knowledge Check",
+      question_string: question || "Quantum Knowledge Check",
+      options: options.length ? options : ["A", "B", "C", "D"],
+      options_array: options.length ? options : ["A", "B", "C", "D"],
+      answer,
+      valid_index_pointer: answer,
+      explanation: explanation || "",
+    };
+  }
   return null;
+}
+
+/**
+ * Normalizes an existing quiz object into both schema keys so any component can read it.
+ */
+function normalizeQuizObject(quiz) {
+  if (!quiz || typeof quiz !== "object") return null;
+  const question = quiz.question || quiz.question_string || "Quantum Knowledge Check";
+  const options = quiz.options || quiz.options_array || [];
+  const answer =
+    quiz.answer !== undefined
+      ? quiz.answer
+      : quiz.valid_index_pointer !== undefined
+      ? quiz.valid_index_pointer
+      : 0;
+  const explanation = quiz.explanation || "";
+
+  return {
+    question,
+    question_string: question,
+    options,
+    options_array: options,
+    answer,
+    valid_index_pointer: answer,
+    explanation,
+  };
+}
+
+/**
+ * Strips raw JSON syntax if prose was contaminated with raw JSON strings.
+ */
+function sanitizeProseText(prose) {
+  if (!prose || typeof prose !== "string") return "Quantum state evaluated.";
+  let s = prose.trim();
+
+  // If it starts with JSON curly bracket or contains JSON structure
+  if (s.startsWith("{") && (s.includes('"vocal_prose_script"') || s.includes('"success"'))) {
+    const extracted =
+      safeExtractString(s, "vocal_prose_script") ||
+      safeExtractString(s, "content") ||
+      safeExtractString(s, "response");
+    if (extracted) return extracted.trim();
+  }
+
+  // Remove markdown code fences if wrapped
+  s = s.replace(/^```[a-z]*\s*/i, "").replace(/\s*```$/i, "").trim();
+
+  // If it still has JSON key quotes at the start
+  s = s.replace(/^\{?\s*"vocal_prose_script"\s*:\s*"?/, "");
+  s = s.replace(/"?\s*,\s*"mathematical_latex_formula"[\s\S]*$/, "");
+  s = s.replace(/"?\s*\}\s*$/, "");
+
+  return s.trim() || "Quantum state evaluated.";
+}
+
+/**
+ * Robustly parses text into clean quantum tutor structure without ever exposing raw JSON.
+ */
+export function parseQuantumAiResponse(raw, fallbackModel = "Groq LPU (GPT-OSS 120B)") {
+  if (!raw) {
+    return {
+      success: true,
+      vocal_prose_script: "I have analyzed your quantum question.",
+      mathematical_latex_formula: null,
+      qiskit_executable_code: null,
+      quiz_generation_object: null,
+      sources: ["Gitwolves Quantum Knowledge Base"],
+      model_used: fallbackModel,
+    };
+  }
+
+  // If already an object
+  if (typeof raw === "object") {
+    let prose = raw.vocal_prose_script || raw.content || raw.response || "";
+    // If the prose itself is a stringified JSON
+    if (typeof prose === "string" && (prose.includes('"vocal_prose_script"') || prose.trim().startsWith("{"))) {
+      const inner = parseQuantumAiResponse(prose, fallbackModel);
+      return {
+        success: true,
+        vocal_prose_script: inner.vocal_prose_script,
+        mathematical_latex_formula: raw.mathematical_latex_formula || inner.mathematical_latex_formula,
+        qiskit_executable_code: raw.qiskit_executable_code || inner.qiskit_executable_code,
+        quiz_generation_object: normalizeQuizObject(raw.quiz_generation_object || raw.quiz || inner.quiz_generation_object),
+        sources: raw.sources || inner.sources || ["Gitwolves Quantum Knowledge Base"],
+        model_used: raw.model_used || inner.model_used || fallbackModel,
+      };
+    }
+    const rawQuiz = raw.quiz_generation_object || raw.quiz || null;
+    return {
+      success: true,
+      vocal_prose_script: sanitizeProseText(prose),
+      mathematical_latex_formula: raw.mathematical_latex_formula || raw.latex || null,
+      qiskit_executable_code: raw.qiskit_executable_code || raw.code || null,
+      quiz_generation_object: normalizeQuizObject(rawQuiz),
+      sources: raw.sources || ["Gitwolves Quantum Knowledge Base"],
+      model_used: raw.model_used || raw.model || fallbackModel,
+    };
+  }
+
+  const text = String(raw).trim();
+
+  // Try direct clean JSON parse first
+  try {
+    const obj = JSON.parse(text);
+    return parseQuantumAiResponse(obj, fallbackModel);
+  } catch (_) {}
+
+  // Try extracting from markdown code block
+  if (text.includes("```json")) {
+    try {
+      const inner = text.split("```json")[1].split("```")[0].trim();
+      const obj = JSON.parse(inner);
+      return parseQuantumAiResponse(obj, fallbackModel);
+    } catch (_) {}
+  }
+
+  // Safe extraction for truncated or invalidly-escaped JSON
+  const extractedProse =
+    safeExtractString(text, "vocal_prose_script") ||
+    safeExtractString(text, "content") ||
+    safeExtractString(text, "response");
+  const extractedLatex =
+    safeExtractString(text, "mathematical_latex_formula") || safeExtractString(text, "latex");
+  const extractedCode =
+    safeExtractString(text, "qiskit_executable_code") || safeExtractString(text, "code");
+  const extractedQuiz = extractQuizObject(text);
+
+  if (extractedProse) {
+    return {
+      success: true,
+      vocal_prose_script: sanitizeProseText(extractedProse),
+      mathematical_latex_formula: extractedLatex,
+      qiskit_executable_code: extractedCode,
+      quiz_generation_object: extractedQuiz,
+      sources: ["Gitwolves Quantum Knowledge Base"],
+      model_used: fallbackModel,
+    };
+  }
+
+  // Clean raw text if not JSON
+  return {
+    success: true,
+    vocal_prose_script: sanitizeProseText(text),
+    mathematical_latex_formula: null,
+    qiskit_executable_code: null,
+    quiz_generation_object: null,
+    sources: ["Gitwolves Quantum Knowledge Base"],
+    model_used: fallbackModel,
+  };
 }
 
 /**
@@ -151,6 +344,7 @@ async function queryGroqDirectly({ userQuery, conversationHistory = [], language
   const systemPrompt = `You are QuantumLeap's expert Socratic AI Quantum Physics Tutor.
 Target Language: ${language === "hi" ? "Hindi (हिंदी)" : language === "hinglish" ? "Hinglish (Hindi written in English alphabets)" : "English"}.
 Explain concepts with scientific precision, physical intuition, and clear mathematics.
+Keep your explanation focused, comprehensive yet concise (under 250 words for vocal_prose_script).
 You MUST output valid, parseable JSON with NO commentary outside JSON.
 Expected JSON format:
 {
@@ -189,41 +383,21 @@ Expected JSON format:
           model,
           messages,
           temperature: 0.2,
-          max_tokens: 1024,
+          max_tokens: 3000,
         }),
       });
 
       if (!response.ok) continue;
 
       const raw = await response.text();
-      const completion = safeJsonParse(raw);
-      const content = completion?.choices?.[0]?.message?.content;
-      if (!content) continue;
+      const parsedCompletion = safeJsonParse(raw);
+      const rawContent = parsedCompletion?.choices?.[0]?.message?.content;
+      if (!rawContent) continue;
 
-      const parsed = safeJsonParse(content);
-      if (parsed && (parsed.vocal_prose_script || parsed.content)) {
-        return {
-          success: true,
-          vocal_prose_script: parsed.vocal_prose_script || parsed.content,
-          mathematical_latex_formula: parsed.mathematical_latex_formula || null,
-          qiskit_executable_code: parsed.qiskit_executable_code || null,
-          quiz_generation_object: parsed.quiz_generation_object || parsed.quiz || null,
-          sources: parsed.sources || ["Groq LPU Quantum Engine"],
-          model_used: `Groq LPU (${model})`,
-          is_cached_fallback: false,
-        };
-      } else {
-        // Return raw text wrapped nicely
-        return {
-          success: true,
-          vocal_prose_script: content.replace(/```json[\s\S]*```/, "").trim() || content,
-          mathematical_latex_formula: null,
-          qiskit_executable_code: null,
-          quiz_generation_object: null,
-          sources: ["Groq LPU Quantum Engine"],
-          model_used: `Groq LPU (${model})`,
-          is_cached_fallback: false,
-        };
+      // Extract and unmarshal clean fields from Groq response
+      const extracted = parseQuantumAiResponse(rawContent, `Groq LPU (${model})`);
+      if (extracted && extracted.vocal_prose_script) {
+        return extracted;
       }
     } catch (e) {
       console.warn(`[Groq Direct fallback notice for ${model}]:`, e.message);

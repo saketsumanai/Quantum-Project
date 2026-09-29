@@ -10,7 +10,7 @@ import { VoiceInput } from './ui/voice-input';
 import { AIInputWithLoading } from './ui/ai-input-with-loading';
 import { useAuth } from '../context/AuthContext';
 import API_BASE from '../config/api';
-import { queryAiTutorSafe } from '../services/aiTutorClient';
+import { queryAiTutorSafe, parseQuantumAiResponse } from '../services/aiTutorClient';
 
 const DEFAULT_AURA_MSG = {
   sender: 'aura',
@@ -235,24 +235,27 @@ function ProgressiveAssistantMessage({ message, onComplete }) {
           {message.quiz && message.onAnswerQuiz && (
             <div className="mt-3.5 p-3 rounded-lg bg-zinc-900/70 border border-zinc-800">
               <div className="text-xs font-semibold text-zinc-200 mb-2">
-                Concept Check: {message.quiz.question_string}
+                Concept Check: {message.quiz.question_string || message.quiz.question}
               </div>
               <div className="flex flex-col gap-1.5">
-                {message.quiz.options_array.map((opt, oIdx) => (
-                  <button
-                    key={oIdx}
-                    onClick={() => message.onAnswerQuiz(oIdx, message.quiz.valid_index_pointer)}
-                    className={`px-2.5 py-1.5 rounded text-left text-xs transition-colors cursor-pointer border ${
-                      message.selectedQuizAnswer === oIdx
-                        ? oIdx === message.quiz.valid_index_pointer
-                          ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300'
-                          : 'bg-red-950/60 border-red-500 text-red-300'
-                        : 'bg-zinc-800/60 hover:bg-zinc-800 border-zinc-700/60 text-zinc-300'
-                    }`}
-                  >
-                    {String.fromCharCode(65 + oIdx)}. {opt}
-                  </button>
-                ))}
+                {(message.quiz.options_array || message.quiz.options || []).map((opt, oIdx) => {
+                  const correctIdx = message.quiz.valid_index_pointer !== undefined ? message.quiz.valid_index_pointer : (message.quiz.answer !== undefined ? message.quiz.answer : 0);
+                  return (
+                    <button
+                      key={oIdx}
+                      onClick={() => message.onAnswerQuiz(oIdx, correctIdx)}
+                      className={`px-2.5 py-1.5 rounded text-left text-xs transition-colors cursor-pointer border ${
+                        message.selectedQuizAnswer === oIdx
+                          ? oIdx === correctIdx
+                            ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300'
+                            : 'bg-red-950/60 border-red-500 text-red-300'
+                          : 'bg-zinc-800/60 hover:bg-zinc-800 border-zinc-700/60 text-zinc-300'
+                      }`}
+                    >
+                      {String.fromCharCode(65 + oIdx)}. {opt}
+                    </button>
+                  );
+                })}
               </div>
               {message.quizFeedback && (
                 <div className={`mt-2 text-xs font-medium ${message.quizFeedback.correct ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -429,13 +432,15 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
     setQuizFeedback(null);
 
     try {
-      const data = await queryAiTutorSafe({
+      const rawData = await queryAiTutorSafe({
         userQuery: textToSend,
         circuitContext,
         currentTopic: activeTopic,
         userLevel,
         videoContext: vidCtx || undefined,
       });
+
+      const data = parseQuantumAiResponse(rawData, "Aura Neural Core");
 
       if (data && (data.success || data.vocal_prose_script)) {
         setMessages((prev) => [

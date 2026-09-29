@@ -687,7 +687,31 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
             # Regex match outermost curly braces
             m = re.search(r"\{.*\}", text, re.DOTALL)
             if m:
-                return json.loads(m.group(0))
+                try:
+                    return json.loads(m.group(0))
+                except Exception:
+                    pass
+
+            # Safe extraction if LLM truncated output or used invalid escapes
+            prose_m = re.search(r"\"vocal_prose_script\"\s*:\s*\"((?:[^\"\\]|\\.)*)", text)
+            if prose_m:
+                try:
+                    prose = prose_m.group(1).encode().decode("unicode_escape", errors="replace")
+                except Exception:
+                    prose = prose_m.group(1).replace('\\"', '"').replace("\\n", "\n")
+
+                latex_m = re.search(r"\"mathematical_latex_formula\"\s*:\s*\"((?:[^\"\\]|\\.)*)", text)
+                latex = latex_m.group(1).replace('\\"', '"') if latex_m else ""
+
+                code_m = re.search(r"\"qiskit_executable_code\"\s*:\s*\"((?:[^\"\\]|\\.)*)", text)
+                code = code_m.group(1).replace('\\"', '"').replace("\\n", "\n") if code_m else ""
+
+                return {
+                    "success": True,
+                    "vocal_prose_script": prose,
+                    "mathematical_latex_formula": latex,
+                    "qiskit_executable_code": code,
+                }
         except Exception:
             pass
         return None
