@@ -31,12 +31,19 @@ generated_svg_assets/
 extracted_winning_slides/
 downloaded_logos/
 SIH Project/
-platform_dubs/
+# platform_dubs — generated at runtime by the dubbing service; never commit media binaries
+platform_dubs/*.mp3
+platform_dubs/*.mp4
+platform_dubs/*.webm
 *.pptx
 *.pdf
 pdf_page-*.png
 test_svg_render.png
 test_vector.svg
+# Stray images and debug artifacts at project root
+sih_slide*.jpg
+sih_slide*.png
+orchestrator_payload.json
 
 # Python & Runtime Artifacts
 __pycache__/
