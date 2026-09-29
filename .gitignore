@@ -12,38 +12,13 @@ ehthumbs.db
 Thumbs.db
 desktop.ini
 
-# Environment Variables & Secrets (CRITICAL SECURITY — never commit these)
+# Environment Variables & Secrets (CRITICAL SECURITY)
 .env
 .env.*
 !.env.example
-frontend/.env
-frontend/.env.*
-!frontend/.env.example
 *.pem
 *.key
 *.cert
-secrets/
-firebase-service-account*.json
-
-# Generated Binary Assets (presentations, exported images — use Git LFS or external storage)
-generated_ppt_assets/
-generated_svg_assets/
-extracted_winning_slides/
-downloaded_logos/
-SIH Project/
-# platform_dubs — generated at runtime by the dubbing service; never commit media binaries
-platform_dubs/*.mp3
-platform_dubs/*.mp4
-platform_dubs/*.webm
-*.pptx
-*.pdf
-pdf_page-*.png
-test_svg_render.png
-test_vector.svg
-# Stray images and debug artifacts at project root
-sih_slide*.jpg
-sih_slide*.png
-orchestrator_payload.json
 
 # Python & Runtime Artifacts
 __pycache__/
@@ -93,7 +68,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .pnpm-debug.log*
-frontend/dist/
+dist/
 dist-ssr/
 *.local
 
@@ -119,4 +94,6 @@ data/cached_simulations/runtime_generated/
 # Docker Local Volume Overrides
 .docker/
 docker-compose.override.yml
-
+secrets/
+.env
+quantum_leap.db

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="100%" height="100%" style="background:#08080f; font-family:'Segoe UI', -apple-system, Roboto, sans-serif;">
+  <defs>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff" />
+      <stop offset="100%" stop-color="#0070f3" />
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#151522" />
+      <stop offset="100%" stop-color="#0e0e18" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Decorative Grid -->
+  <g opacity="0.08" stroke="#ffffff" stroke-width="1">
+    <line x1="100" y1="0" x2="100" y2="800" />
+    <line x1="300" y1="0" x2="300" y2="800" />
+    <line x1="500" y1="0" x2="500" y2="800" />
+    <line x1="700" y1="0" x2="700" y2="800" />
+    <line x1="900" y1="0" x2="900" y2="800" />
+    <line x1="1100" y1="0" x2="1100" y2="800" />
+    <line x1="0" y1="150" x2="1200" y2="150" />
+    <line x1="0" y1="350" x2="1200" y2="350" />
+    <line x1="0" y1="550" x2="1200" y2="550" />
+    <line x1="0" y1="750" x2="1200" y2="750" />
+  </g>
+
+  <!-- Title Badge -->
+  <rect x="360" y="30" width="480" height="42" rx="21" fill="#131320" stroke="#00f0ff" stroke-width="1.5" />
+  <text x="600" y="56" fill="#00f0ff" font-size="15" font-weight="700" letter-spacing="1.5" text-anchor="middle">SYNCHRONIZED 4-WAY QUANTUM FEEDBACK LOOP</text>
+
+  <!-- Central Hub: QuantumLeap Core Engine -->
+  <circle cx="600" cy="400" r="85" fill="#11111c" stroke="url(#cyanGrad)" stroke-width="3" filter="url(#glow)" />
+  <circle cx="600" cy="400" r="70" fill="#161626" stroke="#2a2a3e" stroke-width="1" />
+  <text x="600" y="388" fill="#ffffff" font-size="17" font-weight="800" text-anchor="middle">QuantumLeap</text>
+  <text x="600" y="408" fill="#00f0ff" font-size="11" font-weight="600" text-anchor="middle">Unified Core</text>
+  <text x="600" y="424" fill="#94a3b8" font-size="9" text-anchor="middle">&lt; 10ms Sync</text>
+
+  <!-- Node 1: Top - 16-Qubit Drag-and-Drop Canvas -->
+  <rect x="450" y="110" width="300" height="110" rx="14" fill="url(#cardGrad)" stroke="#00f0ff" stroke-width="1.5" />
+  <rect x="470" y="125" width="28" height="28" rx="6" fill="#00f0ff" opacity="0.2" />
+  <text x="484" y="144" fill="#00f0ff" font-size="15" font-weight="bold" text-anchor="middle">⚡</text>
+  <text x="510" y="142" fill="#ffffff" font-size="14" font-weight="700">16-Qubit Circuit Canvas</text>
+  <text x="470" y="172" fill="#94a3b8" font-size="10.5">Drag-and-Drop Gates: H, Pauli, CNOT, SWAP</text>
+  <text x="470" y="194" fill="#00f0ff" font-size="10" font-weight="600">Hardware Transpiled: IBM 156Q Heron QPU</text>
+
+  <!-- Node 2: Right - Real-Time 3D WebGL Bloch Sphere -->
+  <rect x="850" y="340" width="310" height="120" rx="14" fill="url(#cardGrad)" stroke="#3b82f6" stroke-width="1.5" />
+  <rect x="870" y="355" width="28" height="28" rx="6" fill="#3b82f6" opacity="0.2" />
+  <text x="884" y="374" fill="#3b82f6" font-size="15" font-weight="bold" text-anchor="middle">🌐</text>
+  <text x="910" y="372" fill="#ffffff" font-size="14" font-weight="700">3D WebGL Bloch Sphere</text>
+  <text x="870" y="402" fill="#94a3b8" font-size="10.5">Dynamic Unitary Rotation Trajectories</text>
+  <text x="870" y="422" fill="#94a3b8" font-size="10.5">Physical Spatial Intuition for Phase Angles</text>
+  <text x="870" y="442" fill="#3b82f6" font-size="10" font-weight="600">GPU Shader Accelerated (60 FPS)</text>
+
+  <!-- Node 3: Bottom - Dirac Bra-Ket & Matrix Mathematics -->
+  <rect x="450" y="580" width="300" height="120" rx="14" fill="url(#cardGrad)" stroke="#a855f7" stroke-width="1.5" />
+  <rect x="470" y="595" width="28" height="28" rx="6" fill="#a855f7" opacity="0.2" />
+  <text x="484" y="614" fill="#a855f7" font-size="15" font-weight="bold" text-anchor="middle">∑</text>
+  <text x="510" y="612" fill="#ffffff" font-size="14" font-weight="700">Dirac Bra-Ket &amp; Matrices</text>
+  <text x="470" y="642" fill="#94a3b8" font-size="10.5">Live KaTeX Formula: |ψ⟩ = α|0⟩ + β|1⟩</text>
+  <text x="470" y="662" fill="#94a3b8" font-size="10.5">Unitary Transformation Matrix Calculations</text>
+  <text x="470" y="682" fill="#a855f7" font-size="10" font-weight="600">Normalization Guaranteed (|α|² + |β|² = 1)</text>
+
+  <!-- Node 4: Left - 76-Book RAG Diagnostic Tutor & Voice -->
+  <rect x="40" y="340" width="310" height="120" rx="14" fill="url(#cardGrad)" stroke="#10b981" stroke-width="1.5" />
+  <rect x="60" y="355" width="28" height="28" rx="6" fill="#10b981" opacity="0.2" />
+  <text x="74" y="374" fill="#10b981" font-size="15" font-weight="bold" text-anchor="middle">🧠</text>
+  <text x="100" y="372" fill="#ffffff" font-size="14" font-weight="700">76-Book Grounded RAG</text>
+  <text x="60" y="402" fill="#94a3b8" font-size="10.5">Groq LPU Sub-Second Socratic Hints</text>
+  <text x="60" y="422" fill="#94a3b8" font-size="10.5">Sarvam AI Neural Indic Dubbing (10+ Langs)</text>
+  <text x="60" y="442" fill="#10b981" font-size="10" font-weight="600">0.3% Hallucination · Nielsen &amp; Chuang</text>
+
+  <!-- Connection Beams & Direction Arrows -->
+  <path d="M 600 220 L 600 315" stroke="#00f0ff" stroke-width="2.5" stroke-dasharray="6,4" />
+  <polygon points="600,320 594,308 606,308" fill="#00f0ff" />
+
+  <path d="M 685 400 L 850 400" stroke="#3b82f6" stroke-width="2.5" stroke-dasharray="6,4" />
+  <polygon points="855,400 843,394 843,406" fill="#3b82f6" />
+
+  <path d="M 600 485 L 600 580" stroke="#a855f7" stroke-width="2.5" stroke-dasharray="6,4" />
+  <polygon points="600,585 594,573 606,573" fill="#a855f7" />
+
+  <path d="M 515 400 L 350 400" stroke="#10b981" stroke-width="2.5" stroke-dasharray="6,4" />
+  <polygon points="345,400 357,394 357,406" fill="#10b981" />
+
+  <!-- Bottom Metric Callout Strip -->
+  <rect x="150" y="730" width="900" height="46" rx="10" fill="#11111c" stroke="#232336" stroke-width="1" />
+  <text x="240" y="758" fill="#00f0ff" font-size="12" font-weight="700">✓ 100% Vendor-Neutral</text>
+  <text x="450" y="758" fill="#3b82f6" font-size="12" font-weight="700">✓ 85% Bloom Mastery Gain</text>
+  <text x="690" y="758" fill="#a855f7" font-size="12" font-weight="700">✓ 0.3% Hallucination Rate</text>
+  <text x="910" y="758" fill="#10b981" font-size="12" font-weight="700">✓ ₹0 CapEx / OpEx</text>
+</svg>
