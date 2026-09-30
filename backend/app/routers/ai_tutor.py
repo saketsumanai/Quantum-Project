@@ -162,10 +162,12 @@ async def quiz_from_image_endpoint(request: QuizFromImageRequest):
     questions = []
     quiz_id = str(uuid.uuid4())[:8]
     
-    # Try Gemini vision first
-    if gemini_key and not gemini_key.startswith("AQ."):
-        try:
-            prompt = f"""You are a quantum computing professor. Analyze this image/document and generate {request.num_questions} high-quality multiple-choice quiz questions.
+    # Try Gemini vision first with modern working models
+    if gemini_key:
+        vision_models = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
+        for v_model in vision_models:
+            try:
+                prompt = f"""You are a quantum computing professor. Analyze this image/document and generate {request.num_questions} high-quality multiple-choice quiz questions.
 
 Topic hint: {request.topic_hint or "quantum computing"}
 Difficulty: {request.difficulty}
@@ -182,33 +184,37 @@ Return ONLY valid JSON array with this exact format:
     "formula": "optional LaTeX formula"
   }}
 ]"""
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.post(
-                    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}",
-                    json={"contents": [{"parts": [
-                        {"inline_data": {"mime_type": request.mime_type, "data": request.image_base64}},
-                        {"text": prompt}
-                    ]}]}
-                )
-                if resp.status_code == 200:
-                    text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    if "```json" in text:
-                        text = text.split("```json")[1].split("```")[0].strip()
-                    elif "```" in text:
-                        text = text.split("```")[1].split("```")[0].strip()
-                    raw_qs = json.loads(text)
-                    for i, q in enumerate(raw_qs[:request.num_questions]):
-                        questions.append({
-                            "id": q.get("id", f"q{i+1}"),
-                            "question": q.get("question", ""),
-                            "options": q.get("options", []),
-                            "correct_index": int(q.get("correct_index", 0)),
-                            "explanation": q.get("explanation", ""),
-                            "topic": q.get("topic", "quantum_computing"),
-                            "formula": q.get("formula"),
-                        })
-        except Exception as e:
-            print(f"[Gemini vision] Failed: {e}")
+                async with httpx.AsyncClient(timeout=25.0) as client:
+                    resp = await client.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{v_model}:generateContent?key={gemini_key}",
+                        headers={"Content-Type": "application/json", "X-goog-api-key": gemini_key},
+                        json={"contents": [{"parts": [
+                            {"inline_data": {"mime_type": request.mime_type, "data": request.image_base64}},
+                            {"text": prompt}
+                        ]}],
+                        "generationConfig": {"response_mime_type": "application/json"}}
+                    )
+                    if resp.status_code == 200:
+                        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+                        if "```json" in text:
+                            text = text.split("```json")[1].split("```")[0].strip()
+                        elif "```" in text:
+                            text = text.split("```")[1].split("```")[0].strip()
+                        raw_qs = json.loads(text)
+                        for i, q in enumerate(raw_qs[:request.num_questions]):
+                            questions.append({
+                                "id": q.get("id", f"q{i+1}"),
+                                "question": q.get("question", ""),
+                                "options": q.get("options", []),
+                                "correct_index": int(q.get("correct_index", 0)),
+                                "explanation": q.get("explanation", ""),
+                                "topic": q.get("topic", "quantum_computing"),
+                                "formula": q.get("formula"),
+                            })
+                        if questions:
+                            break
+            except Exception as e:
+                print(f"[Gemini vision {v_model}] Failed: {e}")
     
     # Fallback: use Groq text-based generation with description
     if not questions and groq_key:
@@ -357,11 +363,52 @@ Requirements:
     full_script = ""
     segments = []
 
-    candidate_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3.8-27b", "openai/gpt-oss-120b"]
-    if groq_key:
+    # 1. Try Google Gemini first for multilingual dubbing
+    gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if gemini_key:
+        gemini_dub_models = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"]
+        for g_model in gemini_dub_models:
+            try:
+                async with httpx.AsyncClient(timeout=18.0) as client:
+                    resp = await client.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}",
+                        headers={"Content-Type": "application/json", "X-goog-api-key": gemini_key},
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {
+                                "response_mime_type": "application/json",
+                                "temperature": 0.3,
+                                "maxOutputTokens": 3000
+                            }
+                        }
+                    )
+                    if resp.status_code == 200:
+                        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+                        try:
+                            parsed = json.loads(text)
+                        except Exception:
+                            import re as _re
+                            m = _re.search(r"\{.*\}", text, _re.DOTALL)
+                            parsed = json.loads(m.group(0)) if m else {}
+                        full_script = parsed.get("full_dub_script", "")
+                        for seg in parsed.get("segments", []):
+                            segments.append(DubTimelineSegment(
+                                timestamp=seg.get("timestamp", "00:00"),
+                                section_title=seg.get("section_title", "Lecture Section"),
+                                spoken_text=seg.get("spoken_text", ""),
+                            ))
+                        if full_script and segments:
+                            print(f"[Dub Lecture] ✓ Gemini ({g_model}) generated dub script successfully")
+                            break
+            except Exception as e:
+                print(f"[Dub Lecture] Gemini ({g_model}) error: {e}")
+
+    # 2. Fallback to Groq with verified models
+    if (not full_script or not segments) and groq_key:
+        candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"]
         for model_cand in candidate_models:
             try:
-                async with httpx.AsyncClient(timeout=14.0) as client:
+                async with httpx.AsyncClient(timeout=20.0) as client:
                     resp = await client.post(
                         "https://api.groq.com/openai/v1/chat/completions",
                         headers={"Authorization": f"Bearer {groq_key}"},
@@ -373,13 +420,23 @@ Requirements:
                                 {"role": "user", "content": prompt}
                             ],
                             "temperature": 0.3,
-                            "max_tokens": 2000,
+                            "max_tokens": 2500,
                         }
                     )
                     if resp.status_code == 200:
                         data = resp.json()
-                        content = data["choices"][0]["message"]["content"]
-                        parsed = json.loads(content)
+                        msg = data.get("choices", [{}])[0].get("message", {})
+                        content = (msg.get("content") or msg.get("reasoning") or "").strip()
+                        try:
+                            parsed = json.loads(content)
+                        except Exception:
+                            if "```json" in content:
+                                content = content.split("```json")[1].split("```")[0].strip()
+                            elif "```" in content:
+                                content = content.split("```")[1].split("```")[0].strip()
+                            import re as _re
+                            m = _re.search(r"\{.*\}", content, _re.DOTALL)
+                            parsed = json.loads(m.group(0)) if m else {}
                         full_script = parsed.get("full_dub_script", "")
                         for seg in parsed.get("segments", []):
                             segments.append(DubTimelineSegment(
@@ -388,9 +445,10 @@ Requirements:
                                 spoken_text=seg.get("spoken_text", ""),
                             ))
                         if full_script and segments:
+                            print(f"[Dub Lecture] ✓ Groq ({model_cand}) generated dub script successfully")
                             break
             except Exception as e:
-                print(f"[Dub Lecture] Model {model_cand} error: {e}")
+                print(f"[Dub Lecture] Groq ({model_cand}) error: {e}")
 
     if not full_script or not segments:
         # High-yield native translations across all supported Indian languages & English

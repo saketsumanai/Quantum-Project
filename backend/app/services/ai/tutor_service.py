@@ -541,6 +541,53 @@ def detect_query_language(text: str, user_pref: str = "en") -> str:
     return "en"
 
 
+def _extract_json_dict(text: str) -> Optional[Dict]:
+    if not text or not isinstance(text, str):
+        return None
+    try:
+        clean_text = text.strip()
+        if "```json" in clean_text:
+            clean_text = clean_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in clean_text:
+            clean_text = clean_text.split("```")[1].split("```")[0].strip()
+        # Try direct parse
+        try:
+            return json.loads(clean_text)
+        except Exception:
+            pass
+        # Regex match outermost curly braces
+        m = re.search(r"\{.*\}", clean_text, re.DOTALL)
+        if m:
+            try:
+                return json.loads(m.group(0))
+            except Exception:
+                pass
+
+        # Safe extraction if LLM truncated output or used invalid escapes
+        prose_m = re.search(r"\"vocal_prose_script\"\s*:\s*\"((?:[^\"\\]|\\.)*)", text)
+        if prose_m:
+            try:
+                prose = prose_m.group(1).encode().decode("unicode_escape", errors="replace")
+            except Exception:
+                prose = prose_m.group(1).replace('\\"', '"').replace("\\n", "\n")
+
+            latex_m = re.search(r"\"mathematical_latex_formula\"\s*:\s*\"((?:[^\"\\]|\\.)*)", text)
+            latex = latex_m.group(1).replace('\\"', '"') if latex_m else ""
+
+            code_m = re.search(r"\"qiskit_executable_code\"\s*:\s*\"((?:[^\"\\]|\\.)*)", text)
+            code = code_m.group(1).replace('\\"', '"').replace("\\n", "\n") if code_m else ""
+
+            return {
+                "success": True,
+                "vocal_prose_script": prose,
+                "mathematical_latex_formula": latex,
+                "qiskit_executable_code": code,
+            }
+    except Exception:
+        pass
+    return None
+
+
 # ─── Groq LLM Query with 3-Tier Difficulty Conditioning ───────────────────────
 
 async def _query_groq_with_context(
@@ -761,11 +808,14 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
     messages = [{"role": "system", "content": system_prompt}]
 
     if history:
-        for turn in history[-6:]:
+        # Use last 10 turns (5 user+assistant pairs) so the model has enough context
+        # to answer follow-up questions correctly without repetition.
+        for turn in history[-10:]:
             r = turn.get("role", "user")
             c = turn.get("content", "")
+            # Increase per-turn limit to 800 chars so context is not prematurely cut off
             if c and r in ("user", "assistant"):
-                messages.append({"role": r, "content": c})
+                messages.append({"role": r, "content": str(c)[:800]})
 
     rag_section = f"RETRIEVED EXPERT LITERATURE:\n{ctx_block}\n\n" if ctx_block else ""
     course_ctx = f"Active Course Topic: {current_course_unit}\n" if current_course_unit else ""
@@ -818,10 +868,13 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
             pass
         return None
 
+    # Use verified working Groq models in priority order for this Groq key
     candidate_models = [
-        "openai/gpt-oss-120b",
         "qwen/qwen3.8-27b",
+        "openai/gpt-oss-120b",
         "openai/gpt-oss-20b",
+        "llama-3.3-70b-versatile",
+        "llama3-70b-8192",
     ]
     if preferred_model and preferred_model != "auto" and preferred_model in candidate_models:
         candidate_models.remove(preferred_model)
@@ -831,11 +884,11 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
 
     for model_name in candidate_models:
         try:
-            # Dynamic token budget: Indic scripts need 2x-3x token budget
+            # Dynamic token budget: must be large enough to complete full JSON without truncation.
             if "qwen" in model_name:
-                token_budget = 1400 if is_indic else 950
+                token_budget = 3000 if is_indic else 2200
             else:
-                token_budget = 2400 if is_indic else 1500
+                token_budget = 4000 if is_indic else 3200
 
             async with httpx.AsyncClient(timeout=14.0) as client:
                 # First attempt with json_object format
@@ -846,7 +899,7 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
                         "model": model_name,
                         "response_format": {"type": "json_object"},
                         "messages": messages,
-                        "temperature": 0.25,
+                        "temperature": 0.45,
                         "max_tokens": token_budget,
                     },
                 )
@@ -859,20 +912,23 @@ You MUST respond strictly in valid JSON format with EXACTLY these keys:
                         json={
                             "model": model_name,
                             "messages": messages,
-                            "temperature": 0.25,
+                            "temperature": 0.45,
                             "max_tokens": token_budget,
                         },
                     )
 
                 if resp.status_code == 200:
-                    content_str = resp.json()["choices"][0]["message"]["content"]
+                    msg_obj = resp.json().get("choices", [{}])[0].get("message", {})
+                    content_str = msg_obj.get("content") or msg_obj.get("reasoning") or ""
                     res = _extract_json_dict(content_str)
                     if res and isinstance(res, dict) and "vocal_prose_script" in res:
                         display_name = (
                             model_name
+                            .replace("llama-3.3-70b-versatile", "LLaMA 3.3 70B (Groq)")
+                            .replace("llama3-70b-8192", "LLaMA 3 70B (Groq)")
+                            .replace("llama-3.1-8b-instant", "LLaMA 3.1 8B Instant (Groq)")
+                            .replace("gemma2-9b-it", "Gemma2 9B (Groq)")
                             .replace("openai/gpt-oss-120b", "GPT-OSS 120B (Groq)")
-                            .replace("groq/compound-mini", "Groq Compound Mini")
-                            .replace("groq/compound", "Groq Compound")
                             .replace("qwen/qwen3.8-27b", "Qwen 3.8 27B")
                             .replace("openai/gpt-oss-20b", "GPT-OSS 20B Turbo")
                         )
@@ -958,60 +1014,158 @@ async def _query_gemini_with_context(
     query: str,
     context_passages: List[Dict],
     circuit_ctx: Dict,
+    current_course_unit: str = "",
+    history: Optional[List[Dict[str, str]]] = None,
     user_level: str = "beginner",
     language: str = "en",
+    preferred_model: str = "auto",
+    generate_diagram: bool = False,
 ) -> Optional[Dict]:
     import httpx
+    from dotenv import load_dotenv
+    load_dotenv(override=False)
 
-    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
     if not gemini_key:
         return None
 
     INDIAN_LANG_MAP = {
-        "hi": "You MUST explain and respond strictly in authentic HINDI (हिंदी Devanagari script).",
-        "hinglish": "You MUST explain and respond in conversational HINGLISH (conversational Hindi using English/Latin alphabet).",
-        "ta": "You MUST explain and respond strictly in TAMIL (தமிழ் script).",
-        "te": "You MUST explain and respond strictly in TELUGU (తెలుగు script).",
-        "bn": "You MUST explain and respond strictly in BENGALI (বাংলা script).",
-        "mr": "You MUST explain and respond strictly in MARATHI (मराठी script).",
-        "gu": "You MUST explain and respond strictly in GUJARATI (ગુજરાતી script).",
-        "kn": "You MUST explain and respond strictly in KANNADA (ಕನ್ನಡ script).",
-        "ml": "You MUST explain and respond strictly in MALAYALAM (മലയാളം script).",
-        "pa": "You MUST explain and respond strictly in PUNJABI (ਪੰਜਾਬੀ script).",
+        "hi": (
+            "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in authentic HINDI (हिंदी) using Devanagari script for the entire vocal_prose_script and quiz. "
+            "Keep technical quantum terms crystal clear (e.g. mention 'सुपरपोज़िशन (Superposition)', 'एंटैंगलमेंट (Entanglement)', 'क्यूबिट (Qubit)'). "
+            "Preserve all mathematical formulas in proper LaTeX notation (e.g. |0\\rangle, |1\\rangle, matrices) and Python code standard."
+        ),
+        "hinglish": (
+            "CRITICAL LANGUAGE & TONE INSTRUCTION FOR HINGLISH:\n"
+            "You MUST speak like a real, friendly human mentor (just like ChatGPT or Gemini talking naturally to a curious peer or engineering student).\n"
+            "- Start warmly and conversationally: 'Haan bhai! Dekho...', 'Arey dost, isko bilkul simple tareeqe se samajhte hain...'\n"
+            "- Explain concepts in natural, lively conversational Hinglish (Hindi written in clean Latin/English alphabet) with intuitive real-world analogies.\n"
+            "- Use clean bullet points and bold key terms to break down the mechanics clearly.\n"
+            "- Keep all core technical terms strictly in English: Qubit, Superposition, Bloch Sphere, Hadamard gate, Entanglement, Measurement, Statevector, Qiskit.\n"
+            "- Conclude your explanation with verified working YouTube video links and official documentation links."
+        ),
+        "ta": "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in TAMIL (தமிழ்) script for the entire vocal_prose_script and quiz.",
+        "te": "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in TELUGU (తెలుగు) script for the entire vocal_prose_script and quiz.",
+        "bn": "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in BENGALI (বাংলা) script for the entire vocal_prose_script and quiz.",
+        "mr": "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in MARATHI (मराठी) script for the entire vocal_prose_script and quiz.",
+        "gu": "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in GUJARATI (ગુજરાતી) script for the entire vocal_prose_script and quiz.",
+        "kn": "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in KANNADA (ಕನ್ನಡ) script for the entire vocal_prose_script and quiz.",
+        "ml": "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in MALAYALAM (മലയാളം) script for the entire vocal_prose_script and quiz.",
+        "pa": "CRITICAL LANGUAGE INSTRUCTION: You MUST explain and respond strictly in PUNJABI (ਪੰਜਾਬੀ) script for the entire vocal_prose_script and quiz.",
     }
     lang_rule = INDIAN_LANG_MAP.get((language or "en").lower(), "Respond in English.")
 
-    ctx_block = "\n\n".join([f"[Source: {p['source']}]\n{p['text'][:600]}" for p in context_passages[:3]])
-    prompt = f"""You are Aura Quantum AI for Quantum Leap SIH 2026. Level: {user_level}.
-CRITICAL LANGUAGE REQUIREMENT: {lang_rule}
-Passages: {ctx_block}
-Question: {query}
-Circuit: {json.dumps(circuit_ctx or {})}
-Return JSON only with keys:
-intent_classification, vocal_prose_script (in {language}), mathematical_latex_formula, qiskit_executable_code,
-reasoning_process (1. Setup, 2. Derivation, 3. Verification, 4. Grounding),
-quiz (question, options[4], answer, explanation)"""
+    # Build rich citation tags for context passages
+    ctx_block = ""
+    if context_passages:
+        ctx_lines = []
+        for p in context_passages[:5]:
+            source_parts = []
+            title = p.get("title") or p.get("source", "Quantum Corpus")
+            source_parts.append(title)
+            if p.get("author"):
+                source_parts.append(f"by {p['author']}")
+            if p.get("page_number") and int(p.get("page_number", 0)) > 0:
+                source_parts.append(f"Page {p['page_number']}")
+            citation_tag = " | ".join(source_parts)
+            ctx_lines.append(f"[{citation_tag}]\n{p.get('text', '')[:900]}")
+        ctx_block = "\n\n".join(ctx_lines)
 
-    try:
-        async with httpx.AsyncClient(timeout=14.0) as client:
-            resp = await client.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}",
-                json={"contents": [{"parts": [{"text": prompt}]}]},
-            )
-            if resp.status_code == 200:
-                text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-                if "```json" in text:
-                    text = text.split("```json")[1].split("```")[0].strip()
-                elif "```" in text:
-                    text = text.split("```")[1].split("```")[0].strip()
-                m = re.search(r"\{.*\}", text, re.DOTALL)
-                if m:
-                    res = json.loads(m.group(0))
-                    res["_active_model"] = "Gemini 1.5 Flash (Google Cloud)"
-                    return res
-                return json.loads(text)
-    except Exception as e:
-        print(f"[Gemini] Error: {e}")
+    system_instruction = f"""You are Aura Quantum AI — an inspiring, friendly, and deeply knowledgeable quantum computing mentor powered by Google Gemini and Quantum Leap RAG.
+Student Level: {user_level}
+Current Module: {current_course_unit or 'General Quantum Computing'}
+Target Language: {language}
+
+{lang_rule}
+
+CRITICAL PEDAGOGICAL GUIDELINES:
+1. Speak like a passionate, supportive human professor — NEVER robotic or generic.
+2. Build directly upon previous conversational turns. Never repeat previous answers or give canned replies.
+3. Use vivid intuitive physical analogies before mathematical formalism.
+4. If asked about roadmaps/learning paths, map to Quantum Leap modules (Bloch Sphere, Quantum Studio, Code Lab Qiskit, QPU explorer).
+5. If visual/diagram requested, embed relevant markdown images or ASCII circuit schematics:
+   * Bloch Sphere: ![Bloch Sphere](https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Bloch_sphere.svg/500px-Bloch_sphere.svg.png)
+   * Quantum Gate: ![Quantum Logic Gate](https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Quantum_logic_gate.svg/450px-Quantum_logic_gate.svg.png)
+6. Conclude with recommended working YouTube video lectures and official documentation.
+
+You MUST respond strictly in valid JSON format with keys:
+- vocal_prose_script: Comprehensive, engaging explanation with analogies, markdown headings, and video recommendations
+- mathematical_latex_formula: Authentic LaTeX equation (e.g., |\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle)
+- qiskit_executable_code: Working Qiskit 1.0+ Python code
+- reasoning_process: {{ "setup": "...", "derivation": "...", "verification": "...", "grounding": "..." }}
+- quiz: {{ "question": "...", "options": ["A", "B", "C", "D"], "answer": 0, "explanation": "..." }}
+- citations: ["source 1", "source 2"]
+"""
+
+    user_prompt_content = f"""Verified Quantum Corpus Knowledge Passages:
+{ctx_block or 'Foundational Quantum Computing Library'}
+
+Active Circuit Context:
+{json.dumps(circuit_ctx or {})}
+
+Student Question:
+{query}"""
+
+    # Build contents array with multi-turn history
+    contents = []
+    if history and isinstance(history, list):
+        for h in history[-8:]:
+            h_role = "model" if h.get("role") in ("assistant", "model", "aura") else "user"
+            h_text = h.get("content") or h.get("text") or ""
+            if h_text and isinstance(h_text, str):
+                contents.append({"role": h_role, "parts": [{"text": h_text[:800]}]})
+
+    # Add current query
+    contents.append({"role": "user", "parts": [{"text": user_prompt_content}]})
+
+    # Verified working Gemini models in order of resilience
+    gemini_candidates = [
+        "gemini-3.5-flash-lite",
+        "gemini-3.8-flash",
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+        "gemini-3.6-flash",
+    ]
+    if preferred_model and preferred_model in gemini_candidates:
+        gemini_candidates.remove(preferred_model)
+        gemini_candidates.insert(0, preferred_model)
+
+    for g_model in gemini_candidates:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}"
+            payload = {
+                "contents": contents,
+                "systemInstruction": {"parts": [{"text": system_instruction}]},
+                "generationConfig": {
+                    "response_mime_type": "application/json",
+                    "temperature": 0.4,
+                    "maxOutputTokens": 4096,
+                },
+            }
+            headers = {
+                "Content-Type": "application/json",
+                "X-goog-api-key": gemini_key,
+            }
+            async with httpx.AsyncClient(timeout=14.0) as client:
+                resp = await client.post(url, headers=headers, json=payload)
+                if resp.status_code == 200:
+                    resp_json = resp.json()
+                    candidates = resp_json.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        parts = candidates[0]["content"].get("parts", [])
+                        if parts and "text" in parts[0]:
+                            text = parts[0]["text"]
+                            res = _extract_json_dict(text)
+                            if res and isinstance(res, dict) and "vocal_prose_script" in res:
+                                res["_active_model"] = f"Gemini ({g_model})"
+                                res["_rag_active"] = len(context_passages) > 0
+                                print(f"[Gemini] ✓ {g_model} generated response successfully for language='{language}'")
+                                return res
+                print(f"[Gemini] {g_model} returned status {resp.status_code}: {resp.text[:140]}")
+        except Exception as e:
+            print(f"[Gemini] Error with {g_model}: {e}")
+            continue
+
     return None
 
 
@@ -1170,7 +1324,35 @@ class AITutorService:
                 current_course_unit=course_unit_ctx,
                 language=effective_lang
             )
-            if parsed is None:
+
+            # Determine provider order based on user selection or smart hybrid
+            is_gemini_pref = "gemini" in req_model.lower() or "google" in req_model.lower()
+            is_groq_pref = "groq" in req_model.lower() or "qwen" in req_model.lower() or "llama" in req_model.lower() or "oss" in req_model.lower()
+
+            if parsed is None and is_gemini_pref:
+                # User preferred Gemini -> try Gemini first, fallback to Groq
+                parsed = await _query_gemini_with_context(
+                    req.user_query, passages, req.active_circuit_context or {},
+                    current_course_unit=course_unit_ctx,
+                    history=req.conversation_history,
+                    user_level=level,
+                    language=effective_lang,
+                    preferred_model=req_model,
+                    generate_diagram=req_diagram,
+                )
+                if parsed is None:
+                    print("[Tutor] Gemini failed or busy; falling back seamlessly to Groq...")
+                    parsed = await _query_groq_with_context(
+                        req.user_query, passages, req.active_circuit_context or {},
+                        current_course_unit=course_unit_ctx,
+                        history=req.conversation_history,
+                        language=effective_lang,
+                        preferred_model="auto",
+                        generate_diagram=req_diagram,
+                        user_level=level,
+                    )
+            elif parsed is None and is_groq_pref:
+                # User preferred Groq -> try Groq first, fallback to Gemini
                 parsed = await _query_groq_with_context(
                     req.user_query, passages, req.active_circuit_context or {},
                     current_course_unit=course_unit_ctx,
@@ -1180,12 +1362,39 @@ class AITutorService:
                     generate_diagram=req_diagram,
                     user_level=level,
                 )
-            if parsed is None:
+                if parsed is None:
+                    print("[Tutor] Groq failed or busy; falling back seamlessly to Gemini...")
+                    parsed = await _query_gemini_with_context(
+                        req.user_query, passages, req.active_circuit_context or {},
+                        current_course_unit=course_unit_ctx,
+                        history=req.conversation_history,
+                        user_level=level,
+                        language=effective_lang,
+                        preferred_model="auto",
+                        generate_diagram=req_diagram,
+                    )
+            elif parsed is None:
+                # Default "auto" hybrid: Try Gemini first (blazing fast & large context), then Groq
                 parsed = await _query_gemini_with_context(
                     req.user_query, passages, req.active_circuit_context or {},
+                    current_course_unit=course_unit_ctx,
+                    history=req.conversation_history,
                     user_level=level,
                     language=effective_lang,
+                    preferred_model="auto",
+                    generate_diagram=req_diagram,
                 )
+                if parsed is None:
+                    print("[Tutor] Gemini attempt completed without result; trying Groq...")
+                    parsed = await _query_groq_with_context(
+                        req.user_query, passages, req.active_circuit_context or {},
+                        current_course_unit=course_unit_ctx,
+                        history=req.conversation_history,
+                        language=effective_lang,
+                        preferred_model="auto",
+                        generate_diagram=req_diagram,
+                        user_level=level,
+                    )
         t_llm_end = time.perf_counter()
         llm_latency_ms = max(round((t_llm_end - t_llm_start) * 1000, 2), 280.0)
         total_latency_ms = round(retrieval_latency_ms + llm_latency_ms, 2)
@@ -1291,11 +1500,31 @@ class AITutorService:
             )
 
         # 3. Fallback: domain knowledge bank with 3-tier difficulty
-        domain_key = "superposition"
+        # Intelligently match domain key from query using broader keyword search
+        domain_key = None
+        query_lower_full = req.user_query.lower()
+        topic_lower = (getattr(req, "current_topic", "") or "").lower()
         for key in DOMAIN_FALLBACK:
-            if key in query_lower or key in (getattr(req, "current_topic", "") or "").lower():
+            if key in query_lower_full or key in topic_lower:
                 domain_key = key
                 break
+        # If no specific match, try partial word matching
+        if not domain_key:
+            keyword_map = {
+                "superposition": ["super", "position", "state", "qubit", "alpha", "beta", "|0", "|1"],
+                "entanglement": ["entangl", "bell", "epr", "correlat", "pair", "spooky"],
+                "grover": ["grover", "search", "database", "amplitude", "oracle", "diffusion"],
+                "vqe": ["vqe", "variational", "eigensolver", "molecule", "chemistry", "ansatz"],
+                "shor": ["shor", "factoring", "rsa", "cryptography", "prime", "period"],
+                "teleportation": ["teleport", "fidelity", "bell measurement"],
+                "qft": ["fourier", "qft", "phase", "transform"],
+            }
+            for key, keywords in keyword_map.items():
+                if key in DOMAIN_FALLBACK and any(kw in query_lower_full for kw in keywords):
+                    domain_key = key
+                    break
+        if not domain_key:
+            domain_key = "superposition"
 
         domain_data = DOMAIN_FALLBACK[domain_key]
         tier_data = domain_data.get(level, domain_data["beginner"])

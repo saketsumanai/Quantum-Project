@@ -160,24 +160,52 @@ CRITICAL QUANTUM GLOSSARY RULES:
 English Lecture Transcript:
 {english_text}"""
 
-    try:
-        async with httpx.AsyncClient(timeout=14.0) as client:
-            resp = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
-                json={
-                    "model": "qwen/qwen3.8-27b",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.2,
-                    "max_tokens": 1200,
-                },
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                translated = data["choices"][0]["message"]["content"].strip()
-                return inject_quantum_glossary(translated)
-    except Exception as err:
-        print(f"[QuantumDubber] Translation AI error: {err}")
+    # 1. Try Google Gemini first for high-quality bilingual / multilingual quantum translation
+    gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if gemini_key:
+        gemini_models = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"]
+        for g_model in gemini_models:
+            try:
+                async with httpx.AsyncClient(timeout=16.0) as client:
+                    resp = await client.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}",
+                        headers={"Content-Type": "application/json", "X-goog-api-key": gemini_key},
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"temperature": 0.25, "maxOutputTokens": 2048}
+                        }
+                    )
+                    if resp.status_code == 200:
+                        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        if text:
+                            return inject_quantum_glossary(text)
+            except Exception as e:
+                print(f"[QuantumDubber] Gemini translation ({g_model}) notice: {e}")
+
+    # 2. Fallback to Groq with verified models
+    if groq_key:
+        translation_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"]
+        for model_name in translation_models:
+            try:
+                async with httpx.AsyncClient(timeout=16.0) as client:
+                    resp = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                        json={
+                            "model": model_name,
+                            "messages": [{"role": "user", "content": prompt}],
+                            "temperature": 0.2,
+                            "max_tokens": 1500,
+                        },
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        msg = data.get("choices", [{}])[0].get("message", {})
+                        translated = (msg.get("content") or msg.get("reasoning") or "").strip()
+                        if translated:
+                            return inject_quantum_glossary(translated)
+            except Exception as err:
+                print(f"[QuantumDubber] Translation Groq error with {model_name}: {err}")
 
     # Fallback to regex glossary injection
     return inject_quantum_glossary(english_text)
@@ -241,23 +269,52 @@ Title: "{video_title}" by {author_name}.
 Include intuition, mathematical formalism (mentioning statevectors, qubits, or circuits), and practical application.
 Use key technical words: Qubits, Superposition, Entanglement, Quantum Circuit, Measurement, Qiskit.
 Output ONLY the spoken narration text with no introductory text or markdown formatting."""
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                res = await client.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
-                    json={
-                        "model": "qwen/qwen3.8-27b",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.3,
-                        "max_tokens": 600,
-                    }
-                )
-                if res.status_code == 200:
-                    d = res.json()
-                    return d["choices"][0]["message"]["content"].strip()
-        except Exception as e:
-            print(f"[QuantumDubber] Script generation notice: {e}")
+    # 1. Try Gemini
+    gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if gemini_key:
+        gemini_models = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash"]
+        for g_model in gemini_models:
+            try:
+                async with httpx.AsyncClient(timeout=14.0) as client:
+                    resp = await client.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}",
+                        headers={"Content-Type": "application/json", "X-goog-api-key": gemini_key},
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 1000}
+                        }
+                    )
+                    if resp.status_code == 200:
+                        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        if text:
+                            return text
+            except Exception as e:
+                print(f"[QuantumDubber] Gemini script gen ({g_model}) notice: {e}")
+
+    # 2. Try Groq
+    if groq_key:
+        script_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"]
+        for model_name in script_models:
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    res = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                        json={
+                            "model": model_name,
+                            "messages": [{"role": "user", "content": prompt}],
+                            "temperature": 0.3,
+                            "max_tokens": 700,
+                        }
+                    )
+                    if res.status_code == 200:
+                        d = res.json()
+                        msg = d.get("choices", [{}])[0].get("message", {})
+                        result = (msg.get("content") or msg.get("reasoning") or "").strip()
+                        if result:
+                            return result
+            except Exception as e:
+                print(f"[QuantumDubber] Script generation notice with {model_name}: {e}")
 
     return (
         f"Welcome to this lecture on {video_title}. Today we explore the core principles of quantum mechanics "

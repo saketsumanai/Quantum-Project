@@ -10,11 +10,20 @@
 import { API_BASE } from "../config/api";
 
 const GROQ_API_KEY = (import.meta.env.VITE_GROQ_API_KEY || "").trim();
+const GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY || "").trim();
+
+const GEMINI_MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-3.5-flash",
+  "gemini-flash-latest",
+];
 
 const GROQ_MODELS = [
+  "qwen/qwen3.8-27b",
   "openai/gpt-oss-120b",
   "openai/gpt-oss-20b",
-  "qwen/qwen3.8-27b",
+  "llama-3.3-70b-versatile",
 ];
 
 // ─── Multilingual & Hinglish Neural Language Detector ─────────────────────────
@@ -551,9 +560,10 @@ Expected JSON format:
 
   const messages = [
     { role: "system", content: systemPrompt },
-    ...conversationHistory.slice(-4).map((m) => ({
+    // Include last 8 turns (4 user+assistant pairs) for richer context
+    ...conversationHistory.slice(-8).map((m) => ({
       role: m.role === "assistant" ? "assistant" : "user",
-      content: typeof m.content === "string" ? m.content.slice(0, 500) : "",
+      content: typeof m.content === "string" ? m.content.slice(0, 800) : "",
     })),
     { role: "user", content: userQuery },
   ];
@@ -569,8 +579,8 @@ Expected JSON format:
         body: JSON.stringify({
           model,
           messages,
-          temperature: 0.2,
-          max_tokens: 3000,
+          temperature: 0.5,
+          max_tokens: 4000,
         }),
       });
 
@@ -578,7 +588,7 @@ Expected JSON format:
 
       const raw = await response.text();
       const parsedCompletion = safeJsonParse(raw);
-      const rawContent = parsedCompletion?.choices?.[0]?.message?.content;
+      const rawContent = parsedCompletion?.choices?.[0]?.message?.content || parsedCompletion?.choices?.[0]?.message?.reasoning;
       if (!rawContent) continue;
 
       // Extract and unmarshal clean fields from Groq response
@@ -589,6 +599,99 @@ Expected JSON format:
       }
     } catch (e) {
       console.warn(`[Groq Direct fallback notice for ${model}]:`, e.message);
+    }
+  }
+  return null;
+}
+
+/**
+ * Direct call to Google Gemini Generative Language API
+ */
+async function queryGeminiDirectly({ userQuery, conversationHistory = [], language = "en" }) {
+  if (!GEMINI_API_KEY) return null;
+
+  const targetLang = detectLanguage(userQuery, language);
+  const langPromptRule = LANGUAGE_PROMPTS[targetLang] || LANGUAGE_PROMPTS.en;
+
+  const systemInstruction = `You are Aura Quantum AI — an inspiring, friendly, and deeply knowledgeable human quantum computing mentor powered by Google Gemini.
+${langPromptRule}
+
+CRITICAL PERSONA AND TONE GUIDELINES:
+- Talk like a REAL, approachable human being — NOT like a cold robot, dry academic paper, or corporate machine.
+- When the student speaks informally or in Hinglish (e.g., "bhai...", "sun na", "kya hota hai", "samjhao na"), embrace that friendly energy immediately ("Haan bhai! Dekho, isko bilkul straightforward aur simple tareeqe se samajhte hain...").
+- Use vivid, intuitive real-world analogies (e.g. spinning coin, light switches, ripples in water) before introducing equations.
+- Format beautifully using Markdown headings, bold key concepts, and structured bullet points.
+- If asked about learning paths/roadmap, map to Quantum Leap modules (Bloch Sphere, Quantum Studio, Code Lab Qiskit, QPU explorer).
+- If visual/diagram requested, embed relevant markdown images (Bloch Sphere or Quantum Circuit).
+- Conclude your explanation with verified working YouTube video links and official documentation.
+
+You MUST output valid, parseable JSON with NO commentary outside JSON.
+Expected JSON format:
+{
+  "success": true,
+  "vocal_prose_script": "detailed, friendly conversational explanation with analogies, bullet points, and working video links...",
+  "mathematical_latex_formula": "LaTeX formula (e.g., |\\\\psi\\\\rangle = \\\\alpha|0\\\\rangle + \\\\beta|1\\\\rangle)",
+  "qiskit_executable_code": "Python Qiskit 1.0+ code...",
+  "quiz_generation_object": {
+    "question": "probe question...",
+    "options": ["A", "B", "C", "D"],
+    "answer": 0,
+    "explanation": "why A is correct..."
+  },
+  "sources": [
+    "NPTEL IIT Madras: Quantum Algorithms (https://www.youtube.com/watch?v=2SPjEA-4lKk)",
+    "Wikipedia: Quantum Computing (https://en.wikipedia.org/wiki/Quantum_computing)",
+    "IBM Quantum Learning (https://quantum.ibm.com/learning)"
+  ],
+  "model_used": "Google Gemini"
+}`;
+
+  const contents = [];
+  if (Array.isArray(conversationHistory)) {
+    for (const m of conversationHistory.slice(-8)) {
+      const role = (m.role === "assistant" || m.role === "model" || m.sender === "aura") ? "model" : "user";
+      const text = typeof m.content === "string" ? m.content : (typeof m.text === "string" ? m.text : "");
+      if (text) {
+        contents.push({ role, parts: [{ text: text.slice(0, 800) }] });
+      }
+    }
+  }
+  contents.push({ role: "user", parts: [{ text: userQuery }] });
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-goog-api-key": GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: {
+            response_mime_type: "application/json",
+            temperature: 0.4,
+            maxOutputTokens: 4096,
+          },
+        }),
+      });
+
+      if (!response.ok) continue;
+
+      const raw = await response.text();
+      const parsedCompletion = safeJsonParse(raw);
+      const rawText = parsedCompletion?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) continue;
+
+      const extracted = parseQuantumAiResponse(rawText, `Gemini (${model})`);
+      if (extracted && extracted.vocal_prose_script) {
+        extracted.language_detected = targetLang;
+        return extracted;
+      }
+    } catch (e) {
+      console.warn(`[Gemini Direct fallback notice for ${model}]:`, e.message);
     }
   }
   return null;
@@ -702,7 +805,18 @@ export async function queryAiTutorSafe({
     }
   }
 
-  // ─── Step 2: Direct Groq LPU Execution ────────────────────────────────────
+  // ─── Step 2: Direct Gemini Execution ──────────────────────────────────────
+  const geminiResult = await queryGeminiDirectly({
+    userQuery,
+    conversationHistory,
+    language: effectiveLang,
+  });
+  if (geminiResult) {
+    geminiResult.language_detected = effectiveLang;
+    return geminiResult;
+  }
+
+  // ─── Step 3: Direct Groq LPU Execution ────────────────────────────────────
   const groqResult = await queryGroqDirectly({
     userQuery,
     conversationHistory,
@@ -713,7 +827,7 @@ export async function queryAiTutorSafe({
     return groqResult;
   }
 
-  // ─── Step 3: Verified Offline Knowledge Fallback ──────────────────────────
+  // ─── Step 4: Verified Offline Knowledge Fallback ──────────────────────────
   return getOfflineKnowledge(userQuery, effectiveLang);
 }
 
@@ -768,7 +882,25 @@ export async function chatAiTutorSafe({
     console.warn("[AI Tutor Chat] Primary backend unreachable. Falling back...", err.message);
   }
 
-  // ─── Step 2: Direct Groq Query ────────────────────────────────────────────
+  // ─── Step 2: Direct Gemini Query ──────────────────────────────────────────
+  const geminiResult = await queryGeminiDirectly({
+    userQuery: promptText,
+    conversationHistory: messages,
+    language: effectiveLang,
+  });
+  if (geminiResult) {
+    return {
+      success: true,
+      content: geminiResult.vocal_prose_script,
+      latex: geminiResult.mathematical_latex_formula,
+      code: geminiResult.qiskit_executable_code,
+      sources: geminiResult.sources,
+      quiz: geminiResult.quiz_generation_object,
+      language_detected: effectiveLang,
+    };
+  }
+
+  // ─── Step 3: Direct Groq Query ────────────────────────────────────────────
   const groqResult = await queryGroqDirectly({
     userQuery: promptText,
     conversationHistory: messages,
@@ -786,7 +918,7 @@ export async function chatAiTutorSafe({
     };
   }
 
-  // ─── Step 3: Offline Fallback ─────────────────────────────────────────────
+  // ─── Step 4: Offline Fallback ─────────────────────────────────────────────
   const offline = getOfflineKnowledge(promptText, effectiveLang);
   return {
     success: true,

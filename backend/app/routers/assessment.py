@@ -513,16 +513,19 @@ async def generate_ai_quiz_endpoint(request: AIQuizGenerateRequest):
     # 2. Query Groq
     from dotenv import load_dotenv
     load_dotenv(override=False)
+    gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
     groq_key = (os.getenv("GROQ_API_KEY") or "").strip()
     candidate_models = [
-        "openai/gpt-oss-20b",     # Fast generation (<0.9s)
-        "openai/gpt-oss-120b",    # 120B high-reasoning model
+        "qwen/qwen3.8-27b",
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "llama-3.3-70b-versatile",
     ]
     models_to_try = list(dict.fromkeys(m for m in candidate_models if m))
 
     custom_text = (request.custom_content or "").strip()
 
-    if groq_key:
+    if gemini_key or groq_key:
         system_prompt = f"""You are Aura Quantum Assessment Engine — an elite examiner for Quantum Computing.
 Generate a structured examination with EXACTLY {count} multiple-choice questions on: '{topic}'.
 Difficulty Level: {diff.upper()}.
@@ -564,7 +567,50 @@ Generate EXACTLY {count} {diff} multiple-choice questions specifically testing t
         else:
             user_prompt = f"""Literature Context:\n{rag_ctx}\n\nGenerate EXACTLY {count} {diff} questions on '{topic}'. Ensure scientific accuracy."""
 
-        token_budget = max(3500, count * 750)
+        # 1. Try Google Gemini first
+        if gemini_key:
+            gemini_models = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
+            for g_model in gemini_models:
+                try:
+                    async with httpx.AsyncClient(timeout=22.0) as client:
+                        resp = await client.post(
+                            f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}",
+                            headers={"Content-Type": "application/json", "X-goog-api-key": gemini_key},
+                            json={
+                                "contents": [{"parts": [{"text": user_prompt}]}],
+                                "systemInstruction": {"parts": [{"text": system_prompt}]},
+                                "generationConfig": {"response_mime_type": "application/json", "temperature": 0.25}
+                            }
+                        )
+                        if resp.status_code == 200:
+                            raw_content = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            data = json.loads(raw_content)
+                            qs = []
+                            for idx, q_raw in enumerate(data.get("questions", [])):
+                                qs.append(QuizQuestion(
+                                    id=q_raw.get("id", f"q{idx+1}_{uuid.uuid4().hex[:4]}"),
+                                    question=q_raw.get("question", "Quantum concept question"),
+                                    options=q_raw.get("options", ["A", "B", "C", "D"])[:4],
+                                    correct_index=int(q_raw.get("correct_index", 0)) % 4,
+                                    explanation=q_raw.get("explanation", "Accurate conceptual explanation."),
+                                    topic=topic,
+                                    formula=q_raw.get("formula"),
+                                    code_snippet=q_raw.get("code_snippet"),
+                                    difficulty=diff,
+                                ))
+                            if len(qs) >= 1:
+                                return GenerateTestResponse(
+                                    title=data.get("title", f"{topic} Diagnostic Examination"),
+                                    questions=qs[:count],
+                                    rag_passages=rag_passages,
+                                    source_model=f"Gemini ({g_model}) + RAG Grounding",
+                                )
+                except Exception as e:
+                    print(f"[Assessment Gemini] {g_model} notice: {e}")
+
+        # 2. Fallback to Groq
+        if groq_key:
+            token_budget = max(3500, count * 750)
 
         for model_name in models_to_try:
             try:
@@ -607,7 +653,6 @@ Generate EXACTLY {count} {diff} multiple-choice questions specifically testing t
                             ))
 
                         if len(qs) >= 1:
-                            # If AI generated fewer than count, supplement from curated bank to guarantee exact count
                             if len(qs) < count:
                                 curated_pool = CURATED_EXAM_BANK.get(key_match, CURATED_EXAM_BANK["gates"])
                                 existing_texts = {q.question.strip().lower() for q in qs}
@@ -626,7 +671,6 @@ Generate EXACTLY {count} {diff} multiple-choice questions specifically testing t
                                             code_snippet=fallback_item.get("code_snippet"),
                                         ))
 
-                            # Ensure exact requested count
                             qs = qs[:count]
 
                             for q in qs:

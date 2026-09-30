@@ -63,15 +63,15 @@ function TypewriterProse({ text, isAlreadyStreamed, onComplete }) {
   }, [text, isAlreadyStreamed]);
 
   return (
-    <p
+    <div
       className="text-zinc-200 text-[0.88rem] leading-relaxed m-0"
       style={{ fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
     >
-      {displayedText}
+      <MathRenderer content={displayedText} />
       {!isAlreadyStreamed && displayedText.length < (text || '').length && (
         <span className="inline-block w-1.5 h-3.5 ml-1 bg-zinc-400 animate-pulse align-middle" />
       )}
-    </p>
+    </div>
   );
 }
 
@@ -494,11 +494,14 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
 
     // Add user message
     const userMsg = { sender: 'user', text: textToSend, language: detectedLang };
+    // Keep last 12 messages (6 user+assistant pairs) with 1000 char per message
+    // so the AI has rich context and doesn't repeat the same answers after turn 4-5
     const prevHistory = messages
       .filter((m) => m && m.text)
+      .slice(-12)
       .map((m) => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
-        content: m.text.slice(0, 600),
+        content: m.text.slice(0, 1000),
       }));
 
     setMessages((prev) => [...prev, userMsg]);
