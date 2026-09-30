@@ -3,7 +3,8 @@ import {
   Send, Plus, Trash2, Copy, Check, ChevronDown, ChevronUp, Upload, BookOpen, X,
   Sun, Moon, Cpu, Zap, Globe, AlertTriangle, Sparkles, Volume2, VolumeX, Edit2,
   Search, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, ArrowUpRight,
-  ShieldCheck, Play, User, Terminal, Layers, Lightbulb, Compass, Award, ExternalLink, HelpCircle
+  ShieldCheck, Play, User, Terminal, Layers, Lightbulb, Compass, Award, ExternalLink, HelpCircle,
+  Mic, MicOff, Headphones, FileText, RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import MathRenderer, { LatexBlock } from './MathRenderer';
@@ -122,7 +123,69 @@ const MULTILINGUAL_STARTERS = {
   ],
 };
 
-// ── Code Block with Copy & Studio Action ─────────────────────────────────────
+// ── Word-by-Word Streaming Typewriter Component (ChatGPT Experience) ──────────
+function StreamingMessageProse({ text, isStreaming, onComplete, onSelectCitation }) {
+  const [displayedWordsCount, setDisplayedWordsCount] = useState(isStreaming ? 1 : null);
+  const words = useMemo(() => (text ? text.split(' ') : []), [text]);
+
+  useEffect(() => {
+    if (!isStreaming) {
+      setDisplayedWordsCount(null);
+      return;
+    }
+    setDisplayedWordsCount(1);
+    let count = 1;
+    const interval = setInterval(() => {
+      count += 2; // Stream 2 words per tick (~22ms) for snappy, fluid delivery
+      if (count >= words.length) {
+        setDisplayedWordsCount(null);
+        clearInterval(interval);
+        onComplete?.();
+      } else {
+        setDisplayedWordsCount(count);
+      }
+    }, 22);
+    return () => clearInterval(interval);
+  }, [text, isStreaming, words.length, onComplete]);
+
+  const displayedContent = (isStreaming && displayedWordsCount !== null)
+    ? words.slice(0, displayedWordsCount).join(' ')
+    : text;
+
+  const isStillTyping = isStreaming && displayedWordsCount !== null && displayedWordsCount < words.length;
+
+  return (
+    <div
+      onClick={() => {
+        if (isStillTyping) {
+          setDisplayedWordsCount(null);
+          onComplete?.();
+        }
+      }}
+      title={isStillTyping ? "Click to complete typing immediately" : undefined}
+      style={{ cursor: isStillTyping ? 'pointer' : 'default' }}
+    >
+      <MathRenderer content={displayedContent} onSelectCitation={onSelectCitation} />
+      {isStillTyping && (
+        <span
+          style={{
+            display: 'inline-block',
+            width: '8px',
+            height: '1.15em',
+            background: '#38bdf8',
+            marginLeft: '4px',
+            verticalAlign: 'text-bottom',
+            borderRadius: '2px',
+            boxShadow: '0 0 10px rgba(56, 189, 248, 0.8)',
+            animation: 'pulse 0.7s infinite',
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Code Block with Copy & 1-Click Circuit Studio Action ───────────────────────
 function CodeBlock({ code, language = 'python', onOpenInStudio }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -133,16 +196,64 @@ function CodeBlock({ code, language = 'python', onOpenInStudio }) {
 
   const handleOpenStudio = () => {
     if (!onOpenInStudio) return;
-    // Basic parser for quick circuit loading if Qiskit
-    const hMatches = [...code.matchAll(/qc\.h\((\d+)\)/g)].map(m => ({ gate: 'h', qubits: [parseInt(m[1])], params: [] }));
-    const cxMatches = [...code.matchAll(/qc\.cx\((\d+),\s*(\d+)\)/g)].map(m => ({ gate: 'cx', qubits: [parseInt(m[1]), parseInt(m[2])], params: [] }));
-    const xMatches = [...code.matchAll(/qc\.x\((\d+)\)/g)].map(m => ({ gate: 'x', qubits: [parseInt(m[1])], params: [] }));
-    const zMatches = [...code.matchAll(/qc\.z\((\d+)\)/g)].map(m => ({ gate: 'z', qubits: [parseInt(m[1])], params: [] }));
-    const insts = [...hMatches, ...cxMatches, ...xMatches, ...zMatches];
-    if (insts.length > 0) {
-      const maxQ = Math.max(...insts.flatMap(i => i.qubits)) + 1;
-      onOpenInStudio({ num_qubits: Math.max(2, maxQ), instructions: insts });
+    const insts = [];
+
+    // Parse Hadamard (single or array)
+    for (const m of code.matchAll(/qc\.h\((\d+)\)/g)) {
+      insts.push({ gate: 'h', qubits: [parseInt(m[1])], params: [] });
     }
+    for (const m of code.matchAll(/qc\.h\(\[([^\]]+)\]\)/g)) {
+      const qs = m[1].split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      for (const q of qs) insts.push({ gate: 'h', qubits: [q], params: [] });
+    }
+
+    // Parse CNOT
+    for (const m of code.matchAll(/qc\.(?:cx|cnot)\((\d+),\s*(\d+)\)/g)) {
+      insts.push({ gate: 'cx', qubits: [parseInt(m[1]), parseInt(m[2])], params: [] });
+    }
+
+    // Parse CZ
+    for (const m of code.matchAll(/qc\.cz\((\d+),\s*(\d+)\)/g)) {
+      insts.push({ gate: 'cz', qubits: [parseInt(m[1]), parseInt(m[2])], params: [] });
+    }
+
+    // Parse SWAP
+    for (const m of code.matchAll(/qc\.swap\((\d+),\s*(\d+)\)/g)) {
+      insts.push({ gate: 'swap', qubits: [parseInt(m[1]), parseInt(m[2])], params: [] });
+    }
+
+    // Parse Single-qubit Pauli X, Y, Z
+    for (const m of code.matchAll(/qc\.x\((\d+)\)/g)) {
+      insts.push({ gate: 'x', qubits: [parseInt(m[1])], params: [] });
+    }
+    for (const m of code.matchAll(/qc\.y\((\d+)\)/g)) {
+      insts.push({ gate: 'y', qubits: [parseInt(m[1])], params: [] });
+    }
+    for (const m of code.matchAll(/qc\.z\((\d+)\)/g)) {
+      insts.push({ gate: 'z', qubits: [parseInt(m[1])], params: [] });
+    }
+
+    // Parse S, T
+    for (const m of code.matchAll(/qc\.s\((\d+)\)/g)) {
+      insts.push({ gate: 's', qubits: [parseInt(m[1])], params: [] });
+    }
+    for (const m of code.matchAll(/qc\.t\((\d+)\)/g)) {
+      insts.push({ gate: 't', qubits: [parseInt(m[1])], params: [] });
+    }
+
+    // Parse Rotations RX, RY, RZ
+    for (const m of code.matchAll(/qc\.(rx|ry|rz)\(([^,]+),\s*(\d+)\)/g)) {
+      insts.push({ gate: m[1], qubits: [parseInt(m[3])], params: [m[2].trim()] });
+    }
+
+    const maxQ = insts.length > 0 ? Math.max(...insts.flatMap(i => i.qubits)) + 1 : 2;
+    onOpenInStudio({
+      num_qubits: Math.max(2, maxQ),
+      instructions: insts.length > 0 ? insts : [
+        { gate: 'h', qubits: [0], params: [] },
+        { gate: 'cx', qubits: [0, 1], params: [] }
+      ]
+    });
   };
 
   return (
@@ -153,25 +264,36 @@ function CodeBlock({ code, language = 'python', onOpenInStudio }) {
           <span style={{ fontSize: '0.74rem', color: '#a1a1aa', fontFamily: "'JetBrains Mono', monospace" }}>{language}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {onOpenInStudio && code.includes('QuantumCircuit') && (
+          {onOpenInStudio && (code.includes('QuantumCircuit') || code.includes('qc.')) && (
             <button
               onClick={handleOpenStudio}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4,
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.20)',
-                color: '#ffffff',
+                gap: 5,
+                background: 'rgba(99, 102, 241, 0.18)',
+                border: '1px solid rgba(129, 140, 248, 0.45)',
+                color: '#c7d2fe',
                 cursor: 'pointer',
                 fontSize: '0.72rem',
-                padding: '4px 9px',
-                borderRadius: 4,
-                fontWeight: 600,
+                padding: '4px 10px',
+                borderRadius: 5,
+                fontWeight: 700,
                 fontFamily: "'Poppins', sans-serif",
+                transition: 'all 0.15s ease',
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(99, 102, 241, 0.35)';
+                e.currentTarget.style.borderColor = '#818cf8';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(99, 102, 241, 0.18)';
+                e.currentTarget.style.borderColor = 'rgba(129, 140, 248, 0.45)';
+              }}
+              title="Create and simulate this circuit in Circuit Studio"
             >
-              <ArrowUpRight size={12} /> Open in Studio
+              <Cpu size={12} color="#a5b4fc" />
+              <span>Create in Circuit Studio</span>
             </button>
           )}
           <button
@@ -680,7 +802,17 @@ function RecommendedLecturesBlock({ query, language, onNavigate, onPlayVideo }) 
 }
 
 // ── Message Bubble ────────────────────────────────────────────────────────────
-function MessageBubble({ msg, onOpenInStudio, onSelectCitation, onNavigate, onPlayVideo, language }) {
+function MessageBubble({
+  msg,
+  isLastAssistant = false,
+  onRegenerate,
+  onOpenInStudio,
+  onSelectCitation,
+  onNavigate,
+  onPlayVideo,
+  language,
+  onCompleteStreaming,
+}) {
   const isUser = msg.role === 'user';
   const [copied, setCopied] = useState(false);
 
@@ -777,6 +909,27 @@ function MessageBubble({ msg, onOpenInStudio, onSelectCitation, onNavigate, onPl
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <AudioReader text={msg.content} language={msg.language || language} />
+                {onRegenerate && isLastAssistant && (
+                  <button
+                    onClick={() => onRegenerate(msg.id)}
+                    title="Regenerate this response"
+                    style={{
+                      background: 'none',
+                      border: '1px solid rgba(255, 255, 255, 0.10)',
+                      borderRadius: '5px',
+                      padding: '4px 10px',
+                      cursor: 'pointer',
+                      color: '#a1a1aa',
+                      fontSize: '0.74rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontFamily: "'Poppins', sans-serif",
+                    }}
+                  >
+                    <RotateCcw size={11} /> Regenerate
+                  </button>
+                )}
                 <button
                   onClick={copyMarkdown}
                   title="Copy full response"
@@ -799,9 +952,14 @@ function MessageBubble({ msg, onOpenInStudio, onSelectCitation, onNavigate, onPl
               </div>
             </div>
 
-            {/* Main Explanation Prose - Prominent Larger Font */}
+            {/* Main Explanation Prose - Progressive Streaming / Typewriter Delivery */}
             <div style={{ fontSize: '1.18rem', lineHeight: 1.85, color: '#ffffff', fontFamily: "'Poppins', sans-serif" }}>
-              <MathRenderer content={msg.content} />
+              <StreamingMessageProse
+                text={msg.content}
+                isStreaming={Boolean(msg.isStreaming)}
+                onComplete={() => onCompleteStreaming && onCompleteStreaming(msg.id)}
+                onSelectCitation={onSelectCitation}
+              />
             </div>
 
             {/* Mathematical LaTeX Formula */}
@@ -1021,6 +1179,14 @@ export default function QuantumChatGPT({
   const [activeCitationForModal, setActiveCitationForModal] = useState(null);
   const [activeVideoForModal, setActiveVideoForModal] = useState(null);
 
+  // NotebookLM Grounded Documents & Speech Recognition
+  const [attachedDocs, setAttachedDocs] = useState([]);
+  const [isListening, setIsListening] = useState(false);
+  const [isAudioOverviewActive, setIsAudioOverviewActive] = useState(false);
+  const [isAudioOverviewPlaying, setIsAudioOverviewPlaying] = useState(false);
+  const [audioOverviewScript, setAudioOverviewScript] = useState('');
+  const recognitionRef = useRef(null);
+
   // Citation click handler — resolves to exact textbook excerpt
   const handleSelectCitation = useCallback((citationTextOrObj) => {
     if (citationTextOrObj && typeof citationTextOrObj === 'object') {
@@ -1104,6 +1270,125 @@ export default function QuantumChatGPT({
   const activeSession = sessions.find(s => s.id === activeId) || sessions[0];
   const messages = activeSession?.messages || [];
 
+  // ── Speech Recognition Toggle (ChatGPT Voice Experience) ───────────────────
+  const toggleListening = () => {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome, Safari, or Edge.");
+      return;
+    }
+    if (isListening) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (_) {}
+      }
+      setIsListening(false);
+      return;
+    }
+    try {
+      const rec = new SpeechRec();
+      rec.continuous = true;
+      rec.interimResults = true;
+      const langMap = {
+        hi: 'hi-IN',
+        hinglish: 'hi-IN',
+        ta: 'ta-IN',
+        te: 'te-IN',
+        bn: 'bn-IN',
+        mr: 'mr-IN',
+        gu: 'gu-IN',
+        kn: 'kn-IN',
+        ml: 'ml-IN',
+        pa: 'pa-IN',
+        en: 'en-US',
+      };
+      rec.lang = langMap[selectedLanguage] || 'en-US';
+
+      rec.onresult = (event) => {
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          fullTranscript += event.results[i][0].transcript;
+        }
+        if (fullTranscript.trim()) {
+          setInput(fullTranscript.trim());
+        }
+      };
+      rec.onerror = () => setIsListening(false);
+      rec.onend = () => setIsListening(false);
+      rec.start();
+      recognitionRef.current = rec;
+      setIsListening(true);
+    } catch (e) {
+      console.warn("Speech recognition failed to initialize:", e);
+      setIsListening(false);
+    }
+  };
+
+  // ── Document Grounding / Upload (NotebookLM Experience) ─────────────────────
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const textContent = evt.target.result;
+      const newDoc = {
+        id: Date.now().toString(),
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        content: typeof textContent === 'string' ? textContent : 'Binary file context attached',
+        type: file.name.split('.').pop() || 'text',
+      };
+      setAttachedDocs(prev => [...prev, newDoc]);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const removeAttachedDoc = (id) => {
+    setAttachedDocs(prev => prev.filter(d => d.id !== id));
+  };
+
+  // ── NotebookLM Audio Overview (Conversational Study Podcast) ───────────────
+  const handleTriggerAudioOverview = () => {
+    if (isAudioOverviewPlaying) {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      setIsAudioOverviewPlaying(false);
+      setIsAudioOverviewActive(false);
+      return;
+    }
+
+    const sessionTitle = activeSession.title !== 'New conversation' ? activeSession.title : 'Quantum Physics Foundations';
+    const assistantMsgs = messages.filter(m => m.role === 'assistant');
+    const summaryPoints = assistantMsgs
+      .map(m => m.content.slice(0, 180).replace(/```[\s\S]*?```/g, '').replace(/[\$\#\*]/g, ''))
+      .slice(-3)
+      .join(' ... Next, ');
+
+    const script = `Welcome to the Quantum Leap Audio Overview. Today we are conducting a deep dive into ${sessionTitle}. Here are the key breakthrough insights: ${summaryPoints || "We explored fundamental quantum mechanics, unitary transformations in Hilbert space, and state preparation on the Bloch sphere."} To put this into practice, remember that quantum superposition preserves norm conservation until measurement collapses the wavefunction. That concludes today's audio briefing.`;
+
+    setAudioOverviewScript(script);
+    setIsAudioOverviewActive(true);
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(script);
+      utter.rate = 0.95;
+      utter.pitch = 1.05;
+      utter.onend = () => setIsAudioOverviewPlaying(false);
+      utter.onerror = () => setIsAudioOverviewPlaying(false);
+      window.speechSynthesis.speak(utter);
+      setIsAudioOverviewPlaying(true);
+    }
+  };
+
+  // Mark streaming completed for a specific message
+  const handleCompleteStreaming = useCallback((msgId) => {
+    setSessions(prev => prev.map(s => s.id === activeId ? {
+      ...s,
+      messages: s.messages.map(m => m.id === msgId ? { ...m, isStreaming: false } : m)
+    } : s));
+  }, [activeId]);
+
   const handleNewChat = (proj = 'all') => {
     const newId = Date.now().toString();
     const newSession = {
@@ -1185,8 +1470,17 @@ export default function QuantumChatGPT({
         ? selectedLanguage
         : detectLanguage(text, selectedLanguage);
 
+      // NotebookLM: Ground query with attached documents context if present
+      let queryToSend = text;
+      if (attachedDocs.length > 0) {
+        const docContext = attachedDocs
+          .map(d => `[GROUNDED NOTEBOOK DOCUMENT: ${d.name}]\n${d.content.slice(0, 3500)}\n[/GROUNDED DOCUMENT]`)
+          .join('\n\n');
+        queryToSend = `${docContext}\n\nStudent Question:\n${text}`;
+      }
+
       const rawData = await queryAiTutorSafe({
-        userQuery: text,
+        userQuery: queryToSend,
         circuitContext: {},
         currentTopic: '',
         conversationHistory: history,
@@ -1198,6 +1492,11 @@ export default function QuantumChatGPT({
       const data = parseQuantumAiResponse(rawData, SUPPORTED_MODELS.find(m => m.id === selectedModel)?.name || 'GPT-OSS 120B');
 
       if (data?.vocal_prose_script) {
+        const groundedSources = [
+          ...attachedDocs.map(d => `User Uploaded Note: ${d.name}`),
+          ...(data.sources || []),
+        ];
+
         const assistantMsg = {
           role: 'assistant',
           id: Date.now() + 1,
@@ -1206,11 +1505,12 @@ export default function QuantumChatGPT({
           code: data.qiskit_executable_code || null,
           diagram: data.diagram || null,
           quiz: data.quiz_generation_object || null,
-          sources: data.sources || [],
+          sources: groundedSources,
           model: data.model_used || (SUPPORTED_MODELS.find(m => m.id === selectedModel)?.name || 'GPT-OSS 120B'),
           ragActive: !data.is_cached_fallback,
           language: data.language_detected || effectiveLang,
           userQuery: text,
+          isStreaming: true, // Enable progressive typewriter animation
         };
 
         setSessions(prev => prev.map(s => s.id === activeId ? {
@@ -1234,6 +1534,7 @@ export default function QuantumChatGPT({
         model: 'Autonomous Engine',
         language: effectiveLangFallback,
         userQuery: text,
+        isStreaming: false,
       };
       setSessions(prev => prev.map(s => s.id === activeId ? {
         ...s,
@@ -1242,7 +1543,24 @@ export default function QuantumChatGPT({
     } finally {
       setLoading(false);
     }
-  }, [input, messages, activeId, activeSession, selectedLanguage, selectedModel, generateDiagram]);
+  }, [input, messages, activeId, activeSession, selectedLanguage, selectedModel, generateDiagram, attachedDocs]);
+
+  // ── Regenerate Response (ChatGPT Experience) ───────────────────────────────
+  const handleRegenerateMessage = useCallback((assistantMsgId) => {
+    const activeSess = sessions.find(s => s.id === activeId);
+    if (!activeSess) return;
+    const msgs = activeSess.messages;
+    const idx = msgs.findIndex(m => m.id === assistantMsgId);
+    if (idx <= 0) return;
+    const prevUser = msgs[idx - 1];
+    if (prevUser && prevUser.role === 'user') {
+      setSessions(prev => prev.map(s => s.id === activeId ? {
+        ...s,
+        messages: s.messages.slice(0, idx),
+      } : s));
+      sendMessage(prevUser.content);
+    }
+  }, [sessions, activeId, sendMessage]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1823,6 +2141,30 @@ export default function QuantumChatGPT({
                 </select>
               </div>
 
+              {/* NotebookLM Audio Overview Button */}
+              <button
+                onClick={handleTriggerAudioOverview}
+                title="Play NotebookLM-style Audio Overview summary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.80rem',
+                  fontWeight: 600,
+                  background: isAudioOverviewPlaying ? 'rgba(56, 189, 248, 0.20)' : 'rgba(255, 255, 255, 0.05)',
+                  border: isAudioOverviewPlaying ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.12)',
+                  color: isAudioOverviewPlaying ? '#7dd3fc' : '#ffffff',
+                  cursor: 'pointer',
+                  fontFamily: "'Poppins', sans-serif",
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Headphones size={14} color={isAudioOverviewPlaying ? '#38bdf8' : '#ffffff'} />
+                <span>{isAudioOverviewPlaying ? 'Audio Playing...' : 'Audio Overview'}</span>
+              </button>
+
               {/* Flashcards Deck Button */}
               <button
                 onClick={() => setIsFlashcardsOpen(true)}
@@ -1913,6 +2255,70 @@ export default function QuantumChatGPT({
               )}
             </div>
           </div>
+
+          {/* ── NotebookLM Audio Overview Banner ── */}
+          {isAudioOverviewActive && (
+            <div style={{
+              background: 'linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%)',
+              borderBottom: '1px solid rgba(56, 189, 248, 0.3)',
+              padding: '10px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontFamily: "'Poppins', sans-serif",
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: '#0284c7',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 0 12px rgba(2, 132, 199, 0.5)',
+                }}>
+                  <Volume2 size={16} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#ffffff' }}>
+                    NotebookLM Audio Overview: {activeSession.title}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#7dd3fc' }}>
+                    Synthesized Conversational Quantum Briefing · {isAudioOverviewPlaying ? 'Speaking...' : 'Paused'}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  onClick={handleTriggerAudioOverview}
+                  style={{
+                    background: '#ffffff',
+                    color: '#000000',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '5px 12px',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isAudioOverviewPlaying ? 'Stop' : 'Replay'}
+                </button>
+                <button
+                  onClick={() => {
+                    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                    setIsAudioOverviewPlaying(false);
+                    setIsAudioOverviewActive(false);
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: 4 }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Messages Scroll Area */}
           <div style={{
@@ -2024,17 +2430,26 @@ export default function QuantumChatGPT({
             ) : (
               /* Message Stream */
               <div style={{ maxWidth: '1020px', margin: '0 auto', width: '100%' }}>
-                {messages.map((msg) => (
-                  <MessageBubble
-                    key={msg.id}
-                    msg={msg}
-                    onOpenInStudio={onLoadCircuitIntoStudio}
-                    onSelectCitation={handleSelectCitation}
-                    onNavigate={onNavigate}
-                    onPlayVideo={(video) => setActiveVideoForModal(video)}
-                    language={selectedLanguage}
-                  />
-                ))}
+                {messages.map((msg, index) => {
+                  const isLastAssistant = msg.role === 'assistant' && (
+                    index === messages.length - 1 ||
+                    (index === messages.length - 2 && messages[messages.length - 1].role === 'user')
+                  );
+                  return (
+                    <MessageBubble
+                      key={msg.id}
+                      msg={msg}
+                      isLastAssistant={isLastAssistant}
+                      onRegenerate={handleRegenerateMessage}
+                      onCompleteStreaming={handleCompleteStreaming}
+                      onOpenInStudio={onLoadCircuitIntoStudio}
+                      onSelectCitation={handleSelectCitation}
+                      onNavigate={onNavigate}
+                      onPlayVideo={(video) => setActiveVideoForModal(video)}
+                      language={selectedLanguage}
+                    />
+                  );
+                })}
 
                 {/* Loading indicator */}
                 {loading && (
@@ -2160,6 +2575,40 @@ export default function QuantumChatGPT({
                 flexDirection: 'column',
                 gap: '10px',
               }}>
+                {/* NotebookLM Attached Documents Display */}
+                {attachedDocs.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingBottom: '4px' }}>
+                    {attachedDocs.map(doc => (
+                      <div
+                        key={doc.id}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          background: 'rgba(56, 189, 248, 0.12)',
+                          border: '1px solid rgba(56, 189, 248, 0.35)',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '0.78rem',
+                          color: '#7dd3fc',
+                          fontFamily: "'Poppins', sans-serif",
+                        }}
+                      >
+                        <FileText size={13} color="#38bdf8" />
+                        <span style={{ fontWeight: 600 }}>{doc.name}</span>
+                        <span style={{ fontSize: '0.70rem', color: '#a1a1aa' }}>({doc.size} · Grounded)</span>
+                        <button
+                          onClick={() => removeAttachedDoc(doc.id)}
+                          style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}
+                          title="Remove document"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -2183,33 +2632,52 @@ export default function QuantumChatGPT({
                 {/* Bottom Toolbar inside Input */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* NotebookLM File Upload for Document Grounding */}
                     <input
                       type="file"
                       ref={fileInputRef}
                       style={{ display: 'none' }}
-                      accept="image/*,.pdf"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setInput(prev => `${prev} [Attached File: ${file.name}] `);
-                        }
-                      }}
+                      accept=".txt,.md,.py,.json,.csv,.pdf,text/*"
+                      onChange={handleFileUpload}
                     />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      title="Attach notes or circuit diagram image"
+                      title="Attach notes, code, or PDF for NotebookLM grounding"
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#a1a1aa',
+                        background: attachedDocs.length > 0 ? 'rgba(56, 189, 248, 0.20)' : 'none',
+                        border: attachedDocs.length > 0 ? '1px solid #38bdf8' : 'none',
+                        color: attachedDocs.length > 0 ? '#38bdf8' : '#a1a1aa',
                         cursor: 'pointer',
                         padding: 6,
                         borderRadius: 6,
                         display: 'flex',
                         alignItems: 'center',
+                        gap: 4,
                       }}
                     >
                       <Upload size={17} />
+                      {attachedDocs.length > 0 && <span style={{ fontSize: '0.72rem', fontWeight: 700 }}>{attachedDocs.length}</span>}
+                    </button>
+
+                    {/* ChatGPT Style Voice Input (Microphone) */}
+                    <button
+                      onClick={toggleListening}
+                      title={isListening ? "Stop listening" : `Dictate in ${INDIAN_LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'English'}`}
+                      style={{
+                        background: isListening ? 'rgba(239, 68, 68, 0.25)' : 'none',
+                        border: isListening ? '1px solid #ef4444' : 'none',
+                        color: isListening ? '#f87171' : '#a1a1aa',
+                        cursor: 'pointer',
+                        padding: 6,
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        animation: isListening ? 'pulse 1s infinite' : 'none',
+                      }}
+                    >
+                      {isListening ? <MicOff size={17} color="#f87171" /> : <Mic size={17} />}
+                      {isListening && <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700 }}>Listening...</span>}
                     </button>
 
                     <button
@@ -2240,15 +2708,15 @@ export default function QuantumChatGPT({
                     </span>
                     <button
                       onClick={() => sendMessage()}
-                      disabled={loading || !input.trim()}
+                      disabled={loading || (!input.trim() && attachedDocs.length === 0)}
                       style={{
                         width: '36px',
                         height: '36px',
                         borderRadius: '9px',
-                        background: input.trim() ? '#ffffff' : 'rgba(255,255,255,0.08)',
-                        color: input.trim() ? '#000000' : '#71717a',
+                        background: (input.trim() || attachedDocs.length > 0) ? '#ffffff' : 'rgba(255,255,255,0.08)',
+                        color: (input.trim() || attachedDocs.length > 0) ? '#000000' : '#71717a',
                         border: 'none',
-                        cursor: input.trim() ? 'pointer' : 'default',
+                        cursor: (input.trim() || attachedDocs.length > 0) ? 'pointer' : 'default',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -2270,6 +2738,8 @@ export default function QuantumChatGPT({
           onClose={() => setIsStudioOpen(false)}
           activeTopic={activeSession.title}
           language={selectedLanguage}
+          attachedDocs={attachedDocs}
+          onTriggerAudioOverview={handleTriggerAudioOverview}
           onOpenFlashcards={() => setIsFlashcardsOpen(true)}
           onOpenCitation={handleSelectCitation}
           onOpenInStudio={onLoadCircuitIntoStudio}

@@ -19,6 +19,8 @@ export default function QuantumStudio({
   activeTopic = '',
   citedSources = [],
   language = 'en',
+  attachedDocs = [],
+  onTriggerAudioOverview,
   onOpenFlashcards,
   onOpenCitation,
   onOpenInStudio,
@@ -183,6 +185,100 @@ export default function QuantumStudio({
                 150 peer-reviewed textbooks, lecture series, and seminal treatises indexed for verification.
               </div>
             </div>
+
+            {/* NotebookLM Audio Overview Banner */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.12) 100%)',
+              border: '1px solid rgba(129, 140, 248, 0.35)',
+              borderRadius: '12px',
+              padding: '14px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <Volume2 size={16} color="#818cf8" />
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#c7d2fe', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    NotebookLM Audio Overview
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#e2e8f0', fontWeight: 600 }}>
+                  2-Host Conversational Deep Dive
+                </div>
+                <div style={{ fontSize: '0.70rem', color: '#94a3b8', marginTop: 2 }}>
+                  Generate an AI podcast discussion on {activeTopic || 'Quantum Computing'}
+                </div>
+              </div>
+              <button
+                onClick={() => onTriggerAudioOverview && onTriggerAudioOverview()}
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 14px',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 8px rgba(99, 102, 241, 0.4)',
+                  transition: 'transform 0.15s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <Play size={13} fill="#ffffff" />
+                Listen Deep Dive
+              </button>
+            </div>
+
+            {/* Notebook Grounded Documents */}
+            {attachedDocs && attachedDocs.length > 0 && (
+              <div style={{
+                background: '#111827',
+                border: '1px solid rgba(52, 211, 153, 0.3)',
+                borderRadius: '10px',
+                padding: '12px 14px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Grounded Source Files ({attachedDocs.length})
+                  </span>
+                  <span style={{ fontSize: '0.66rem', color: '#6ee7b7', background: 'rgba(52, 211, 153, 0.12)', padding: '2px 6px', borderRadius: '4px' }}>
+                    Active Context
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {attachedDocs.map((doc, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      padding: '6px 10px',
+                      borderRadius: '6px',
+                      fontSize: '0.74rem',
+                      color: '#e2e8f0'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                        <span style={{ color: '#34d399' }}>📄</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                          {doc.name}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
+                        {(doc.size / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* NotebookLM Style Action Cards Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>

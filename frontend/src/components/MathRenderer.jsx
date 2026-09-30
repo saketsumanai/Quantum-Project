@@ -67,7 +67,7 @@ export function LatexBlock({ tex, display = true, className = '', style = {} }) 
  *  - Bold: **text**
  *  - Inline code: `code`
  */
-export default function MathRenderer({ content, className = '', style = {} }) {
+export default function MathRenderer({ content, onSelectCitation, className = '', style = {} }) {
   const renderedElements = useMemo(() => {
     if (!content) return null;
     const text = String(content);
@@ -108,14 +108,14 @@ export default function MathRenderer({ content, className = '', style = {} }) {
         return <LatexBlock key={index} tex={part} display={false} />;
       }
 
-      // Regular prose — format markdown bold, inline code, paragraphs
+      // Regular prose — format markdown bold, inline code, paragraphs, and interactive citations
       return (
         <span key={index}>
-          {renderMarkdownSegment(part)}
+          {renderMarkdownSegment(part, onSelectCitation)}
         </span>
       );
     });
-  }, [content]);
+  }, [content, onSelectCitation]);
 
   return (
     <div className={`math-rendered-text ${className}`} style={{ lineHeight: 1.85, fontSize: '1.18rem', color: '#ffffff', ...style }}>
@@ -125,9 +125,9 @@ export default function MathRenderer({ content, className = '', style = {} }) {
 }
 
 /**
- * Format markdown headings, bold, code, and lists inside plain text segments
+ * Format markdown headings, bold, code, citations, and lists inside plain text segments
  */
-function renderMarkdownSegment(segment) {
+function renderMarkdownSegment(segment, onSelectCitation) {
   // Split lines
   const lines = segment.split('\n');
   return lines.map((line, lIdx) => {
@@ -164,10 +164,11 @@ function renderMarkdownSegment(segment) {
     const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ');
     const displayLine = isBullet ? trimmed.replace(/^[-*]\s+/, '') : line;
 
-    // Parse inline bold and inline code
-    const tokens = displayLine.split(/(\*\*.*?\*\*|`.*?`)/g);
+    // Parse inline bold, inline code, and bracket citations [1], [Nielsen & Chuang], [Source: ...]
+    const tokens = displayLine.split(/(\*\*.*?\*\*|`.*?`|\[(?:Source:[^\]]+|\d+|[A-Z][a-zA-Z\s&]+(?:,\s*\d{4}|,\s*Ch\.\s*\d+)?|Ch\.\s*\d+)\])/g);
 
     const formattedLine = tokens.map((tok, tIdx) => {
+      if (!tok) return null;
       if (tok.startsWith('**') && tok.endsWith('**') && tok.length > 4) {
         return (
           <strong key={tIdx} style={{ color: '#ffffff', fontWeight: 700 }}>
@@ -191,6 +192,49 @@ function renderMarkdownSegment(segment) {
           >
             {tok.slice(1, -1)}
           </code>
+        );
+      }
+      // NotebookLM citation chip [1], [Nielsen & Chuang, 2010], etc.
+      if (tok.startsWith('[') && tok.endsWith(']') && tok.length > 2) {
+        const citContent = tok.slice(1, -1).trim();
+        return (
+          <span
+            key={tIdx}
+            onClick={() => onSelectCitation && onSelectCitation(citContent)}
+            title={`Project source citation: ${citContent}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              padding: '1px 6px',
+              margin: '0 3px',
+              borderRadius: '5px',
+              background: 'rgba(52, 211, 153, 0.12)',
+              border: '1px solid rgba(52, 211, 153, 0.35)',
+              color: '#6ee7b7',
+              fontSize: '0.78em',
+              fontWeight: 700,
+              cursor: onSelectCitation ? 'pointer' : 'default',
+              verticalAlign: 'baseline',
+              fontFamily: "'JetBrains Mono', monospace",
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (onSelectCitation) {
+                e.currentTarget.style.background = 'rgba(52, 211, 153, 0.25)';
+                e.currentTarget.style.borderColor = '#34d399';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (onSelectCitation) {
+                e.currentTarget.style.background = 'rgba(52, 211, 153, 0.12)';
+                e.currentTarget.style.borderColor = 'rgba(52, 211, 153, 0.35)';
+              }
+            }}
+          >
+            <span>{tok}</span>
+            <span style={{ fontSize: '0.72em', opacity: 0.8 }}>↗</span>
+          </span>
         );
       }
       return tok;
