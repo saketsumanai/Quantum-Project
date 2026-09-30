@@ -10,6 +10,7 @@ import {
 import MathRenderer, { LatexBlock } from "./MathRenderer";
 import API_BASE from "../config/api";
 import { chatAiTutorSafe } from "../services/aiTutorClient";
+import { simulateQuantumCodeClient, checkQuantumCodeClient } from "../services/quantumSimClient";
 
 const API = API_BASE;
 
@@ -601,20 +602,31 @@ export default function QuantumCodeLab({ onNavigateToStudio }) {
     setIsRunning(true);
     setRunError(null);
     try {
-      const resp = await fetch(`${API}/simulation/execute-code`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          framework: "qiskit",
-          shots,
-          timeout_seconds: 12,
-        }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        throw new Error(data.detail?.message || data.detail || "Execution failed");
+      let data = null;
+      try {
+        const resp = await fetch(`${API}/simulation/execute-code`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code,
+            framework: "qiskit",
+            shots,
+            timeout_seconds: 12,
+          }),
+        });
+        const contentType = resp.headers.get("content-type") || "";
+        if (resp.ok && contentType.includes("application/json")) {
+          data = await resp.json();
+        }
+      } catch (networkErr) {
+        console.warn("[Backend offline or Vercel]:", networkErr.message);
       }
+
+      // If backend is unreachable or returned non-JSON (e.g. Vercel static hosting)
+      if (!data) {
+        data = simulateQuantumCodeClient(code, shots);
+      }
+
       setRunResult(data);
 
       if (!data.success && data.error) {
@@ -643,19 +655,30 @@ export default function QuantumCodeLab({ onNavigateToStudio }) {
     setIsChecking(true);
     setRunError(null);
     try {
-      const resp = await fetch(`${API}/simulation/check-code`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          problem_id: mode === "problem" ? selectedProblem.id : null,
-          framework: "qiskit",
-        }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        throw new Error(data.detail?.message || data.detail || "Check failed");
+      let data = null;
+      try {
+        const resp = await fetch(`${API}/simulation/check-code`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code,
+            problem_id: mode === "problem" ? selectedProblem.id : null,
+            framework: "qiskit",
+          }),
+        });
+        const contentType = resp.headers.get("content-type") || "";
+        if (resp.ok && contentType.includes("application/json")) {
+          data = await resp.json();
+        }
+      } catch (networkErr) {
+        console.warn("[Backend offline or Vercel]:", networkErr.message);
       }
+
+      // If backend is unreachable or returned non-JSON (e.g. Vercel static hosting)
+      if (!data) {
+        data = checkQuantumCodeClient(code, mode === "problem" ? selectedProblem?.id : null);
+      }
+
       setCheckResult(data);
       if (data.circuit_telemetry?.counts) {
         setRunResult({
