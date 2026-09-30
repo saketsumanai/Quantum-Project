@@ -539,6 +539,11 @@ SMART RESPONSE RULES:
 5. YOUTUBE/REFERENCES: ONLY include when student asks a specific topic AND would benefit from videos. NEVER for casual responses.
 6. MCQ/QUIZ: ONLY include when student asks for practice or after explaining a core new concept. NOT for every response.
 7. FOLLOW-UP: Build directly on previous context. NEVER repeat prior explanations.
+8. QUANTUM CODE LAB & COPILOT DEBUGGING:
+   - When code, error messages, or test failures are in context:
+     * Pinpoint the exact line and error cause (e.g. inverted control/target, missing gate, premature measurement, deprecated methods).
+     * Explain the physical quantum mechanics behind the issue.
+     * Always provide the clean, verified working Qiskit 1.0+ code in ```python ... ``` and in "qiskit_executable_code".
 
 CONVERSATIONAL MEMORY:
 - Always remember and build upon previous turns. Connect follow-up answers to prior context.
@@ -646,6 +651,11 @@ SMART RESPONSE RULES:
 5. YOUTUBE/REFERENCES: ONLY include when student asks a specific topic AND would benefit from videos. NEVER for casual responses.
 6. MCQ/QUIZ: ONLY include when student asks for practice or after explaining a core new concept. NOT for every response.
 7. FOLLOW-UP: Build directly on previous context. NEVER repeat prior explanations.
+8. QUANTUM CODE LAB & COPILOT DEBUGGING:
+   - When code, error messages, or test failures are in context:
+     * Pinpoint the exact line and error cause (e.g. inverted control/target, missing gate, premature measurement, deprecated methods).
+     * Explain the physical quantum mechanics behind the issue.
+     * Always provide the clean, verified working Qiskit 1.0+ code in ```python ... ``` and in "qiskit_executable_code".
 
 CONVERSATIONAL MEMORY:
 - Always remember and build upon previous turns. Connect follow-up answers to prior context.
@@ -870,6 +880,9 @@ export async function chatAiTutorSafe({
 }) {
   const promptText = query || (messages.length ? messages[messages.length - 1].content : "");
   const effectiveLang = detectLanguage(promptText, language);
+  const promptWithContext = context && context.trim()
+    ? `${promptText}\n\n[Active Quantum IDE & Code Context]:\n${context.trim()}`
+    : promptText;
 
   // ─── Step 1: Attempt Backend API Call Safely ──────────────────────────────
   try {
@@ -878,7 +891,7 @@ export async function chatAiTutorSafe({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        query,
+        query: promptText,
         messages,
         topic,
         context,
@@ -892,14 +905,15 @@ export async function chatAiTutorSafe({
       const rawText = await resp.text();
       if (rawText && rawText.trim().length > 0) {
         const parsed = safeJsonParse(rawText);
-        if (parsed && (parsed.content || parsed.response)) {
+        if (parsed && (parsed.content || parsed.response || parsed.vocal_prose_script)) {
           return {
             success: true,
-            content: parsed.content || parsed.response,
-            latex: parsed.latex || null,
-            code: parsed.code || null,
+            content: parsed.content || parsed.response || parsed.vocal_prose_script,
+            latex: parsed.latex || parsed.mathematical_latex_formula || null,
+            code: parsed.code || parsed.qiskit_executable_code || null,
             sources: parsed.sources || ["Gitwolves Neural Core"],
             language_detected: parsed.language || effectiveLang,
+            model: parsed.model || "Aura Quantum Core",
           };
         }
       }
@@ -910,7 +924,7 @@ export async function chatAiTutorSafe({
 
   // ─── Step 2: Direct Gemini Query ──────────────────────────────────────────
   const geminiResult = await queryGeminiDirectly({
-    userQuery: promptText,
+    userQuery: promptWithContext,
     conversationHistory: messages,
     language: effectiveLang,
   });
@@ -923,12 +937,13 @@ export async function chatAiTutorSafe({
       sources: geminiResult.sources,
       quiz: geminiResult.quiz_generation_object,
       language_detected: effectiveLang,
+      model: geminiResult.model_used || "Google Gemini",
     };
   }
 
   // ─── Step 3: Direct Groq Query ────────────────────────────────────────────
   const groqResult = await queryGroqDirectly({
-    userQuery: promptText,
+    userQuery: promptWithContext,
     conversationHistory: messages,
     language: effectiveLang,
   });
@@ -941,6 +956,7 @@ export async function chatAiTutorSafe({
       sources: groqResult.sources,
       quiz: groqResult.quiz_generation_object,
       language_detected: effectiveLang,
+      model: groqResult.model_used || "Groq LPU",
     };
   }
 
@@ -954,5 +970,6 @@ export async function chatAiTutorSafe({
     sources: offline.sources,
     quiz: offline.quiz_generation_object,
     language_detected: effectiveLang,
+    model: "Aura Quantum Offline Engine",
   };
 }

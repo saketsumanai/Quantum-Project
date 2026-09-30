@@ -88,10 +88,18 @@ async def chat_endpoint(request: ChatRequest):
         lower_q = clean_user_query.lower()
         wants_diagram = any(k in lower_q for k in ["diagram", "bloch", "sphere", "circuit", "draw", "visual", "picture", "plot"])
 
+        # Incorporate IDE / CodeLab context (code, error, problem, test diagnostics)
+        circuit_ctx = dict(request.circuit_context or {})
+        query_for_tutor = clean_user_query
+        if request.context and str(request.context).strip():
+            context_str = str(request.context).strip()
+            circuit_ctx["ide_context"] = context_str
+            query_for_tutor = f"{clean_user_query}\n\n[Active Quantum IDE & Code Context]:\n{context_str}"
+
         # Use the existing tutor service with clean query and explicit conversation history
         tutor_req = AITutorQueryRequest(
-            user_query=clean_user_query,
-            active_circuit_context=request.circuit_context or {},
+            user_query=query_for_tutor,
+            active_circuit_context=circuit_ctx,
             conversation_history=structured_history,
             current_topic=request.topic or "",
             language=request.language or "en",
@@ -125,7 +133,7 @@ async def chat_endpoint(request: ChatRequest):
             diagram=result.diagram,
             quiz=quiz_dict,
             sources=result.sources,
-            model="Qwen-3.8-27B · RAG Grounded",
+            model=result.model_used or "Aura Quantum Core",
             language=result.language_detected or getattr(tutor_req, "language", "en")
         )
     except HTTPException:

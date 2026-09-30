@@ -536,6 +536,8 @@ export default function QuantumCodeLab({ onNavigateToStudio }) {
   const [aiMessages, setAiMessages] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [copiedCodeIdx, setCopiedCodeIdx] = useState(null);
+  const [appliedCodeIdx, setAppliedCodeIdx] = useState(null);
   const chatEndRef = useRef(null);
   const editorRef = useRef(null);
 
@@ -723,6 +725,7 @@ export default function QuantumCodeLab({ onNavigateToStudio }) {
     const question = (q || aiQuestion).trim();
     if (!question) return;
     setAiQuestion("");
+    setAiDrawerOpen(true);
     setAiMessages((prev) => [...prev, { role: "user", content: question, ts: Date.now() }]);
     setAiLoading(true);
     setAiError(null);
@@ -730,14 +733,14 @@ export default function QuantumCodeLab({ onNavigateToStudio }) {
     const contextPayload = `
 Quantum IDE Context:
 Mode: ${mode}
-${mode === "problem" ? `Problem: ${selectedProblem.title} (${selectedProblem.difficulty})` : "Custom Quantum Playground"}
-User Code:
+${mode === "problem" ? `Problem: ${selectedProblem.title} (${selectedProblem.difficulty})\nExpected Pattern: ${selectedProblem.expectedPatterns?.join(", ") || "N/A"}` : "Custom Quantum Playground"}
+User Code in Editor:
 \`\`\`python
 ${code}
 \`\`\`
-${runResult ? `Execution Output / Counts: ${JSON.stringify(runResult.counts)}` : ""}
-${runError ? `Error: ${runError}` : ""}
-${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stringify(checkResult.diagnostics)}` : ""}
+${runResult ? `Execution Output / Counts: ${JSON.stringify(runResult.counts || {})}\nCircuit Depth: ${runResult.circuit_depth || "N/A"}\nStdout: ${runResult.stdout || ""}` : ""}
+${runError ? `Terminal Error: ${runError}` : ""}
+${checkResult ? `Check Score: ${checkResult.score}/100, Passed: ${checkResult.passed}\nDiagnostics: ${JSON.stringify(checkResult.diagnostics || [])}\nFailing Tests: ${JSON.stringify(checkResult.test_results?.filter((t) => !t.passed) || [])}` : ""}
 `;
 
     try {
@@ -747,15 +750,22 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
           ...aiMessages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
           { role: "user", content: question },
         ],
-        topic: mode === "problem" ? selectedProblem.title : "Quantum Programming & Qiskit",
+        topic: mode === "problem" ? `${selectedProblem.title} - Qiskit Code Lab` : "Quantum Programming & Qiskit",
         conversationHistory: aiMessages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
         context: contextPayload,
       });
 
-      const answer = data.content || data.response || data.answer || "Quantum AI Copilot response generated.";
+      const answer = data.content || data.vocal_prose_script || data.response || data.answer || "Quantum AI Copilot response generated.";
       setAiMessages((prev) => [
         ...prev,
-        { role: "assistant", content: answer, model: data.model || data._active_model || "Groq LPU · GPT-OSS 120B", ts: Date.now() },
+        {
+          role: "assistant",
+          content: answer,
+          code: data.code || null,
+          latex: data.latex || null,
+          model: data.model || data._active_model || "Aura Quantum Copilot (Qiskit 1.0+)",
+          ts: Date.now(),
+        },
       ]);
     } catch (err) {
       setAiError("AI Copilot active in resilient mode.");
@@ -1947,6 +1957,33 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                           </div>
                         ))}
                       </div>
+                    {/* Ask AI Copilot to Fix Button */}
+                    {!checkResult.passed && (
+                      <div style={{ marginTop: 14 }}>
+                        <button
+                          onClick={() => {
+                            setAiDrawerOpen(true);
+                            askAI("My quantum circuit checks failed. Analyze my code, explain what went wrong, and provide the exact working corrected Qiskit 1.0+ code.");
+                          }}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "8px 16px",
+                            background: "linear-gradient(135deg, #ffffff 0%, #e4e4e7 100%)",
+                            border: "none",
+                            borderRadius: 5,
+                            color: "#000000",
+                            fontSize: "0.76rem",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            boxShadow: "0 2px 10px rgba(255, 255, 255, 0.15)",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <Sparkles size={14} color="#000000" /> Ask AI Copilot to Fix This Circuit
+                        </button>
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -2161,19 +2198,88 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Diagnostics: ${JSON.stri
                     key={i}
                     style={{
                       alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                      maxWidth: "92%",
+                      maxWidth: "94%",
                       background: msg.role === "user" ? "#27272a" : "#141418",
                       border: msg.role === "user" ? "1px solid rgba(255, 255, 255, 0.14)" : "1px solid rgba(255, 255, 255, 0.08)",
                       borderRadius: 8,
-                      padding: "9px 13px",
+                      padding: "10px 14px",
                       fontSize: "0.8rem",
-                      lineHeight: 1.5,
+                      lineHeight: 1.55,
                       color: msg.role === "user" ? "#ffffff" : "#e4e4e7",
                     }}
                   >
                     <div style={{ whiteSpace: "pre-wrap" }}>{msg.content}</div>
+
+                    {/* Extracted or Suggested Code Block with Apply to Editor */}
+                    {(() => {
+                      let codeSnippet = msg.code;
+                      if (!codeSnippet && msg.content && msg.content.includes("```")) {
+                        const m = msg.content.match(/```(?:python|qiskit)?\n([\s\S]*?)```/);
+                        if (m) codeSnippet = m[1].trim();
+                      }
+                      if (!codeSnippet) return null;
+
+                      const isCopied = copiedCodeIdx === i;
+                      const isApplied = appliedCodeIdx === i;
+
+                      return (
+                        <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                            <button
+                              onClick={() => {
+                                handleEditorChange(codeSnippet);
+                                setAppliedCodeIdx(i);
+                                setTimeout(() => setAppliedCodeIdx(null), 2500);
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "4px 10px",
+                                background: isApplied ? "#10b981" : "#ffffff",
+                                border: "none",
+                                borderRadius: 4,
+                                color: "#000000",
+                                fontSize: "0.7rem",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                transition: "all 0.15s ease",
+                              }}
+                              title="Apply this corrected code directly to Monaco Editor"
+                            >
+                              {isApplied ? <Check size={12} color="#000000" /> : <Zap size={12} color="#000000" />}
+                              <span>{isApplied ? "Applied to Editor!" : "Apply to Editor"}</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(codeSnippet);
+                                setCopiedCodeIdx(i);
+                                setTimeout(() => setCopiedCodeIdx(null), 2000);
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "4px 8px",
+                                background: "#18181b",
+                                border: "1px solid rgba(255, 255, 255, 0.14)",
+                                borderRadius: 4,
+                                color: "#e4e4e7",
+                                fontSize: "0.7rem",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {isCopied ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+                              <span>{isCopied ? "Copied!" : "Copy Code"}</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {msg.model && (
-                      <div style={{ fontSize: "0.62rem", color: "#71717a", marginTop: 4, textAlign: "right" }}>
+                      <div style={{ fontSize: "0.62rem", color: "#71717a", marginTop: 6, textAlign: "right", fontFamily: "var(--font-mono, monospace)" }}>
                         {msg.model}
                       </div>
                     )}
