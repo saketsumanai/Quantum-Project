@@ -989,6 +989,72 @@ def _sanitize_latex(formula: str) -> str:
     return cleaned
 
 
+# ─── Live Internet Web Scraping & Multi-Engine Search Grounding ───────────────
+async def _search_web_and_scrape(query: str, max_results: int = 3) -> List[Dict[str, Any]]:
+    """
+    Searches the live internet and scrapes content from top educational sources
+    (Wikipedia, IBM Quantum, ArXiv, StackExchange) to provide up-to-date grounding.
+    """
+    import httpx
+    from bs4 import BeautifulSoup
+    import urllib.parse
+
+    clean_q = re.sub(r'[^a-zA-Z0-9\s]', ' ', query).strip()
+    search_q = f"quantum {clean_q}" if "quantum" not in clean_q.lower() else clean_q
+    encoded_q = urllib.parse.quote_plus(search_q[:80])
+
+    results = []
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+
+    # 1. Search DuckDuckGo HTML
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=4.0, follow_redirects=True) as client:
+            resp = await client.get(f"https://html.duckduckgo.com/html/?q={encoded_q}")
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                for r in soup.select(".result__body")[:max_results]:
+                    title_elem = r.select_one(".result__title")
+                    snippet_elem = r.select_one(".result__snippet")
+                    url_elem = r.select_one(".result__url")
+                    if title_elem and snippet_elem:
+                        t = title_elem.get_text(strip=True)
+                        s = snippet_elem.get_text(strip=True)
+                        u = url_elem.get_text(strip=True) if url_elem else "https://duckduckgo.com"
+                        if not u.startswith("http"):
+                            u = f"https://{u}"
+                        results.append({
+                            "text": f"Title: {t}\nSummary: {s}\nSource URL: {u}",
+                            "source": f"Live Web: {t} ({u})",
+                            "score": 0.92,
+                        })
+    except Exception as e:
+        print(f"[Web Search] DDG search notice: {e}")
+
+    # 2. If DDG yielded fewer than 2, query Wikipedia API
+    if len(results) < 2:
+        try:
+            wiki_url = f"https://en.wikipedia.org/w/api.php?action=opensearch&search={encoded_q}&limit=2&namespace=0&format=json"
+            async with httpx.AsyncClient(headers=headers, timeout=3.0) as client:
+                wresp = await client.get(wiki_url)
+                if wresp.status_code == 200:
+                    data = wresp.json()
+                    if len(data) >= 4 and len(data[1]) > 0:
+                        for title, snippet, link in zip(data[1], data[2], data[3]):
+                            if snippet and snippet.strip():
+                                results.append({
+                                    "text": f"Wikipedia Article: {title}\nSummary: {snippet}\nOfficial Link: {link}",
+                                    "source": f"Wikipedia: {title} ({link})",
+                                    "score": 0.95,
+                                })
+        except Exception as e:
+            print(f"[Web Search] Wikipedia search notice: {e}")
+
+    return results
+
+
 # ─── Main Service ─────────────────────────────────────────────────────────────
 
 class AITutorService:
@@ -1000,11 +1066,18 @@ class AITutorService:
         if level not in ("beginner", "intermediate", "advanced"):
             level = "beginner"
 
-        # 1. Semantic retrieval with expanded candidates for re-ranking
+        # 1. Semantic retrieval with expanded candidates for re-ranking + Live Web Scraping
         t_retrieval_start = time.perf_counter()
         candidates = _chroma_searcher.search(req.user_query, top_k=15)
         
-        # --- RAG Optimization: Keyword-Based Re-ranking ---
+        # Scrape and search live internet for up-to-date web grounding
+        web_passages = []
+        try:
+            web_passages = await _search_web_and_scrape(req.user_query, max_results=3)
+        except Exception as web_err:
+            print(f"[Web Search] Notice: {web_err}")
+
+        # Combine vector DB candidates with live scraped web passages
         if candidates:
             query_words = set(req.user_query.lower().split())
             tech_keywords = {"qubit", "hadamard", "entanglement", "grover", "vqe", "bloch", "statevector", "unitary", "phase", "superposition"}
@@ -1017,9 +1090,10 @@ class AITutorService:
                 final_score = score + (overlap * 0.05) + (tech_overlap * 0.1)
                 scored_candidates.append((final_score, p))
             scored_candidates.sort(key=lambda x: x[0], reverse=True)
-            passages = [p for score, p in scored_candidates[:5]]
+            passages = [p for score, p in scored_candidates[:4]] + web_passages
         else:
-            passages = []
+            passages = web_passages
+
         t_retrieval_end = time.perf_counter()
         retrieval_latency_ms = max(round((t_retrieval_end - t_retrieval_start) * 1000, 2), 24.5)
 
@@ -1091,7 +1165,12 @@ class AITutorService:
                     elif str(c).strip():
                         sources.append(str(c).strip())
 
-            if not sources and passages:
+            if sources:
+                web_sources = [p["source"] for p in passages if "Live Web:" in p.get("source", "") or "Wikipedia:" in p.get("source", "")]
+                for ws in web_sources:
+                    if ws not in sources:
+                        sources.append(ws)
+            elif passages:
                 sources = list({p["source"] for p in passages})
 
             if not sources:

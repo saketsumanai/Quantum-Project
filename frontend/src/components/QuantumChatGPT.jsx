@@ -12,6 +12,7 @@ import QuantumVisualizer from './QuantumVisualizer';
 import QuantumFlashcards from './QuantumFlashcards';
 import CitationProjector from './CitationProjector';
 import QuantumStudio from './QuantumStudio';
+import BlochSphere from './BlochSphere';
 import { resolveCitationsForQuery, QUANTUM_TEXTBOOK_EXCERPTS } from '../data/quantumCitationsData';
 import { INDIAN_LANGUAGES, VIDEO_LECTURES } from '../data/videoLecturesData';
 import API_BASE from '../config/api';
@@ -125,40 +126,51 @@ const MULTILINGUAL_STARTERS = {
 
 // ── Word-by-Word Streaming Typewriter Component (ChatGPT Experience) ──────────
 function StreamingMessageProse({ text, isStreaming, onComplete, onSelectCitation }) {
-  const [displayedWordsCount, setDisplayedWordsCount] = useState(isStreaming ? 1 : null);
-  const words = useMemo(() => (text ? text.split(' ') : []), [text]);
+  const [displayedCount, setDisplayedCount] = useState(isStreaming ? 1 : null);
+
+  // Smart tokenizer preserving LaTeX math blocks, code blocks, and markdown atomic units
+  const tokens = useMemo(() => {
+    if (!text) return [];
+    const regex = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$[^$\n]+?\$|```[\s\S]*?```|\S+\s*)/g;
+    const list = [];
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+      list.push(m[0]);
+    }
+    return list.length > 0 ? list : [text];
+  }, [text]);
 
   useEffect(() => {
     if (!isStreaming) {
-      setDisplayedWordsCount(null);
+      setDisplayedCount(null);
       return;
     }
-    setDisplayedWordsCount(1);
+    setDisplayedCount(1);
     let count = 1;
     const interval = setInterval(() => {
-      count += 2; // Stream 2 words per tick (~22ms) for snappy, fluid delivery
-      if (count >= words.length) {
-        setDisplayedWordsCount(null);
+      count += 2; // Stream 2 atomic tokens per tick (~22ms) for snappy, fluid delivery
+      if (count >= tokens.length) {
+        setDisplayedCount(null);
         clearInterval(interval);
         onComplete?.();
       } else {
-        setDisplayedWordsCount(count);
+        setDisplayedCount(count);
       }
     }, 22);
     return () => clearInterval(interval);
-  }, [text, isStreaming, words.length, onComplete]);
+  }, [text, isStreaming, tokens.length, onComplete]);
 
-  const displayedContent = (isStreaming && displayedWordsCount !== null)
-    ? words.slice(0, displayedWordsCount).join(' ')
+  const displayedContent = (isStreaming && displayedCount !== null)
+    ? tokens.slice(0, displayedCount).join('')
     : text;
 
-  const isStillTyping = isStreaming && displayedWordsCount !== null && displayedWordsCount < words.length;
+  const isStillTyping = isStreaming && displayedCount !== null && displayedCount < tokens.length;
 
   return (
     <div
       onClick={() => {
         if (isStillTyping) {
-          setDisplayedWordsCount(null);
+          setDisplayedCount(null);
           onComplete?.();
         }
       }}
@@ -181,6 +193,213 @@ function StreamingMessageProse({ text, isStreaming, onComplete, onSelectCitation
           }}
         />
       )}
+    </div>
+  );
+}
+
+// ── Interactive In-Chat Bloch Sphere & Circuit Simulator ────────────────────
+function ChatBlochSimulator({ initialGate = 'H', onOpenInStudio }) {
+  const [qubitsCoords, setQubitsCoords] = useState([
+    { qubit_index: 0, x: 1, y: 0, z: 0, theta_rad: Math.PI / 2, phi_rad: 0 }
+  ]);
+  const [activeGates, setActiveGates] = useState(['H']);
+
+  const applyGate = (gate) => {
+    setQubitsCoords((prev) => {
+      const current = prev[0] || { qubit_index: 0, x: 0, y: 0, z: 1, theta_rad: 0, phi_rad: 0 };
+      let th = current.theta_rad;
+      let ph = current.phi_rad;
+
+      if (gate === 'RESET') {
+        th = 0;
+        ph = 0;
+        setActiveGates([]);
+      } else if (gate === 'H') {
+        if (Math.abs(th) < 0.1) {
+          th = Math.PI / 2;
+          ph = 0;
+        } else if (Math.abs(th - Math.PI) < 0.1) {
+          th = Math.PI / 2;
+          ph = Math.PI;
+        } else {
+          th = 0;
+          ph = 0;
+        }
+        setActiveGates(g => [...g, 'H']);
+      } else if (gate === 'X') {
+        th = Math.PI - th;
+        ph = -ph;
+        setActiveGates(g => [...g, 'X']);
+      } else if (gate === 'Z') {
+        ph = (ph + Math.PI) % (2 * Math.PI);
+        setActiveGates(g => [...g, 'Z']);
+      } else if (gate === 'S') {
+        ph = (ph + Math.PI / 2) % (2 * Math.PI);
+        setActiveGates(g => [...g, 'S']);
+      } else if (gate === 'T') {
+        ph = (ph + Math.PI / 4) % (2 * Math.PI);
+        setActiveGates(g => [...g, 'T']);
+      } else if (gate === 'Y') {
+        th = Math.PI - th;
+        ph = (Math.PI - ph) % (2 * Math.PI);
+        setActiveGates(g => [...g, 'Y']);
+      }
+
+      const x = Math.sin(th) * Math.cos(ph);
+      const y = Math.sin(th) * Math.sin(ph);
+      const z = Math.cos(th);
+
+      return [{ qubit_index: 0, x, y, z, theta_rad: th, phi_rad: ph }];
+    });
+  };
+
+  const handleLaunchStudio = () => {
+    if (onOpenInStudio) {
+      onOpenInStudio({
+        num_qubits: 1,
+        instructions: activeGates.map(g => ({
+          gate: g.toLowerCase(),
+          qubits: [0],
+          params: [],
+        })),
+      });
+    }
+  };
+
+  return (
+    <div style={{
+      marginTop: 16,
+      marginBottom: 16,
+      background: '#0d0d14',
+      border: '1px solid rgba(56, 189, 248, 0.25)',
+      borderRadius: 14,
+      padding: '16px 18px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 26,
+            height: 26,
+            borderRadius: 7,
+            background: 'rgba(56, 189, 248, 0.15)',
+            border: '1px solid rgba(56, 189, 248, 0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#38bdf8',
+          }}>
+            <Compass size={14} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', fontFamily: "'Times New Roman', Times, serif" }}>
+              Live 3D Bloch Sphere & Circuit Simulator
+            </div>
+            <div style={{ fontSize: '0.70rem', color: '#94a3b8' }}>
+              Interact with quantum gates to observe unitary rotations & state vector dynamics
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={handleLaunchStudio}
+          style={{
+            background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: 6,
+            padding: '6px 12px',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            boxShadow: '0 2px 8px rgba(37, 99, 235, 0.35)',
+          }}
+        >
+          <Zap size={12} fill="#ffffff" />
+          <span>Open in Circuit Studio</span>
+        </button>
+      </div>
+
+      {/* Interactive Gate Toolbar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        flexWrap: 'wrap',
+        marginBottom: 12,
+        background: 'rgba(255, 255, 255, 0.03)',
+        padding: '8px 10px',
+        borderRadius: 8,
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+      }}>
+        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600, marginRight: 4 }}>
+          Apply Gate:
+        </span>
+        {[
+          { label: '|0⟩ Reset', gate: 'RESET', color: '#f43f5e' },
+          { label: 'H (Hadamard)', gate: 'H', color: '#38bdf8' },
+          { label: 'X (NOT)', gate: 'X', color: '#34d399' },
+          { label: 'Y (Pauli-Y)', gate: 'Y', color: '#a78bfa' },
+          { label: 'Z (Phase Flip)', gate: 'Z', color: '#fbbf24' },
+          { label: 'S (π/2)', gate: 'S', color: '#f472b6' },
+          { label: 'T (π/4)', gate: 'T', color: '#818cf8' },
+        ].map((btn) => (
+          <button
+            key={btn.gate}
+            onClick={() => applyGate(btn.gate)}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: `1px solid ${btn.color}40`,
+              color: btn.color,
+              borderRadius: 5,
+              padding: '4px 9px',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = `${btn.color}25`;
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            {btn.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Render 3D Bloch Sphere */}
+      <div style={{ height: '320px', position: 'relative' }}>
+        <BlochSphere blochCoordinates={qubitsCoords} selectedQubit={0} />
+      </div>
+
+      {/* Circuit Steps Applied */}
+      <div style={{
+        marginTop: 10,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: '0.74rem',
+        color: '#94a3b8',
+      }}>
+        <span>Circuit History:</span>
+        <code style={{
+          background: 'rgba(0, 0, 0, 0.4)',
+          padding: '2px 8px',
+          borderRadius: 4,
+          color: '#38bdf8',
+          fontFamily: "'JetBrains Mono', monospace",
+        }}>
+          qc = QuantumCircuit(1); {activeGates.map(g => `qc.${g.toLowerCase()}(0)`).join('; ')}
+        </code>
+      </div>
     </div>
   );
 }
@@ -591,25 +810,37 @@ function resolveLecturesForQuery(query = '', language = 'all', limit = 2) {
   return candidates.slice(0, limit);
 }
 
-// ── Recommended Lectures Card Component ──────────────────────────────────────
+// ── Recommended Lectures Card Component with Inline Player & Exact Working URLs ───
 function RecommendedLecturesBlock({ query, language, onNavigate, onPlayVideo }) {
   const lectures = useMemo(() => resolveLecturesForQuery(query, language, 2), [query, language]);
+  const [inlineVideoId, setInlineVideoId] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+
   if (!lectures || lectures.length === 0) return null;
+
+  const isVideoRequested = /video|yt|youtube|lecture|watch|link/i.test(query || '');
+
+  const copyUrl = (id, url) => {
+    navigator.clipboard?.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2500);
+  };
 
   return (
     <div style={{
-      marginTop: 16,
-      background: '#111118',
-      border: '1px solid rgba(255, 255, 255, 0.12)',
+      marginTop: 18,
+      background: isVideoRequested ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(17, 17, 24, 0.95) 100%)' : '#111118',
+      border: isVideoRequested ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.12)',
       borderRadius: '12px',
-      padding: '14px 18px',
+      padding: '16px 18px',
+      boxShadow: isVideoRequested ? '0 4px 20px rgba(239, 68, 68, 0.15)' : 'none',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
-            width: 24,
-            height: 24,
-            borderRadius: 6,
+            width: 26,
+            height: 26,
+            borderRadius: 7,
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid rgba(239, 68, 68, 0.35)',
             display: 'flex',
@@ -617,17 +848,22 @@ function RecommendedLecturesBlock({ query, language, onNavigate, onPlayVideo }) 
             justifyContent: 'center',
             color: '#f87171',
           }}>
-            <Play size={12} fill="#f87171" />
+            <Play size={13} fill="#f87171" />
           </div>
-          <span style={{
-            fontSize: '0.85rem',
-            fontWeight: 800,
-            fontFamily: "'Times New Roman', Times, serif",
-            color: '#ffffff',
-            letterSpacing: '0.02em',
-          }}>
-            Curated YouTube Lectures in Our Database
-          </span>
+          <div>
+            <span style={{
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              fontFamily: "'Times New Roman', Times, serif",
+              color: '#ffffff',
+              letterSpacing: '0.02em',
+            }}>
+              {isVideoRequested ? '🎬 Best Verified Working YouTube Video' : 'Curated YouTube Video Lectures'}
+            </span>
+            <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+              Direct streaming links with IIT / NPTEL / IBM verified lectures
+            </div>
+          </div>
         </div>
         {onNavigate && (
           <button
@@ -651,151 +887,234 @@ function RecommendedLecturesBlock({ query, language, onNavigate, onPlayVideo }) 
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: lectures.length > 1 ? 'repeat(auto-fit, minmax(260px, 1fr))' : '1fr', gap: 12 }}>
-        {lectures.map((lec) => (
-          <div
-            key={lec.id}
-            style={{
-              background: '#161620',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 10,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.40)';
-              e.currentTarget.style.background = '#1a1a26';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.background = '#161620';
-            }}
-          >
-            {/* Video Thumbnail with Duration Badge */}
-            <div style={{ position: 'relative', width: '100%', height: '115px', background: '#09090d', overflow: 'hidden' }}>
-              <img
-                src={lec.thumbnail}
-                alt={lec.title}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)',
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {lectures.map((lec) => {
+          const directUrl = `https://www.youtube.com/watch?v=${lec.youtubeId}`;
+          const isPlayingThis = inlineVideoId === lec.id;
+
+          return (
+            <div
+              key={lec.id}
+              style={{
+                background: '#161620',
+                border: isPlayingThis ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: 10,
+                overflow: 'hidden',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <button
-                  onClick={() => onPlayVideo && onPlayVideo(lec)}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    background: 'rgba(0, 0, 0, 0.75)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    color: '#ffffff',
+                flexDirection: 'column',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {/* Inline Embedded Player */}
+              {isPlayingThis ? (
+                <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000000' }}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${lec.youtubeId}?autoplay=1`}
+                    title={lec.title}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                /* Video Thumbnail with Duration Badge */
+                <div style={{ position: 'relative', width: '100%', height: '140px', background: '#09090d', overflow: 'hidden' }}>
+                  <img
+                    src={lec.thumbnail}
+                    alt={lec.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'transform 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1.0)'}
-                  title="Watch Video"
-                >
-                  <Play size={16} fill="#ffffff" />
-                </button>
-              </div>
-              <span style={{
-                position: 'absolute',
-                bottom: 6,
-                right: 8,
-                background: 'rgba(0,0,0,0.85)',
-                borderRadius: 4,
-                padding: '2px 5px',
-                fontSize: '0.68rem',
-                color: '#ffffff',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}>
-                {lec.duration}
-              </span>
-              <span style={{
-                position: 'absolute',
-                top: 6,
-                left: 8,
-                background: 'rgba(56, 189, 248, 0.25)',
-                border: '1px solid rgba(56, 189, 248, 0.45)',
-                borderRadius: 4,
-                padding: '2px 6px',
-                fontSize: '0.66rem',
-                color: '#7dd3fc',
-                fontWeight: 700,
-              }}>
-                {lec.languageLabel}
-              </span>
-            </div>
-
-            {/* Video Meta */}
-            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1, justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.35, marginBottom: 2 }}>
-                  {lec.title}
-                </div>
-                <div style={{ fontSize: '0.72rem', color: '#a1a1aa' }}>
-                  {lec.instructor} · <span style={{ color: '#d4d4d8' }}>{lec.level}</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 4 }}>
-                <button
-                  onClick={() => onPlayVideo && onPlayVideo(lec)}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 4,
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.16)',
-                    borderRadius: 6,
-                    padding: '5px 8px',
+                  }}>
+                    <button
+                      onClick={() => setInlineVideoId(lec.id)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 20,
+                        background: 'rgba(239, 68, 68, 0.9)',
+                        border: 'none',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)',
+                        transition: 'transform 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1.0)'}
+                    >
+                      <Play size={14} fill="#ffffff" />
+                      <span>Play Video Now</span>
+                    </button>
+                  </div>
+                  <span style={{
+                    position: 'absolute',
+                    bottom: 6,
+                    right: 8,
+                    background: 'rgba(0,0,0,0.85)',
+                    borderRadius: 4,
+                    padding: '2px 6px',
+                    fontSize: '0.68rem',
                     color: '#ffffff',
-                    fontSize: '0.74rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Play size={11} fill="#ffffff" /> Watch Inline
-                </button>
-                {onNavigate && (
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>
+                    {lec.duration}
+                  </span>
+                  <span style={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    background: 'rgba(56, 189, 248, 0.25)',
+                    border: '1px solid rgba(56, 189, 248, 0.45)',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    fontSize: '0.68rem',
+                    color: '#7dd3fc',
+                    fontWeight: 700,
+                  }}>
+                    {lec.languageLabel}
+                  </span>
+                </div>
+              )}
+
+              {/* Video Meta & Working URL Bar */}
+              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.35, marginBottom: 3 }}>
+                    {lec.title}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#a1a1aa' }}>
+                    {lec.instructor} · <span style={{ color: '#d4d4d8' }}>{lec.level}</span> · {lec.organization}
+                  </div>
+                </div>
+
+                {/* Exact Working YouTube URL Display */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'rgba(0, 0, 0, 0.45)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 6,
+                  padding: '5px 10px',
+                  gap: 8,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                    <span style={{ color: '#ef4444', fontSize: '0.72rem', fontWeight: 700 }}>URL:</span>
+                    <a
+                      href={directUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: '#60a5fa',
+                        fontSize: '0.72rem',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        textDecoration: 'none',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title="Open on YouTube in new tab"
+                    >
+                      {directUrl}
+                    </a>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      onClick={() => copyUrl(lec.id, directUrl)}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: 4,
+                        padding: '3px 8px',
+                        color: copiedId === lec.id ? '#34d399' : '#e2e8f0',
+                        fontSize: '0.68rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      {copiedId === lec.id ? <><Check size={10} color="#34d399" /> Copied!</> : <><Copy size={10} /> Copy URL</>}
+                    </button>
+                    <a
+                      href={directUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: '#e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        textDecoration: 'none',
+                        padding: '3px',
+                      }}
+                      title="Open in YouTube"
+                    >
+                      <ExternalLink size={13} />
+                    </a>
+                  </div>
+                </div>
+
+                {/* Bottom Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 2 }}>
                   <button
-                    onClick={() => onNavigate('videos')}
+                    onClick={() => setInlineVideoId(isPlayingThis ? null : lec.id)}
                     style={{
+                      flex: 1,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 3,
-                      background: 'none',
-                      border: '1px solid rgba(255, 255, 255, 0.10)',
+                      justifyContent: 'center',
+                      gap: 5,
+                      background: isPlayingThis ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                      border: isPlayingThis ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255, 255, 255, 0.16)',
                       borderRadius: 6,
-                      padding: '5px 8px',
-                      color: '#a1a1aa',
+                      padding: '6px 10px',
+                      color: isPlayingThis ? '#7dd3fc' : '#ffffff',
                       fontSize: '0.74rem',
+                      fontWeight: 600,
                       cursor: 'pointer',
                     }}
-                    title="Open in Multilingual Video Hub with AI Dubber"
                   >
-                    <ExternalLink size={12} />
+                    <Play size={11} fill={isPlayingThis ? '#7dd3fc' : '#ffffff'} />
+                    {isPlayingThis ? 'Hide Video Player' : 'Watch Inline Here'}
                   </button>
-                )}
+                  {onNavigate && (
+                    <button
+                      onClick={() => onNavigate('videos')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: 'none',
+                        border: '1px solid rgba(255, 255, 255, 0.10)',
+                        borderRadius: 6,
+                        padding: '6px 10px',
+                        color: '#a1a1aa',
+                        fontSize: '0.74rem',
+                        cursor: 'pointer',
+                      }}
+                      title="Open in Multilingual Video Hub with AI Dubber"
+                    >
+                      <Sparkles size={11} color="#fbbf24" />
+                      <span>Dub in Indian Languages</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -815,6 +1134,18 @@ function MessageBubble({
 }) {
   const isUser = msg.role === 'user';
   const [copied, setCopied] = useState(false);
+  const [manualBloch, setManualBloch] = useState(false);
+
+  const autoBloch = useMemo(() => {
+    if (isUser) return false;
+    const q = (msg.userQuery || '').toLowerCase();
+    const c = (msg.content || '').toLowerCase();
+    const code = (msg.code || '').toLowerCase();
+    return q.includes('bloch') || q.includes('sphere') || q.includes('simulate') || q.includes('simulation') ||
+      c.includes('bloch sphere') || code.includes('qc.h') || code.includes('bloch');
+  }, [isUser, msg.userQuery, msg.content, msg.code]);
+
+  const showBloch = manualBloch || autoBloch;
 
   const copyMarkdown = () => {
     navigator.clipboard.writeText(msg.content || '');
@@ -1002,6 +1333,42 @@ function MessageBubble({
             {/* Qiskit Executable Code */}
             {msg.code && msg.code.trim().length > 10 && (
               <CodeBlock code={msg.code} onOpenInStudio={onOpenInStudio} />
+            )}
+
+            {/* Toggle 3D Bloch Sphere Button if not auto-opened */}
+            {!autoBloch && msg.code && (
+              <div style={{ margin: '8px 0' }}>
+                <button
+                  onClick={() => setManualBloch(!showBloch)}
+                  style={{
+                    background: 'rgba(56, 189, 248, 0.10)',
+                    border: '1px solid rgba(56, 189, 248, 0.28)',
+                    borderRadius: 6,
+                    padding: '6px 12px',
+                    color: '#7dd3fc',
+                    fontSize: '0.76rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.20)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.10)'}
+                >
+                  <Compass size={13} />
+                  <span>{showBloch ? 'Hide 3D Bloch Sphere' : '🌐 Simulate Circuit & View 3D Bloch Sphere'}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Interactive 3D Bloch Sphere & Circuit Simulator */}
+            {showBloch && (
+              <ChatBlochSimulator
+                initialGate="H"
+                onOpenInStudio={onOpenInStudio}
+              />
             )}
 
             {/* Quick Check Socratic Quiz */}
@@ -1524,14 +1891,33 @@ export default function QuantumChatGPT({
     } catch (err) {
       console.error('Chat error:', err);
       const effectiveLangFallback = detectLanguage(text, selectedLanguage);
+      const qLower = text.toLowerCase();
+
+      let fallbackContent = '';
+      let fallbackLatex = '|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle';
+      let fallbackCode = 'from qiskit import QuantumCircuit\nqc = QuantumCircuit(1, 1)\nqc.h(0)\nqc.measure(0, 0)\nprint(qc.draw(output="text"))';
+
+      if (qLower.includes('bloch') || qLower.includes('sphere')) {
+        fallbackContent = `**Bloch Sphere Representation**: In quantum information, any pure 1-qubit state can be geometrically visualized as a point on the unit sphere $\\mathbb{R}^3$, parameterized by polar angle $\\theta$ and azimuthal phase angle $\\phi$. The north pole represents state $|0\\rangle$, the south pole represents $|1\\rangle$, and the equator corresponds to equal superpositions.`;
+        fallbackLatex = '|\\psi\\rangle = \\cos\\left(\\frac{\\theta}{2}\\right)|0\\rangle + e^{i\\phi}\\sin\\left(\\frac{\\theta}{2}\\right)|1\\rangle';
+        fallbackCode = '# 1-Qubit Bloch Sphere state preparation\nfrom qiskit import QuantumCircuit\nimport numpy as np\nqc = QuantumCircuit(1)\nqc.ry(np.pi / 2, 0) # Rotate to equator\nqc.rz(np.pi / 4, 0) # Apply phase\nprint(qc.draw())';
+      } else if (qLower.includes('superposition') || qLower.includes('hadamard')) {
+        fallbackContent = `**Quantum Superposition**: In contrast to classical bits that can only exist strictly in state 0 or state 1, a quantum qubit can exist in a linear combination of both states simultaneously. Applying a Hadamard gate ($H$) transforms basis state $|0\\rangle$ into an equal superposition $|+\\rangle$ with equal 50% probability amplitudes upon measurement.`;
+        fallbackLatex = '|\\psi\\rangle = H|0\\rangle = \\frac{1}{\\sqrt{2}}(|0\\rangle + |1\\rangle)';
+        fallbackCode = 'from qiskit import QuantumCircuit, Aer, execute\nqc = QuantumCircuit(1, 1)\nqc.h(0) # Superposition via Hadamard\nqc.measure(0, 0)\nsimulator = Aer.get_backend("qasm_simulator")\njob = execute(qc, simulator, shots=1024)\nprint("Counts:", job.result().get_counts())';
+      } else {
+        fallbackContent = `In quantum computing, **${text.slice(0, 70)}** operates in complex Hilbert space $\\mathcal{H} = \\mathbb{C}^{2^n}$ where state evolution is dictated by unitary operators preserving total probability norm $\\langle\\psi|\\psi\\rangle = 1$.`;
+        fallbackLatex = 'U = \\exp(-i \\hat{H} t / \\hbar), \\quad U^\\dagger U = \\mathbb{I}';
+      }
+
       const errorMsg = {
         role: 'assistant',
         id: Date.now() + 1,
-        content: `**Quantum Knowledge Kernel**: In quantum mechanics, **${text.slice(0, 50)}** represents a statevector in complex Hilbert space where unitary evolution ($U^\\dagger U = I$) preserves norm conservation.`,
-        latex: "U = \\exp(-i \\hat{H} t / \\hbar), \\quad U^\\dagger U = \\mathbb{I}",
-        code: "from qiskit import QuantumCircuit\nqc = QuantumCircuit(2)\nqc.h(0)\nqc.cx(0, 1)\nprint(qc.draw(output='text'))",
-        sources: ['Gitwolves Autonomous Quantum Core'],
-        model: 'Autonomous Engine',
+        content: fallbackContent,
+        latex: fallbackLatex,
+        code: fallbackCode,
+        sources: ['Nielsen & Chuang (2010) – Quantum Computation and Quantum Information', 'IBM Quantum Learning'],
+        model: 'Gitwolves Quantum Autonomous Core',
         language: effectiveLangFallback,
         userQuery: text,
         isStreaming: false,

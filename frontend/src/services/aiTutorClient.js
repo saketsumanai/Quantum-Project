@@ -611,37 +611,50 @@ export async function queryAiTutorSafe({
   const effectiveLang = detectLanguage(userQuery, language);
 
   // ─── Step 1: Attempt Backend API Call Safely ──────────────────────────────
-  try {
-    const backendUrl = `${API_BASE}/ai-tutor/query`;
-    const resp = await fetch(backendUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_query: userQuery,
-        active_circuit_context: circuitContext,
-        current_topic: currentTopic,
-        user_level: userLevel,
-        conversation_history: conversationHistory,
-        language: effectiveLang,
-        model,
-        generate_diagram: generateDiagram,
-        video_context: videoContext,
-      }),
-    });
+  const endpointsToTry = [
+    `${API_BASE}/ai-tutor/query`,
+    "/api/v1/ai-tutor/query",
+  ];
 
-    const contentType = resp.headers.get("content-type") || "";
-    if (resp.ok && contentType.includes("application/json")) {
-      const rawText = await resp.text();
-      if (rawText && rawText.trim().length > 0) {
-        const parsed = safeJsonParse(rawText);
-        if (parsed && parsed.success) {
-          parsed.language_detected = parsed.language_detected || effectiveLang;
-          return parsed;
+  for (const backendUrl of endpointsToTry) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+      const resp = await fetch(backendUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          user_query: userQuery,
+          active_circuit_context: circuitContext,
+          current_topic: currentTopic,
+          user_level: userLevel,
+          conversation_history: conversationHistory,
+          language: effectiveLang,
+          model,
+          generate_diagram: generateDiagram,
+          video_context: videoContext,
+        }),
+      });
+
+      clearTimeout(timeoutId);
+
+      const contentType = resp.headers.get("content-type") || "";
+      if (resp.ok && contentType.includes("application/json")) {
+        const rawText = await resp.text();
+        if (rawText && rawText.trim().length > 0) {
+          const parsed = safeJsonParse(rawText);
+          if (parsed && (parsed.success || parsed.vocal_prose_script || parsed.content)) {
+            parsed.success = true;
+            parsed.language_detected = parsed.language_detected || effectiveLang;
+            return parsed;
+          }
         }
       }
+    } catch (err) {
+      console.warn(`[AI Tutor] Attempt on ${backendUrl} notice:`, err.message);
     }
-  } catch (err) {
-    console.warn("[AI Tutor] Primary backend unreachable or returned non-JSON. Falling back to direct neural engine...", err.message);
   }
 
   // ─── Step 2: Direct Groq LPU Execution ────────────────────────────────────
