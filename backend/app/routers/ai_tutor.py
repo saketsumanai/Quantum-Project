@@ -48,6 +48,7 @@ class ChatResponse(BaseModel):
     content: str
     latex: Optional[str] = None
     code: Optional[str] = None
+    diagram: Optional[Dict[str, Any]] = None
     quiz: Optional[Dict[str, Any]] = None
     sources: Optional[List[str]] = None
     model: Optional[str] = None
@@ -62,49 +63,50 @@ async def chat_endpoint(request: ChatRequest):
     """
     try:
         last_user_msg = ""
-        history_ctx = ""
+        structured_history = []
 
         if request.messages:
             user_messages = [m for m in request.messages if m.role == "user"]
             if user_messages:
                 last_user_msg = user_messages[-1].content
-            if len(request.messages) > 1:
-                history_pairs = []
-                for msg in request.messages[:-1]:
-                    if msg.role == "user":
-                        history_pairs.append(f"User: {msg.content[:250]}")
-                    elif msg.role == "assistant":
-                        history_pairs.append(f"Assistant: {msg.content[:250]}")
-                if history_pairs:
-                    history_ctx = "Previous conversation:\n" + "\n".join(history_pairs[-6:])
+            for msg in request.messages[:-1]:
+                if msg.role in ("user", "assistant") and msg.content:
+                    structured_history.append({"role": msg.role, "content": str(msg.content)[:600]})
         elif request.query:
             last_user_msg = request.query
             if request.conversation_history:
-                history_pairs = []
                 for msg in request.conversation_history:
-                    r = msg.get("role", "User")
-                    c = str(msg.get("content", ""))[:250]
-                    history_pairs.append(f"{r.capitalize()}: {c}")
-                if history_pairs:
-                    history_ctx = "Previous conversation:\n" + "\n".join(history_pairs[-6:])
+                    r = msg.get("role", "user")
+                    c = str(msg.get("content", ""))[:600]
+                    if c and r in ("user", "assistant"):
+                        structured_history.append({"role": r, "content": c})
 
         if not last_user_msg:
             raise HTTPException(status_code=400, detail="No user message found in query or messages.")
 
-        if request.context:
-            history_ctx = (history_ctx + f"\n\nContext:\n{request.context}").strip()
+        clean_user_query = last_user_msg.strip()
+        lower_q = clean_user_query.lower()
+        wants_diagram = any(k in lower_q for k in ["diagram", "bloch", "sphere", "circuit", "draw", "visual", "picture", "plot"])
 
-        full_query = f"{history_ctx}\n\nCurrent question: {last_user_msg}" if history_ctx else last_user_msg
-
-        # Use the existing tutor service
+        # Use the existing tutor service with clean query and explicit conversation history
         tutor_req = AITutorQueryRequest(
-            user_query=full_query,
+            user_query=clean_user_query,
             active_circuit_context=request.circuit_context or {},
+            conversation_history=structured_history,
             current_topic=request.topic or "",
             language=request.language or "en",
-            preferred_model=request.preferred_model or "openai/gpt-oss-20b"
+            generate_diagram=wants_diagram,
+            preferred_model=request.preferred_model or "auto"
         )
         result = await tutor_service.query(tutor_req)
+        
+        reply_content = result.vocal_prose_script or ""
+        # If user explicitly asked for diagram/picture/bloch and no image markdown is present, inject the visual diagram
+        if wants_diagram and "![" not in reply_content:
+            if "bloch" in lower_q or "sphere" in lower_q:
+                reply_content += "\n\n![Bloch Sphere 3D Vector Representation](https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Bloch_sphere.svg/500px-Bloch_sphere.svg.png)\n"
+            elif "circuit" in lower_q or "gate" in lower_q:
+                reply_content += "\n\n![Quantum Circuit Logic Gates](https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Quantum_logic_gate.svg/450px-Quantum_logic_gate.svg.png)\n"
         
         quiz_dict = None
         if result.quiz_generation_object:
@@ -117,9 +119,10 @@ async def chat_endpoint(request: ChatRequest):
         
         return ChatResponse(
             success=True,
-            content=result.vocal_prose_script,
+            content=reply_content,
             latex=result.mathematical_latex_formula,
             code=result.qiskit_executable_code,
+            diagram=result.diagram,
             quiz=quiz_dict,
             sources=result.sources,
             model="Qwen-3.8-27B · RAG Grounded",

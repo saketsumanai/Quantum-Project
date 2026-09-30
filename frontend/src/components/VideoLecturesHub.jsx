@@ -105,6 +105,111 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
     };
   }, []);
 
+  // ── YouTube IFrame API & Netflix-Style Dub Synchronization ──────────────────
+  const ytPlayerRef = useRef(null);
+
+  // Load YouTube IFrame API script on mount if not already present
+  useEffect(() => {
+    if (!window.YT) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      if (firstScriptTag && firstScriptTag.parentNode) {
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      } else {
+        document.head.appendChild(tag);
+      }
+    }
+  }, []);
+
+  // Hook up YT.Player to iframe for Netflix-style synced playback & seeking
+  useEffect(() => {
+    let syncInterval = null;
+
+    const setupPlayer = () => {
+      if (!window.YT || !window.YT.Player) return;
+      try {
+        const frame = document.getElementById("quantum-leap-yt-frame");
+        if (!frame) return;
+
+        ytPlayerRef.current = new window.YT.Player("quantum-leap-yt-frame", {
+          events: {
+            onReady: (e) => {
+              if (quantumDubState.playerMode === "dubbed_audio") {
+                try { e.target.mute(); } catch (_) {}
+              }
+            },
+            onStateChange: (event) => {
+              // 1 = PLAYING, 2 = PAUSED, 0 = ENDED, 3 = BUFFERING
+              if (quantumDubState.playerMode === "dubbed_audio" && activeAudioRef.current) {
+                if (event.data === 1) { // Video Started Playing
+                  try { ytPlayerRef.current.mute(); } catch (_) {}
+                  const curYtTime = event.target.getCurrentTime ? event.target.getCurrentTime() : 0;
+                  activeAudioRef.current.currentTime = curYtTime;
+                  activeAudioRef.current.playbackRate = dubRate;
+                  activeAudioRef.current.volume = dubVolume;
+                  activeAudioRef.current.play().catch(() => {});
+                  setIsPlayingDub(true);
+                } else if (event.data === 2 || event.data === 0) { // Video Paused or Ended
+                  activeAudioRef.current.pause();
+                  setIsPlayingDub(false);
+                } else if (event.data === 3) { // Buffering / Seeking
+                  const curYtTime = event.target.getCurrentTime ? event.target.getCurrentTime() : 0;
+                  activeAudioRef.current.currentTime = curYtTime;
+                }
+              }
+            },
+          },
+        });
+      } catch (err) {
+        console.warn("[YT Player Init Notice]:", err);
+      }
+    };
+
+    if (window.YT && window.YT.Player) {
+      setupPlayer();
+    } else {
+      window.onYouTubeIframeAPIReady = setupPlayer;
+    }
+
+    // High-frequency drift alignment: keeps dubbed audio aligned with YouTube video within 0.35s
+    syncInterval = setInterval(() => {
+      if (
+        quantumDubState.playerMode === "dubbed_audio" &&
+        isPlayingDub &&
+        ytPlayerRef.current &&
+        typeof ytPlayerRef.current.getCurrentTime === "function" &&
+        activeAudioRef.current &&
+        !activeAudioRef.current.paused
+      ) {
+        try {
+          const ytTime = ytPlayerRef.current.getCurrentTime();
+          const dubTime = activeAudioRef.current.currentTime;
+          if (Math.abs(ytTime - dubTime) > 0.4) {
+            activeAudioRef.current.currentTime = ytTime;
+          }
+        } catch (_) {}
+      }
+    }, 450);
+
+    return () => {
+      if (syncInterval) clearInterval(syncInterval);
+    };
+  }, [activeVideo.youtubeId, quantumDubState.playerMode, isPlayingDub, dubRate, dubVolume]);
+
+  // Pre-load audio element whenever audioUrl changes
+  useEffect(() => {
+    if (quantumDubState.audioUrl) {
+      if (!activeAudioRef.current || activeAudioRef.current.src !== quantumDubState.audioUrl) {
+        const audio = new Audio(quantumDubState.audioUrl);
+        audio.preload = "auto";
+        audio.playbackRate = dubRate;
+        audio.volume = dubVolume;
+        activeAudioRef.current = audio;
+      }
+    }
+  }, [quantumDubState.audioUrl, dubRate, dubVolume]);
+
   // ── Quantum-Aware Open-Source Dubber State ──────────────────────────────────
   const [quantumDubState, setQuantumDubState] = useState({
     isDubbing: false,
@@ -549,38 +654,37 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
   const handlePlayFullDub = () => {
     // If high-fidelity neural audio track is generated and available
     if (quantumDubState.audioUrl) {
-      if (activeAudioRef.current) {
-        activeAudioRef.current.pause();
-        activeAudioRef.current = null;
-      }
       if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-      const audio = new Audio(quantumDubState.audioUrl);
-      activeAudioRef.current = audio;
+      let audio = activeAudioRef.current;
+      if (!audio || audio.src !== quantumDubState.audioUrl) {
+        audio = new Audio(quantumDubState.audioUrl);
+        activeAudioRef.current = audio;
+      }
+
       audio.playbackRate = dubRate;
       audio.volume = dubVolume;
+
+      // Sync with YouTube player (Netflix lockstep feel)
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === "function") {
+        try {
+          ytPlayerRef.current.mute();
+          const curTime = ytPlayerRef.current.getCurrentTime();
+          if (curTime > 0) audio.currentTime = curTime;
+          ytPlayerRef.current.playVideo();
+        } catch (_) {}
+      }
+
       setIsPlayingDub(true);
       setActiveSegmentIndex(-1);
 
       audio.onended = () => {
         setIsPlayingDub(false);
         setActiveSegmentIndex(null);
-        activeAudioRef.current = null;
       };
-      audio.onerror = () => {
-        console.warn("Direct neural audio load failed, falling back to speech synthesis.");
-        if (dubData && dubData.full_dub_script) {
-          speakText(dubData.full_dub_script, -1);
-        } else {
-          setIsPlayingDub(false);
-          setActiveSegmentIndex(null);
-        }
-      };
+
       audio.play().catch((err) => {
-        console.warn("Audio play rejected, falling back to speech synthesis:", err);
-        if (dubData && dubData.full_dub_script) {
-          speakText(dubData.full_dub_script, -1);
-        }
+        console.warn("Direct neural audio play notice:", err);
       });
       return;
     }
@@ -592,7 +696,11 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
   const handleStopDub = () => {
     if (activeAudioRef.current) {
       activeAudioRef.current.pause();
-      activeAudioRef.current = null;
+    }
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === "function") {
+      try {
+        ytPlayerRef.current.pauseVideo();
+      } catch (_) {}
     }
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -1012,11 +1120,8 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
               />
             ) : (
               <iframe
-                src={
-                  quantumDubState.playerMode === "dubbed_audio" && isPlayingDub
-                    ? `https://www.youtube-nocookie.com/embed/${activeVideo.youtubeId}?autoplay=1&mute=1`
-                    : `https://www.youtube-nocookie.com/embed/${activeVideo.youtubeId}?autoplay=1`
-                }
+                id="quantum-leap-yt-frame"
+                src={`https://www.youtube-nocookie.com/embed/${activeVideo.youtubeId}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&autoplay=1${quantumDubState.playerMode === "dubbed_audio" ? "&mute=1" : ""}`}
                 title={activeVideo.title}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

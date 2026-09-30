@@ -125,6 +125,119 @@ export default function MathRenderer({ content, onSelectCitation, className = ''
 }
 
 /**
+ * Interactive diagram / image renderer for chat and learning hub
+ */
+function InlineDiagramCard({ url, caption }) {
+  const [hasError, setHasError] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  if (hasError) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '6px 12px',
+          background: 'rgba(99, 102, 241, 0.15)',
+          border: '1px solid rgba(99, 102, 241, 0.4)',
+          borderRadius: 8,
+          color: '#a5b4fc',
+          fontSize: '0.85em',
+          textDecoration: 'none',
+          margin: '6px 0',
+        }}
+      >
+        <span>📊 View Diagram: {caption || 'Quantum Diagram'}</span>
+        <span style={{ fontSize: '0.75em' }}>↗</span>
+      </a>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        margin: '14px 0',
+        padding: '12px',
+        background: 'linear-gradient(145deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.9))',
+        border: '1px solid rgba(99, 102, 241, 0.35)',
+        borderRadius: 12,
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+        maxWidth: isZoomed ? '100%' : '540px',
+        transition: 'all 0.3s ease',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#818cf8', fontWeight: 700, fontSize: '0.84em' }}>
+          <span>📊</span>
+          <span>{caption || 'Quantum Visual Diagram'}</span>
+        </span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => setIsZoomed(prev => !prev)}
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 4,
+              color: '#cbd5e1',
+              padding: '2px 8px',
+              fontSize: '0.74em',
+              cursor: 'pointer',
+            }}
+          >
+            {isZoomed ? '⤡ Standard' : '⤢ Expand'}
+          </button>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: 'rgba(99, 102, 241, 0.2)',
+              border: '1px solid rgba(99, 102, 241, 0.4)',
+              borderRadius: 4,
+              color: '#c7d2fe',
+              padding: '2px 8px',
+              fontSize: '0.74em',
+              textDecoration: 'none',
+            }}
+          >
+            HD Source ↗
+          </a>
+        </div>
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          background: '#0a0d14',
+          borderRadius: 8,
+          padding: '12px',
+          overflow: 'hidden',
+        }}
+      >
+        <img
+          src={url}
+          alt={caption || 'Quantum Diagram'}
+          onError={() => setHasError(true)}
+          style={{
+            maxWidth: '100%',
+            maxHeight: isZoomed ? '650px' : '320px',
+            objectFit: 'contain',
+            borderRadius: 6,
+            transition: 'max-height 0.3s ease',
+          }}
+          loading="lazy"
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
  * Extract 11-char YouTube ID from various YouTube URL formats
  */
 function extractYouTubeId(url) {
@@ -296,11 +409,23 @@ function renderMarkdownSegment(segment, onSelectCitation) {
     const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ');
     const displayLine = isBullet ? trimmed.replace(/^[-*]\s+/, '') : line;
 
-    // Parse inline markdown links [Title](url), standalone URLs, bold, inline code, and bracket citations
-    const tokens = displayLine.split(/(\[[^\]]+\]\(https?:\/\/[^\s\)]+\)|https?:\/\/[^\s\)]+|\*\*.*?\*\*|`.*?`|\[(?:Source:[^\]]+|\d+|[A-Z][a-zA-Z\s&]+(?:,\s*\d{4}|,\s*Ch\.\s*\d+)?|Ch\.\s*\d+)\])/g);
+    // Parse inline markdown images, links [Title](url), standalone URLs, bold, inline code, and bracket citations
+    const tokens = displayLine.split(/(!\[[^\]]*\]\(https?:\/\/[^\s\)]+\)|\[[^\]]+\]\(https?:\/\/[^\s\)]+\)|https?:\/\/[^\s\)]+|\*\*.*?\*\*|`.*?`|\[(?:Source:[^\]]+|\d+|[A-Z][a-zA-Z\s&]+(?:,\s*\d{4}|,\s*Ch\.\s*\d+)?|Ch\.\s*\d+)\])/g);
 
     const formattedLine = tokens.map((tok, tIdx) => {
       if (!tok) return null;
+
+      // 0. Markdown image/diagram: ![Alt](url)
+      const mdImgMatch = tok.match(/^!\[([^\]]*)\]\((https?:\/\/[^\s\)]+)\)$/);
+      if (mdImgMatch) {
+        return (
+          <InlineDiagramCard
+            key={tIdx}
+            caption={mdImgMatch[1]}
+            url={mdImgMatch[2]}
+          />
+        );
+      }
 
       // 1. Markdown link: [Title](url)
       const mdLinkMatch = tok.match(/^\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)$/);

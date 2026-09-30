@@ -494,11 +494,20 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
 
     // Add user message
     const userMsg = { sender: 'user', text: textToSend, language: detectedLang };
+    const prevHistory = messages
+      .filter((m) => m && m.text)
+      .map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text.slice(0, 600),
+      }));
+
     setMessages((prev) => [...prev, userMsg]);
     setInputQuery('');
     setIsLoading(true);
     setSelectedQuizAnswer(null);
     setQuizFeedback(null);
+
+    const wantsDiagram = /diagram|bloch|sphere|circuit|draw|visual|picture|roadmap|plot/i.test(textToSend);
 
     try {
       const rawData = await queryAiTutorSafe({
@@ -506,7 +515,9 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
         circuitContext,
         currentTopic: activeTopic,
         userLevel,
+        conversationHistory: prevHistory,
         language: detectedLang,
+        generateDiagram: wantsDiagram,
         videoContext: vidCtx || undefined,
       });
 

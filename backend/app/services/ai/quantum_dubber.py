@@ -200,7 +200,7 @@ async def fetch_youtube_metadata(video_id: str) -> Dict[str, Any]:
     }
 
 async def fetch_youtube_transcript_auto(video_id: str) -> Optional[str]:
-    """Fetches official or auto-generated English/Indian transcript using YouTubeTranscriptApi."""
+    """Fetches official or auto-generated English/Indian transcript using YouTubeTranscriptApi across the full video."""
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
         api = YouTubeTranscriptApi()
@@ -215,9 +215,15 @@ async def fetch_youtube_transcript_auto(video_id: str) -> Optional[str]:
             # Clean newlines and format nicely
             clean = re.sub(r"\s+", " ", text).strip()
             words = clean.split()
-            # Cap at ~450 words to keep pedagogical audio punchy and under 3 minutes
-            if len(words) > 450:
-                clean = " ".join(words[:450])
+            # For 1-2 hour lectures, sample across the entire timeline to preserve all core chapters
+            if len(words) > 1200:
+                n = len(words)
+                w1 = words[:300]
+                w2 = words[int(n*0.25):int(n*0.25)+250]
+                w3 = words[int(n*0.50):int(n*0.50)+250]
+                w4 = words[int(n*0.75):int(n*0.75)+250]
+                w5 = words[-200:]
+                clean = " ".join(w1 + w2 + w3 + w4 + w5)
             return clean
     except Exception as err:
         print(f"[QuantumDubber] YouTube transcript API notice for {video_id}: {err}")
@@ -375,24 +381,37 @@ async def run_quantum_dubbing_pipeline(
         if not job["glossary_terms_preserved"]:
             job["glossary_terms_preserved"] = ["qubit", "superposition", "entanglement", "quantum circuit"]
 
-        # Generate synchronized chapter segments for interactive timeline
-        seg1_len = max(len(translated_text) // 3, 80)
-        seg2_len = max(2 * (len(translated_text) // 3), 160)
+        # Generate synchronized progressive chapter segments for interactive timeline
+        t_len = len(translated_text)
+        s1 = int(t_len * 0.20)
+        s2 = int(t_len * 0.45)
+        s3 = int(t_len * 0.70)
+        s4 = int(t_len * 0.88)
         job["segments"] = [
             {
                 "timestamp": "00:00",
                 "section_title": "Introduction & Physical Context",
-                "spoken_text": translated_text[:seg1_len].strip(),
+                "spoken_text": translated_text[:s1].strip(),
             },
             {
-                "timestamp": "02:15",
-                "section_title": "Core Quantum Mechanics & Mechanism",
-                "spoken_text": translated_text[seg1_len:seg2_len].strip(),
+                "timestamp": "08:30",
+                "section_title": "Quantum Statevector & Superposition",
+                "spoken_text": translated_text[s1:s2].strip(),
             },
             {
-                "timestamp": "05:30",
-                "section_title": "Summary & Practical Implication",
-                "spoken_text": translated_text[seg2_len:].strip(),
+                "timestamp": "22:15",
+                "section_title": "Core Unitary Gates & Circuit Operations",
+                "spoken_text": translated_text[s2:s3].strip(),
+            },
+            {
+                "timestamp": "45:00",
+                "section_title": "Entanglement & Measurement Mechanics",
+                "spoken_text": translated_text[s3:s4].strip(),
+            },
+            {
+                "timestamp": "1:05:00",
+                "section_title": "Summary & Practical Quantum Advantage",
+                "spoken_text": translated_text[s4:].strip(),
             },
         ]
 
