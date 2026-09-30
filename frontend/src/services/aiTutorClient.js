@@ -543,7 +543,7 @@ SMART RESPONSE RULES:
    - When code, error messages, or test failures are in context:
      * Pinpoint the exact line and error cause (e.g. inverted control/target, missing gate, premature measurement, deprecated methods).
      * Explain the physical quantum mechanics behind the issue.
-     * Always provide the clean, verified working Qiskit 1.0+ code in ```python ... ``` and in "qiskit_executable_code".
+     * Always provide the clean, verified working Qiskit 1.0+ code in \`\`\`python ... \`\`\` and in "qiskit_executable_code".
 
 CONVERSATIONAL MEMORY:
 - Always remember and build upon previous turns. Connect follow-up answers to prior context.
@@ -655,7 +655,7 @@ SMART RESPONSE RULES:
    - When code, error messages, or test failures are in context:
      * Pinpoint the exact line and error cause (e.g. inverted control/target, missing gate, premature measurement, deprecated methods).
      * Explain the physical quantum mechanics behind the issue.
-     * Always provide the clean, verified working Qiskit 1.0+ code in ```python ... ``` and in "qiskit_executable_code".
+     * Always provide the clean, verified working Qiskit 1.0+ code in \`\`\`python ... \`\`\` and in "qiskit_executable_code".
 
 CONVERSATIONAL MEMORY:
 - Always remember and build upon previous turns. Connect follow-up answers to prior context.

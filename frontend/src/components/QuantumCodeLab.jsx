@@ -1957,6 +1957,8 @@ ${checkResult ? `Check Score: ${checkResult.score}/100, Passed: ${checkResult.pa
                           </div>
                         ))}
                       </div>
+                    )}
+
                     {/* Ask AI Copilot to Fix Button */}
                     {!checkResult.passed && (
                       <div style={{ marginTop: 14 }}>
