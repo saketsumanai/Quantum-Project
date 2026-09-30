@@ -129,7 +129,7 @@ EDGE_TTS_VOICE_MAP = {
     "gu": "gu-IN-NiranjanNeural",
     "kn": "kn-IN-GaganNeural",
     "ml": "ml-IN-MidhunNeural",
-    "pa": "pa-IN-GurpreetNeural",
+    "pa": "hi-IN-MadhurNeural",
     "en": "en-IN-PrabhatNeural",
 }
 
@@ -163,7 +163,7 @@ English Lecture Transcript:
     # 1. Try Google Gemini first for high-quality bilingual / multilingual quantum translation
     gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
     if gemini_key:
-        gemini_models = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"]
+        gemini_models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"]
         for g_model in gemini_models:
             try:
                 async with httpx.AsyncClient(timeout=16.0) as client:
@@ -272,7 +272,7 @@ Output ONLY the spoken narration text with no introductory text or markdown form
     # 1. Try Gemini
     gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
     if gemini_key:
-        gemini_models = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash"]
+        gemini_models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"]
         for g_model in gemini_models:
             try:
                 async with httpx.AsyncClient(timeout=14.0) as client:
@@ -325,16 +325,47 @@ Output ONLY the spoken narration text with no introductory text or markdown form
         "in Qiskit, we observe the probabilistic collapse of the quantum state."
     )
 
-async def synthesize_edge_tts_audio(text: str, output_path: str, voice: str = "hi-IN-MadhurNeural") -> bool:
-    """Synthesizes high-fidelity Hindi audio using Microsoft Edge Neural TTS."""
+async def synthesize_edge_tts_audio(text: str, output_path: str, voice: str = "hi-IN-MadhurNeural", target_lang: str = "hi") -> bool:
+    """Synthesizes high-fidelity audio using Microsoft Edge Neural TTS with gTTS fallback."""
+    # 1. Try Microsoft Edge Neural TTS with requested voice
     try:
         import edge_tts
         communicate = edge_tts.Communicate(text, voice=voice)
         await communicate.save(output_path)
-        return os.path.exists(output_path) and os.path.getsize(output_path) > 100
+        if os.path.exists(output_path) and os.path.getsize(output_path) > 100:
+            return True
     except Exception as err:
-        print(f"[QuantumDubber] Edge-TTS error: {err}")
-        return False
+        print(f"[QuantumDubber] Edge-TTS voice '{voice}' notice: {err}")
+
+    # 2. Try Edge Neural TTS with universal Hindi/Indian fallback voice
+    if voice != "hi-IN-MadhurNeural":
+        try:
+            import edge_tts
+            communicate = edge_tts.Communicate(text, voice="hi-IN-MadhurNeural")
+            await communicate.save(output_path)
+            if os.path.exists(output_path) and os.path.getsize(output_path) > 100:
+                print(f"[QuantumDubber] Edge-TTS succeeded with fallback voice 'hi-IN-MadhurNeural'")
+                return True
+        except Exception as err:
+            print(f"[QuantumDubber] Edge-TTS fallback voice notice: {err}")
+
+    # 3. Guaranteed offline-tolerant fallback via gTTS
+    try:
+        from gtts import gTTS
+        gtts_lang_map = {
+            "hi": "hi", "hinglish": "hi", "bn": "bn", "ta": "ta", "te": "te",
+            "mr": "mr", "gu": "gu", "kn": "kn", "ml": "ml", "pa": "pa", "en": "en"
+        }
+        gtts_lang = gtts_lang_map.get((target_lang or "hi").lower(), "hi")
+        tts = gTTS(text=text[:3500], lang=gtts_lang)
+        tts.save(output_path)
+        if os.path.exists(output_path) and os.path.getsize(output_path) > 100:
+            print(f"[QuantumDubber] gTTS fallback generated audio successfully for lang='{gtts_lang}'")
+            return True
+    except Exception as gerr:
+        print(f"[QuantumDubber] gTTS fallback error: {gerr}")
+
+    return False
 
 def mux_audio_video_ffmpeg(video_input: str, audio_input: str, output_path: str) -> bool:
     """Muxes the new dubbed Hindi audio with the original video using FFmpeg."""
@@ -477,7 +508,7 @@ async def run_quantum_dubbing_pipeline(
         job["progress"] = 80
         job["message"] = f"Synthesizing high-fidelity neural voice using {effective_voice}..."
         
-        tts_ok = await synthesize_edge_tts_audio(translated_text, output_audio, voice=effective_voice)
+        tts_ok = await synthesize_edge_tts_audio(translated_text, output_audio, voice=effective_voice, target_lang=target_lang_clean)
         if not tts_ok:
             raise RuntimeError("TTS audio generation failed.")
         await asyncio.sleep(0.5)
@@ -495,8 +526,8 @@ async def run_quantum_dubbing_pipeline(
         job["status"] = "completed"
         job["progress"] = 100
         job["message"] = f"Lecture successfully dubbed into {LANGUAGE_NAME_MAP.get(target_lang_clean, 'Hindi')} with Quantum Glossary intact!"
-        job["watch_url"] = f"/platform_dubs/{video_id}_{target_language}.mp4"
-        job["audio_url"] = f"/platform_dubs/{video_id}_{target_language}.mp3"
+        job["watch_url"] = f"/platform_dubs/{video_id}_{target_lang_clean}.mp4"
+        job["audio_url"] = f"/platform_dubs/{video_id}_{target_lang_clean}.mp3"
         job["completed_at"] = time.time()
 
         # Save sidecar JSON with metadata, transcript, and timeline segments
