@@ -1155,14 +1155,13 @@ Student Question:
     # Add current query
     contents.append({"role": "user", "parts": [{"text": user_prompt_content}]})
 
-    # Verified working Gemini models in priority order (lite models fastest + most available)
+    # Verified working Gemini low/lite models for lightweight fast fallback
     gemini_candidates = [
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-flash-8b",
+        "gemini-1.5-flash",
+        "gemini-2.5-flash-lite",
         "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-        "gemini-3.1-flash-image",
-        "gemini-3.6-flash",
-        "gemini-3.8-flash",
-        "gemini-3.5-flash",
     ]
     if preferred_model and preferred_model in gemini_candidates:
         gemini_candidates.remove(preferred_model)
@@ -1412,26 +1411,26 @@ class AITutorService:
                         generate_diagram=req_diagram,
                     )
             elif parsed is None:
-                # Default "auto" hybrid: Try Gemini first (blazing fast & large context), then Groq
-                parsed = await _query_gemini_with_context(
+                # Default "auto" hybrid: Try Groq first, then fallback to Gemini low models
+                parsed = await _query_groq_with_context(
                     req.user_query, passages, req.active_circuit_context or {},
                     current_course_unit=course_unit_ctx,
                     history=req.conversation_history,
-                    user_level=level,
                     language=effective_lang,
                     preferred_model="auto",
                     generate_diagram=req_diagram,
+                    user_level=level,
                 )
                 if parsed is None:
-                    print("[Tutor] Gemini attempt completed without result; trying Groq...")
-                    parsed = await _query_groq_with_context(
+                    print("[Tutor] Groq attempt completed without result; falling back to Gemini low models...")
+                    parsed = await _query_gemini_with_context(
                         req.user_query, passages, req.active_circuit_context or {},
                         current_course_unit=course_unit_ctx,
                         history=req.conversation_history,
+                        user_level=level,
                         language=effective_lang,
                         preferred_model="auto",
                         generate_diagram=req_diagram,
-                        user_level=level,
                     )
         t_llm_end = time.perf_counter()
         llm_latency_ms = max(round((t_llm_end - t_llm_start) * 1000, 2), 280.0)

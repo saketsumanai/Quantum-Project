@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Play,
   Search,
@@ -49,6 +49,16 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
   const [dubRate, setDubRate] = useState(1.0);
   const [dubVolume, setDubVolume] = useState(1.0);
   const [showFullScript, setShowFullScript] = useState(false);
+  const [quantumDubState, setQuantumDubState] = useState({
+    isDubbing: false,
+    progress: 0,
+    step: "idle",
+    message: "",
+    watchUrl: null,
+    audioUrl: null,
+    preservedTerms: [],
+    playerMode: "youtube", // "youtube" | "dubbed"
+  });
   const activeAudioRef = React.useRef(null);
 
   // ── Lecture Notes State ──────────────────────────────────────────────────────
@@ -132,6 +142,11 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
         const frame = document.getElementById("quantum-leap-yt-frame");
         if (!frame) return;
 
+        if (ytPlayerRef.current && typeof ytPlayerRef.current.destroy === "function") {
+          try { ytPlayerRef.current.destroy(); } catch (_) {}
+          ytPlayerRef.current = null;
+        }
+
         ytPlayerRef.current = new window.YT.Player("quantum-leap-yt-frame", {
           events: {
             onReady: (e) => {
@@ -194,6 +209,10 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
 
     return () => {
       if (syncInterval) clearInterval(syncInterval);
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.destroy === "function") {
+        try { ytPlayerRef.current.destroy(); } catch (_) {}
+        ytPlayerRef.current = null;
+      }
     };
   }, [activeVideo.youtubeId, quantumDubState.playerMode, isPlayingDub, dubRate, dubVolume]);
 
@@ -209,18 +228,6 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
       }
     }
   }, [quantumDubState.audioUrl, dubRate, dubVolume]);
-
-  // ── Quantum-Aware Open-Source Dubber State ──────────────────────────────────
-  const [quantumDubState, setQuantumDubState] = useState({
-    isDubbing: false,
-    progress: 0,
-    step: "idle",
-    message: "",
-    watchUrl: null,
-    audioUrl: null,
-    preservedTerms: [],
-    playerMode: "youtube", // "youtube" | "dubbed"
-  });
 
   // Check if active video has pre-rendered dubbed MP4 on backend
   useEffect(() => {
@@ -1121,7 +1128,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
             ) : (
               <iframe
                 id="quantum-leap-yt-frame"
-                src={`https://www.youtube-nocookie.com/embed/${activeVideo.youtubeId}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&autoplay=1${quantumDubState.playerMode === "dubbed_audio" ? "&mute=1" : ""}`}
+                src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?enablejsapi=1&rel=0${quantumDubState.playerMode === "dubbed_audio" ? "&mute=1" : ""}`}
                 title={activeVideo.title}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
