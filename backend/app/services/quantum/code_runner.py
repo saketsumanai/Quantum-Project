@@ -178,6 +178,11 @@ class QuantumCodeRunner:
                     "TMPDIR": tmpdir,
                     "TEMP": tmpdir,
                 }
+                # Windows requires SYSTEMROOT / WINDIR to initialize Python's random numbers and crypto subsystem
+                if sys.platform == "win32":
+                    for win_var in ["SYSTEMROOT", "WINDIR", "SYSTEMDRIVE", "LOCALAPPDATA", "USERPROFILE", "APPDATA", "COMSPEC", "PATHEXT"]:
+                        if win_var in os.environ:
+                            clean_env[win_var] = os.environ[win_var]
 
                 proc = subprocess.run(
                     [PYTHON_EXE, runner_script_path],
