@@ -220,7 +220,33 @@ function ProgressiveAssistantMessage({ message, onComplete }) {
               <Terminal size={12} />
               <span>Executable Quantum Proof</span>
             </div>
-            <span className="text-[10px] text-zinc-500">Python</span>
+            <div className="flex items-center gap-2">
+              {message.onLoadCircuitIntoStudio && (message.code.includes('qc.') || message.code.includes('QuantumCircuit') || message.code.includes('Quantum Circuit')) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const code = message.code;
+                    const hMatches = [...code.matchAll(/qc\.h\((\d+)\)/g)].map(m => ({ gate: 'h', qubits: [parseInt(m[1])], params: [] }));
+                    const cxMatches = [...code.matchAll(/qc\.cx\((\d+),\s*(\d+)\)/g)].map(m => ({ gate: 'cx', qubits: [parseInt(m[1]), parseInt(m[2])], params: [] }));
+                    const xMatches = [...code.matchAll(/qc\.x\((\d+)\)/g)].map(m => ({ gate: 'x', qubits: [parseInt(m[1])], params: [] }));
+                    const zMatches = [...code.matchAll(/qc\.z\((\d+)\)/g)].map(m => ({ gate: 'z', qubits: [parseInt(m[1])], params: [] }));
+                    const yMatches = [...code.matchAll(/qc\.y\((\d+)\)/g)].map(m => ({ gate: 'y', qubits: [parseInt(m[1])], params: [] }));
+                    const insts = [...hMatches, ...cxMatches, ...xMatches, ...zMatches, ...yMatches];
+                    const maxQ = insts.length > 0 ? Math.max(...insts.flatMap(i => i.qubits)) + 1 : 2;
+                    message.onLoadCircuitIntoStudio({
+                      num_qubits: Math.max(2, maxQ),
+                      instructions: insts.length > 0 ? insts : [{ gate: 'h', qubits: [0], params: [] }, { gate: 'cx', qubits: [0, 1], params: [] }]
+                    });
+                  }}
+                  className="px-2.5 py-1 rounded text-[11px] font-sans font-semibold bg-indigo-500/20 hover:bg-indigo-500/35 text-indigo-300 border border-indigo-500/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Create and simulate this quantum circuit in Circuit Studio"
+                >
+                  <Cpu size={12} />
+                  <span>Create in Circuit Studio</span>
+                </button>
+              )}
+              <span className="text-[10px] text-zinc-500">Python</span>
+            </div>
           </div>
           <pre className="p-3 text-[0.74rem] font-mono text-zinc-300 overflow-x-auto m-0 leading-relaxed">
             {message.code}
@@ -291,7 +317,7 @@ function ProgressiveAssistantMessage({ message, onComplete }) {
 }
 
 // ─── Main AI Tutor Chat Component ────────────────────────────────────────────
-export default function AITutorChat({ circuitContext, activeTopic = "entanglement" }) {
+export default function AITutorChat({ circuitContext, activeTopic = "entanglement", onLoadCircuitIntoStudio, onNavigate }) {
   const auth = useAuth ? useAuth() : {};
   const user = auth?.user;
   const deleteUserChatHistory = auth?.deleteUserChatHistory;
@@ -318,27 +344,39 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
   const [quizFeedback, setQuizFeedback] = useState(null);
   const chatEndRef = useRef(null);
 
-  // Persist messages to localStorage
+  // Persist messages to localStorage & Cloud Firestore
   useEffect(() => {
     try {
       localStorage.setItem('ql_copilot_chats_' + (user?.id || 'guest'), JSON.stringify(messages));
     } catch (_) {}
-  }, [messages, user?.id]);
+    if (user?.id && user.id !== 'guest' && auth?.saveUserAiCopilotMessagesToFirestore) {
+      auth.saveUserAiCopilotMessagesToFirestore(user.id, messages);
+    }
+  }, [messages, user?.id, auth]);
 
-  // Sync on user change
+  // Sync on user change (load local and Cloud Firestore)
   useEffect(() => {
+    let active = true;
     try {
       const saved = localStorage.getItem('ql_copilot_chats_' + (user?.id || 'guest'));
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setMessages(parsed);
-          return;
         }
       }
     } catch (_) {}
-    setMessages([DEFAULT_AURA_MSG]);
-  }, [user?.id]);
+
+    if (user?.id && user.id !== 'guest' && auth?.getUserAiCopilotMessagesFromFirestore) {
+      auth.getUserAiCopilotMessagesFromFirestore(user.id).then((cloudMsgs) => {
+        if (active && Array.isArray(cloudMsgs) && cloudMsgs.length > 0) {
+          setMessages(cloudMsgs);
+        }
+      }).catch(() => {});
+    }
+
+    return () => { active = false; };
+  }, [user?.id, auth]);
 
   // Listen for global chat history clear event
   useEffect(() => {
@@ -876,6 +914,10 @@ export default function AITutorChat({ circuitContext, activeTopic = "entanglemen
                       selectedQuizAnswer,
                       quizFeedback,
                       onAnswerQuiz: handleAnswerQuiz,
+                      onLoadCircuitIntoStudio: (circuit) => {
+                        onLoadCircuitIntoStudio?.(circuit);
+                        onNavigate?.('studio');
+                      },
                     }}
                     onComplete={() => {
                       m.isAlreadyStreamed = true;

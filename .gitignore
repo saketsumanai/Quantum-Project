@@ -97,3 +97,7 @@ docker-compose.override.yml
 secrets/
 .env
 quantum_leap.db
+platform_dubs/
+*.db-shm
+*.db-wal
+

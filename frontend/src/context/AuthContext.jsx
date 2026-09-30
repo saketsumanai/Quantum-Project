@@ -11,6 +11,12 @@ import {
   saveUserTopicProgressToFirestore,
   recordUserTestToFirestore,
   clearUserAiChatHistoryInFirestore,
+  saveUserAiSessionsToFirestore,
+  getUserAiSessionsFromFirestore,
+  saveUserAiCopilotMessagesToFirestore,
+  getUserAiCopilotMessagesFromFirestore,
+  saveCourseCompletionToFirestore,
+  getUserCourseCompletionsFromFirestore,
 } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -717,6 +723,41 @@ export function AuthProvider({ children }) {
     [token]
   );
 
+  /**
+   * Records a completed course / curriculum track to Firestore and user state.
+   */
+  const recordCourseCompletion = useCallback(async (courseId, completionData = {}) => {
+    if (!courseId) return;
+    const record = {
+      courseId,
+      title: completionData.title || courseId,
+      score: completionData.score || 100,
+      completedAt: new Date().toISOString(),
+    };
+
+    setUser((prev) => {
+      if (!prev) return prev;
+      const current = prev.courses_completed || [];
+      if (!current.some((c) => c.courseId === courseId)) {
+        const updated = {
+          ...prev,
+          courses_completed: [...current, record],
+          total_xp: (prev.total_xp || 0) + 100,
+        };
+        try {
+          localStorage.setItem("ql_cached_profile", JSON.stringify(updated));
+        } catch (_) {}
+        return updated;
+      }
+      return prev;
+    });
+
+    const currentUid = user?.id || user?.uid;
+    if (currentUid && !isGuest) {
+      saveCourseCompletionToFirestore(currentUid, courseId, completionData);
+    }
+  }, [user, isGuest]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -735,8 +776,14 @@ export function AuthProvider({ children }) {
         refetchProfile: () => {},
         updateUserTopics,
         recordTest,
+        recordCourseCompletion,
         updateUserProfile,
         deleteUserChatHistory,
+        saveUserAiSessionsToFirestore,
+        getUserAiSessionsFromFirestore,
+        saveUserAiCopilotMessagesToFirestore,
+        getUserAiCopilotMessagesFromFirestore,
+        getUserCourseCompletionsFromFirestore,
       }}
     >
       {children}

@@ -157,6 +157,38 @@ print(qc.draw(output='text'))`,
     sources: ["Lov K. Grover (1996) - A fast quantum mechanical algorithm for database search"],
   },
 };
+/**
+ * Robustly parses text into JSON without throwing.
+ */
+export function safeJsonParse(text) {
+  if (!text || typeof text !== "string") return null;
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // Attempt markdown code block extraction
+    try {
+      if (trimmed.includes("```json")) {
+        const inner = trimmed.split("```json")[1].split("```")[0].trim();
+        return JSON.parse(inner);
+      }
+      if (trimmed.includes("```")) {
+        const inner = trimmed.split("```")[1].split("```")[0].trim();
+        return JSON.parse(inner);
+      }
+      // Regex match outermost curly braces
+      const match = trimmed.match(/\{[\s\S]*\}/);
+      if (match) {
+        return JSON.parse(match[0]);
+      }
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
 
 /**
  * Safely extracts a string field value from potentially malformed or truncated JSON text.

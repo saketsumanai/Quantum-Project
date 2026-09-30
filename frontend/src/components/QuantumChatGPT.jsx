@@ -1006,7 +1006,7 @@ export default function QuantumChatGPT({
   onNavigate,
   onLoadCircuitIntoStudio,
 }) {
-  const { user, deleteUserChatHistory } = useAuth();
+  const { user, deleteUserChatHistory, saveUserAiSessionsToFirestore, getUserAiSessionsFromFirestore } = useAuth();
   const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage);
   const [selectedModel, setSelectedModel] = useState(SUPPORTED_MODELS[0].id);
   const [generateDiagram, setGenerateDiagram] = useState(false);
@@ -1052,15 +1052,19 @@ export default function QuantumChatGPT({
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Sync to localStorage
+  // Sync to localStorage & Cloud Firestore
   useEffect(() => {
     try {
       localStorage.setItem('ql_ai_chats_' + (user?.id || 'guest'), JSON.stringify(sessions));
     } catch (_) {}
-  }, [sessions, user?.id]);
+    if (user?.id && user.id !== 'guest' && saveUserAiSessionsToFirestore) {
+      saveUserAiSessionsToFirestore(user.id, sessions);
+    }
+  }, [sessions, user?.id, saveUserAiSessionsToFirestore]);
 
-  // Handle user change
+  // Handle user change & load from Cloud Firestore
   useEffect(() => {
+    let active = true;
     try {
       const saved = localStorage.getItem('ql_ai_chats_' + (user?.id || 'guest'));
       if (saved) {
@@ -1068,14 +1072,21 @@ export default function QuantumChatGPT({
         if (Array.isArray(parsed) && parsed.length > 0) {
           setSessions(parsed);
           setActiveId(parsed[0].id);
-          return;
         }
       }
     } catch (_) {}
-    const initial = [{ id: '1', title: 'New conversation', project: 'all', messages: [], ts: Date.now() }];
-    setSessions(initial);
-    setActiveId('1');
-  }, [user?.id]);
+
+    if (user?.id && user.id !== 'guest' && getUserAiSessionsFromFirestore) {
+      getUserAiSessionsFromFirestore(user.id).then((cloudSessions) => {
+        if (active && Array.isArray(cloudSessions) && cloudSessions.length > 0) {
+          setSessions(cloudSessions);
+          setActiveId(cloudSessions[0].id);
+        }
+      }).catch(() => {});
+    }
+
+    return () => { active = false; };
+  }, [user?.id, getUserAiSessionsFromFirestore]);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {

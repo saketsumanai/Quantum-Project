@@ -344,4 +344,169 @@ export async function clearUserAiChatHistoryInFirestore(uid) {
   } catch (_) {}
 }
 
+/**
+ * Saves multi-session AI ChatGPT conversation history to Cloud Firestore.
+ */
+export async function saveUserAiSessionsToFirestore(uid, sessions) {
+  if (!uid || !Array.isArray(sessions)) return;
+  try {
+    if (!db) throw new Error("Firestore not initialized");
+    const chatDocRef = doc(db, "user_chats", uid);
+    // Limit to 20 most recent sessions to stay well within Firestore doc size limit
+    const trimmed = sessions.slice(0, 20).map((s) => ({
+      id: s.id,
+      title: s.title || "Conversation",
+      project: s.project || "all",
+      ts: s.ts || Date.now(),
+      messages: (s.messages || []).slice(-30).map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content || "",
+        latex: m.latex || null,
+        code: m.code || null,
+        language: m.language || "en",
+        ts: m.ts || Date.now(),
+      })),
+    }));
+
+    await setDoc(chatDocRef, {
+      sessions: trimmed,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn("[Firestore] saveUserAiSessions notice (offline/local fallback):", err.message);
+  }
+}
+
+/**
+ * Retrieves AI ChatGPT conversation history from Cloud Firestore.
+ */
+export async function getUserAiSessionsFromFirestore(uid) {
+  if (!uid) return null;
+  try {
+    if (!db) return null;
+    const chatDocRef = doc(db, "user_chats", uid);
+    const snap = await getDoc(chatDocRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.sessions) && data.sessions.length > 0) {
+        return data.sessions;
+      }
+    }
+  } catch (err) {
+    console.warn("[Firestore] getUserAiSessions notice:", err.message);
+  }
+  return null;
+}
+
+/**
+ * Saves AI Copilot Drawer chat messages to Cloud Firestore.
+ */
+export async function saveUserAiCopilotMessagesToFirestore(uid, messages) {
+  if (!uid || !Array.isArray(messages)) return;
+  try {
+    if (!db) return;
+    const copilotDocRef = doc(db, "user_copilot", uid);
+    const trimmed = messages.slice(-25).map((m) => ({
+      sender: m.sender,
+      text: m.text || "",
+      latex: m.latex || null,
+      code: m.code || null,
+      language: m.language || "en",
+    }));
+    await setDoc(copilotDocRef, {
+      messages: trimmed,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn("[Firestore] Copilot save notice:", err.message);
+  }
+}
+
+/**
+ * Retrieves AI Copilot Drawer chat messages from Cloud Firestore.
+ */
+export async function getUserAiCopilotMessagesFromFirestore(uid) {
+  if (!uid) return null;
+  try {
+    if (!db) return null;
+    const copilotDocRef = doc(db, "user_copilot", uid);
+    const snap = await getDoc(copilotDocRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.messages) && data.messages.length > 0) {
+        return data.messages;
+      }
+    }
+  } catch (err) {
+    console.warn("[Firestore] Copilot get notice:", err.message);
+  }
+  return null;
+}
+
+/**
+ * Saves course / curriculum completion milestone to Cloud Firestore.
+ */
+export async function saveCourseCompletionToFirestore(uid, courseId, completionData = {}) {
+  if (!uid || !courseId) return;
+  const courseRecord = {
+    courseId,
+    title: completionData.title || courseId,
+    completedAt: new Date().toISOString(),
+    score: completionData.score || 100,
+    certificateId: `QL-CERT-${Date.now().toString(36).toUpperCase()}`,
+  };
+  try {
+    if (!db) throw new Error("Firestore not initialized");
+    const userDocRef = doc(db, "users", uid);
+    await setDoc(userDocRef, {
+      coursesCompleted: arrayUnion(courseRecord),
+      [`coursesProgress.${courseId}`]: {
+        completed: true,
+        completedAt: new Date().toISOString(),
+      },
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn("[Firestore] Course completion save note:", err.message);
+  }
+
+  // Backup in localStorage
+  try {
+    const key = `ql_courses_completed_${uid}`;
+    const existing = JSON.parse(localStorage.getItem(key) || "[]");
+    if (!existing.some((c) => c.courseId === courseId)) {
+      existing.push(courseRecord);
+      localStorage.setItem(key, JSON.stringify(existing));
+    }
+  } catch (_) {}
+}
+
+/**
+ * Retrieves course completions from Cloud Firestore or localStorage.
+ */
+export async function getUserCourseCompletionsFromFirestore(uid) {
+  if (!uid) return [];
+  try {
+    if (db) {
+      const userDocRef = doc(db, "users", uid);
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.coursesCompleted)) {
+          return data.coursesCompleted;
+        }
+      }
+    }
+  } catch (_) {}
+
+  try {
+    const key = `ql_courses_completed_${uid}`;
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  } catch (_) {
+    return [];
+  }
+}
+
 export default app;
+

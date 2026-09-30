@@ -399,11 +399,20 @@ function QuantumLeapApp() {
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
-      {/* Global Floating Quantum AI Tutor Drawer (Only accessible after sign in) */}
+      {/* Global Floating Quantum AI Tutor Drawer (Accessible across platform) */}
       {isAuthenticated && activeTab !== "codelab" && (
         <AITutorChat
           circuitContext={{ num_qubits: numQubits, gates_applied: instructions.map((i) => i.gate) }}
           activeTopic="entanglement"
+          onLoadCircuitIntoStudio={(circuit) => {
+            if (circuit?.num_qubits) setNumQubits(circuit.num_qubits);
+            if (circuit?.instructions) {
+              setInstructions(circuit.instructions);
+              setHasSimulated(false);
+            }
+            handleNavigateTab("studio");
+          }}
+          onNavigate={handleNavigateTab}
         />
       )}
     </div>

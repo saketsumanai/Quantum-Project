@@ -144,14 +144,39 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
     return () => { isMounted = false; };
   }, [activeVideo.youtubeId]);
 
-  const initiateQuantumDubbing = async (url) => {
+  const initiateQuantumDubbing = async (url, targetLang) => {
     const videoId = extractYouTubeId(url) || activeVideo.youtubeId;
-    setQuantumDubState(prev => ({
+    const effectiveLang = targetLang || dubLanguage || "hi";
+    setDubLanguage(effectiveLang);
+
+    // If custom URL and not active, switch active video
+    if (videoId && videoId !== activeVideo.youtubeId) {
+      const customVid = {
+        id: `custom-${videoId}`,
+        title: `YouTube Quantum Lecture (${videoId})`,
+        englishTitle: `YouTube Lecture (${videoId})`,
+        language: effectiveLang,
+        languageLabel: INDIAN_LANGUAGES.find((l) => l.code === effectiveLang)?.label || "Hindi",
+        instructor: "Online Quantum Educator",
+        organization: "YouTube Lecture",
+        duration: "Full Video",
+        topic: "foundations",
+        topicLabel: "Quantum Computing",
+        level: "All Levels",
+        youtubeId: videoId,
+        embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`,
+        thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        description: "YouTube lecture dubbed with Quantum Leap's Quantum Glossary AI engine.",
+      };
+      setActiveVideo(customVid);
+    }
+
+    setQuantumDubState((prev) => ({
       ...prev,
       isDubbing: true,
       progress: 10,
       step: "initializing",
-      message: "Starting Quantum-Aware Dubbing Pipeline...",
+      message: `Starting Quantum-Aware Dubbing Pipeline into ${INDIAN_LANGUAGES.find((l) => l.code === effectiveLang)?.label || effectiveLang}...`,
       preservedTerms: [],
     }));
 
@@ -161,7 +186,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           youtube_url: url || `https://www.youtube.com/watch?v=${videoId}`,
-          target_language: dubLanguage || "hi",
+          target_language: effectiveLang,
           voice: undefined,
         }),
       });
@@ -182,7 +207,7 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
       pollQuantumDubbingStatus(videoId);
     } catch (err) {
       console.error("Dubbing error:", err);
-      setQuantumDubState(prev => ({ ...prev, isDubbing: false, message: "Dubbing failed to start." }));
+      setQuantumDubState((prev) => ({ ...prev, isDubbing: false, message: "Dubbing failed to start." }));
     }
   };
 
@@ -585,6 +610,158 @@ export default function VideoLecturesHub({ onSwitchToChat, onSwitchToAssessment 
             </button>
           )}
         </div>
+      </div>
+
+      {/* ── Universal YouTube AI Neural Dubber Banner ── */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 27, 75, 0.4) 100%)",
+          border: "1px solid rgba(99, 102, 241, 0.25)",
+          borderRadius: "12px",
+          padding: "16px 20px",
+          marginBottom: "24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          boxShadow: "0 8px 32px -8px rgba(0, 0, 0, 0.5)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              style={{
+                width: "34px",
+                height: "34px",
+                borderRadius: "8px",
+                background: "rgba(99, 102, 241, 0.2)",
+                border: "1px solid rgba(99, 102, 241, 0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#a5b4fc",
+              }}
+            >
+              <Mic size={17} />
+            </div>
+            <div>
+              <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#ffffff", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>AI Neural Dubber for ANY YouTube Video</span>
+                <span
+                  style={{
+                    fontSize: "0.68rem",
+                    padding: "2px 8px",
+                    borderRadius: "10px",
+                    background: "rgba(16, 185, 129, 0.15)",
+                    color: "#34d399",
+                    border: "1px solid rgba(16, 185, 129, 0.3)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Quantum Glossary Layer Active
+                </span>
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
+                Paste any YouTube video link from NPTEL, IBM Quantum, or MIT — our AI will extract speech, translate, and dub it into Indian languages!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setCustomError("");
+            const id = extractYouTubeId(customUrl);
+            if (!id) {
+              setCustomError("Please enter a valid YouTube URL (e.g. https://www.youtube.com/watch?v=... or 11-char ID)");
+              return;
+            }
+            initiateQuantumDubbing(customUrl, dubLanguage);
+          }}
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: "260px", position: "relative" }}>
+            <input
+              type="text"
+              placeholder="Paste any YouTube video link (e.g. https://www.youtube.com/watch?v=...)"
+              value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                background: "rgba(15, 23, 42, 0.6)",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                borderRadius: "8px",
+                fontSize: "0.82rem",
+                color: "#ffffff",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <label style={{ fontSize: "0.76rem", color: "#94a3b8", fontWeight: 500 }}>Target Language:</label>
+            <select
+              value={dubLanguage}
+              onChange={(e) => setDubLanguage(e.target.value)}
+              style={{
+                padding: "9px 12px",
+                background: "#1e1b4b",
+                border: "1px solid rgba(99, 102, 241, 0.4)",
+                borderRadius: "8px",
+                color: "#e0e7ff",
+                fontSize: "0.80rem",
+                fontWeight: 600,
+                outline: "none",
+                cursor: "pointer",
+              }}
+            >
+              <option value="hi">Hindi (हिंदी)</option>
+              <option value="hinglish">Hinglish</option>
+              <option value="ta">Tamil (தமிழ்)</option>
+              <option value="te">Telugu (తెలుగు)</option>
+              <option value="bn">Bengali (বাংলা)</option>
+              <option value="mr">Marathi (मराठी)</option>
+              <option value="gu">Gujarati (ગુજરાતી)</option>
+              <option value="kn">Kannada (ಕನ್ನಡ)</option>
+              <option value="ml">Malayalam (മലയാളം)</option>
+              <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            disabled={quantumDubState.isDubbing}
+            style={{
+              padding: "9px 20px",
+              background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+              border: "none",
+              borderRadius: "8px",
+              color: "#ffffff",
+              fontSize: "0.82rem",
+              fontWeight: 600,
+              cursor: quantumDubState.isDubbing ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: "0 2px 10px rgba(79, 70, 229, 0.3)",
+              opacity: quantumDubState.isDubbing ? 0.7 : 1,
+            }}
+          >
+            <Sparkles size={14} />
+            <span>{quantumDubState.isDubbing ? "Dubbing in progress..." : "⚡ Dub This YouTube Video"}</span>
+          </button>
+        </form>
+
+        {customError && (
+          <div style={{ color: "#f87171", fontSize: "0.76rem" }}>{customError}</div>
+        )}
       </div>
 
       {/* ── Active Video Theatre ── */}
