@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
@@ -125,7 +125,139 @@ export default function MathRenderer({ content, onSelectCitation, className = ''
 }
 
 /**
- * Format markdown headings, bold, code, citations, and lists inside plain text segments
+ * Extract 11-char YouTube ID from various YouTube URL formats
+ */
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+?&v=))([\w-]{11})/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Interactive link / YouTube inline player badge
+ */
+function InlineVideoBadge({ url, title }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const ytId = useMemo(() => extractYouTubeId(url), [url]);
+
+  if (!ytId) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          color: '#38bdf8',
+          textDecoration: 'none',
+          padding: '2px 8px',
+          background: 'rgba(56, 189, 248, 0.12)',
+          border: '1px solid rgba(56, 189, 248, 0.3)',
+          borderRadius: 5,
+          fontWeight: 600,
+          fontSize: '0.86em',
+          margin: '0 3px',
+          transition: 'all 0.15s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(56, 189, 248, 0.25)';
+          e.currentTarget.style.borderColor = '#38bdf8';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(56, 189, 248, 0.12)';
+          e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+        }}
+      >
+        <span>🌐 {title || url}</span>
+        <span style={{ fontSize: '0.75em' }}>↗</span>
+      </a>
+    );
+  }
+
+  return (
+    <span style={{ display: 'inline-block', margin: '4px 0', verticalAlign: 'middle', maxWidth: '100%' }}>
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '3px 10px',
+        background: 'rgba(239, 68, 68, 0.12)',
+        border: '1px solid rgba(239, 68, 68, 0.38)',
+        borderRadius: 6,
+        margin: '0 4px',
+      }}>
+        <span style={{ color: '#ef4444', fontWeight: 800, fontSize: '0.84em' }}>▶ YouTube</span>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open in YouTube tab"
+          style={{
+            color: '#fca5a5',
+            textDecoration: 'none',
+            fontWeight: 600,
+            fontSize: '0.84em',
+            maxWidth: '220px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {title || "Watch Video"}
+        </a>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsPlaying(prev => !prev);
+          }}
+          style={{
+            background: isPlaying ? '#374151' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: 4,
+            padding: '2px 8px',
+            fontSize: '0.72em',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(239, 68, 68, 0.3)',
+          }}
+        >
+          {isPlaying ? "✕ Close" : "▶️ Watch in Chat"}
+        </button>
+      </span>
+
+      {isPlaying && (
+        <span style={{
+          display: 'block',
+          marginTop: 8,
+          marginBottom: 10,
+          position: 'relative',
+          width: '100%',
+          maxWidth: '560px',
+          paddingTop: '56.25%',
+          background: '#09090d',
+          borderRadius: 8,
+          overflow: 'hidden',
+          border: '1px solid rgba(239, 68, 68, 0.45)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+        }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+            title={title || "YouTube Video"}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Format markdown headings, bold, code, citations, links, and lists inside plain text segments
  */
 function renderMarkdownSegment(segment, onSelectCitation) {
   // Split lines
@@ -164,11 +296,36 @@ function renderMarkdownSegment(segment, onSelectCitation) {
     const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ');
     const displayLine = isBullet ? trimmed.replace(/^[-*]\s+/, '') : line;
 
-    // Parse inline bold, inline code, and bracket citations [1], [Nielsen & Chuang], [Source: ...]
-    const tokens = displayLine.split(/(\*\*.*?\*\*|`.*?`|\[(?:Source:[^\]]+|\d+|[A-Z][a-zA-Z\s&]+(?:,\s*\d{4}|,\s*Ch\.\s*\d+)?|Ch\.\s*\d+)\])/g);
+    // Parse inline markdown links [Title](url), standalone URLs, bold, inline code, and bracket citations
+    const tokens = displayLine.split(/(\[[^\]]+\]\(https?:\/\/[^\s\)]+\)|https?:\/\/[^\s\)]+|\*\*.*?\*\*|`.*?`|\[(?:Source:[^\]]+|\d+|[A-Z][a-zA-Z\s&]+(?:,\s*\d{4}|,\s*Ch\.\s*\d+)?|Ch\.\s*\d+)\])/g);
 
     const formattedLine = tokens.map((tok, tIdx) => {
       if (!tok) return null;
+
+      // 1. Markdown link: [Title](url)
+      const mdLinkMatch = tok.match(/^\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)$/);
+      if (mdLinkMatch) {
+        return (
+          <InlineVideoBadge
+            key={tIdx}
+            url={mdLinkMatch[2]}
+            title={mdLinkMatch[1]}
+          />
+        );
+      }
+
+      // 2. Standalone URL: https://...
+      if (tok.startsWith('http://') || tok.startsWith('https://')) {
+        return (
+          <InlineVideoBadge
+            key={tIdx}
+            url={tok}
+            title={tok}
+          />
+        );
+      }
+
+      // 3. Bold text: **text**
       if (tok.startsWith('**') && tok.endsWith('**') && tok.length > 4) {
         return (
           <strong key={tIdx} style={{ color: '#ffffff', fontWeight: 700 }}>
@@ -176,6 +333,8 @@ function renderMarkdownSegment(segment, onSelectCitation) {
           </strong>
         );
       }
+
+      // 4. Inline code: `code`
       if (tok.startsWith('`') && tok.endsWith('`') && tok.length > 2) {
         return (
           <code
@@ -194,7 +353,8 @@ function renderMarkdownSegment(segment, onSelectCitation) {
           </code>
         );
       }
-      // NotebookLM citation chip [1], [Nielsen & Chuang, 2010], etc.
+
+      // 5. NotebookLM citation chip [1], [Nielsen & Chuang, 2010], etc.
       if (tok.startsWith('[') && tok.endsWith(']') && tok.length > 2) {
         const citContent = tok.slice(1, -1).trim();
         return (
@@ -237,6 +397,7 @@ function renderMarkdownSegment(segment, onSelectCitation) {
           </span>
         );
       }
+
       return tok;
     });
 

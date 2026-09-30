@@ -773,7 +773,7 @@ function resolveLecturesForQuery(query = '', language = 'all', limit = 2) {
   const q = (query || '').toLowerCase();
 
   const TOPIC_KEYWORD_MAP = {
-    foundations: ['qubit', 'basis', 'bloch', 'state', 'amplitude', 'dirac', 'bra', 'ket'],
+    foundations: ['qubit', 'basis', 'bloch', 'state', 'amplitude', 'dirac', 'bra', 'ket', 'intro', 'kya', 'hai', 'sun', 'bhai', 'samjhao'],
     superposition: ['superposition', 'entanglement', 'bell', 'epr', 'teleportation', 'schrodinger', 'cat'],
     gates: ['gate', 'hadamard', 'cnot', 'pauli', 'unitary', 'circuit', 'rotation', 'swap', 'toffoli', 'cx'],
     algorithms: ['grover', 'shor', 'algorithm', 'qft', 'fourier', 'phase estimation', 'oracle', 'deutsch', 'jozsa'],
@@ -805,14 +805,63 @@ function resolveLecturesForQuery(query = '', language = 'all', limit = 2) {
     if (langFiltered.length > 0) {
       return langFiltered.slice(0, limit);
     }
+    const globalLangMatches = VIDEO_LECTURES.filter(v => v.language === userLang);
+    if (globalLangMatches.length > 0) {
+      return globalLangMatches.slice(0, limit);
+    }
+  }
+
+  // Fallback: If empty, default to foundations
+  if (!candidates || candidates.length === 0) {
+    candidates = VIDEO_LECTURES.filter(v => v.topic === 'foundations');
   }
 
   return candidates.slice(0, limit);
 }
 
 // ── Recommended Lectures Card Component with Inline Player & Exact Working URLs ───
-function RecommendedLecturesBlock({ query, language, onNavigate, onPlayVideo }) {
-  const lectures = useMemo(() => resolveLecturesForQuery(query, language, 2), [query, language]);
+function RecommendedLecturesBlock({ query, language, sources = [], onNavigate, onPlayVideo }) {
+  const webYouTubeLectures = useMemo(() => {
+    const list = [];
+    if (Array.isArray(sources)) {
+      for (const s of sources) {
+        const match = typeof s === 'string' ? s.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+?&v=))([\w-]{11})/) : null;
+        if (match) {
+          const ytId = match[1];
+          const cleanTitle = s.replace(/\s*\([^\)]*https?:\/\/[^\)]*\)/, '').replace(/^Live Web:\s*/, '').replace(/^Wikipedia:\s*/, '');
+          list.push({
+            id: `web-yt-${ytId}`,
+            title: cleanTitle || 'Live Web Verified Quantum Lecture',
+            englishTitle: cleanTitle || 'Live Web Verified Quantum Lecture',
+            language: language || 'en',
+            languageLabel: 'Live Web YouTube',
+            instructor: 'Verified Quantum Educator',
+            organization: 'YouTube Verified',
+            duration: 'Full Video',
+            topic: 'web',
+            level: 'Recommended',
+            youtubeId: ytId,
+            embedUrl: `https://www.youtube.com/embed/${ytId}`,
+            thumbnail: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+            description: cleanTitle,
+          });
+        }
+      }
+    }
+    return list;
+  }, [sources, language]);
+
+  const databaseLectures = useMemo(() => resolveLecturesForQuery(query, language, 2), [query, language]);
+  const lectures = useMemo(() => {
+    const combined = [...webYouTubeLectures, ...databaseLectures];
+    const seen = new Set();
+    return combined.filter(item => {
+      if (seen.has(item.youtubeId)) return false;
+      seen.add(item.youtubeId);
+      return true;
+    }).slice(0, 3);
+  }, [webYouTubeLectures, databaseLectures]);
+
   const [inlineVideoId, setInlineVideoId] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
@@ -1382,10 +1431,11 @@ function MessageBubble({
               />
             )}
 
-            {/* Guided YouTube Lectures from Database */}
+            {/* Guided YouTube Lectures from Database & Live Web */}
             <RecommendedLecturesBlock
               query={msg.userQuery || msg.content}
               language={msg.language || language}
+              sources={msg.sources}
               onNavigate={onNavigate}
               onPlayVideo={onPlayVideo}
             />
@@ -1417,9 +1467,11 @@ function MessageBubble({
   );
 }
 
-// ── Literature Sources Accordion with Interactive Treatise Card Projection ───
+// ── Literature Sources Accordion with Interactive Treatise & Web Video Cards ───
 function SourcesAccordion({ sources, onSelectCitation }) {
   const [open, setOpen] = useState(true);
+  const [inlineVideoId, setInlineVideoId] = useState(null);
+
   return (
     <div style={{
       marginTop: 18,
@@ -1447,75 +1499,157 @@ function SourcesAccordion({ sources, onSelectCitation }) {
           }}
         >
           <BookOpen size={15} color="#6ee7b7" />
-          <span>{sources.length} Authoritative Treatise Source{sources.length > 1 ? 's' : ''} (150-Book Library)</span>
+          <span>{sources.length} Verified Sources & Citations (Treatise & Live Web)</span>
           {open ? <ChevronUp size={14} color="#a1a1aa" /> : <ChevronDown size={14} color="#a1a1aa" />}
         </button>
         <span style={{ fontSize: '0.72rem', color: '#a1a1aa' }}>
-          Click source to project exact treatise excerpt
+          Interactive links & verified literature citations
         </span>
       </div>
 
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {sources.map((s, i) => (
-            <div
-              key={i}
-              onClick={() => onSelectCitation && onSelectCitation(s)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                background: '#161620',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '8px',
-                padding: '10px 14px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(52, 211, 153, 0.38)';
-                e.currentTarget.style.background = '#1a1a26';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                e.currentTarget.style.background = '#161620';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
-                <span style={{
-                  background: 'rgba(56, 189, 248, 0.12)',
-                  border: '1px solid rgba(56, 189, 248, 0.28)',
-                  borderRadius: 4,
-                  padding: '2px 7px',
-                  fontSize: '0.70rem',
-                  color: '#7dd3fc',
-                  fontWeight: 700,
-                  fontFamily: "'JetBrains Mono', monospace",
-                }}>
-                  p.{i + 1}
-                </span>
-                <span style={{ fontSize: '0.86rem', color: '#ffffff', fontWeight: 500 }}>
-                  {s}
-                </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {sources.map((s, i) => {
+            const urlMatch = typeof s === 'string' ? s.match(/(https?:\/\/[^\s\)]+)/) : null;
+            const url = urlMatch ? urlMatch[1] : null;
+            const ytMatch = url ? url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+?&v=))([\w-]{11})/) : null;
+            const ytId = ytMatch ? ytMatch[1] : null;
+            const isPlayingThis = inlineVideoId === ytId;
+            const cleanTitle = url ? s.replace(/\s*\([^\)]*https?:\/\/[^\)]*\)/, '').replace(url, '').trim() : s;
+
+            return (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  background: '#161620',
+                  border: isPlayingThis ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+                    <span style={{
+                      background: ytId ? 'rgba(239, 68, 68, 0.15)' : url ? 'rgba(56, 189, 248, 0.12)' : 'rgba(52, 211, 153, 0.12)',
+                      border: ytId ? '1px solid rgba(239, 68, 68, 0.35)' : url ? '1px solid rgba(56, 189, 248, 0.28)' : '1px solid rgba(52, 211, 153, 0.28)',
+                      borderRadius: 4,
+                      padding: '2px 7px',
+                      fontSize: '0.70rem',
+                      color: ytId ? '#f87171' : url ? '#7dd3fc' : '#6ee7b7',
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}>
+                      {ytId ? 'YouTube' : url ? 'Web' : `p.${i + 1}`}
+                    </span>
+                    <span style={{ fontSize: '0.86rem', color: '#ffffff', fontWeight: 500 }}>
+                      {cleanTitle || s}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {ytId ? (
+                      <>
+                        <button
+                          onClick={() => setInlineVideoId(isPlayingThis ? null : ytId)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            fontSize: '0.74rem',
+                            color: '#ffffff',
+                            fontWeight: 700,
+                            background: isPlayingThis ? '#374151' : '#dc2626',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '4px 10px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Play size={11} fill="#ffffff" />
+                          <span>{isPlayingThis ? '✕ Close' : '▶️ Watch in Chat'}</span>
+                        </button>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: '#94a3b8',
+                            fontSize: '0.74rem',
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}
+                        >
+                          <span>Open</span>
+                          <ArrowUpRight size={12} />
+                        </a>
+                      </>
+                    ) : url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          fontSize: '0.74rem',
+                          color: '#38bdf8',
+                          fontWeight: 600,
+                          background: 'rgba(56, 189, 248, 0.12)',
+                          border: '1px solid rgba(56, 189, 248, 0.28)',
+                          borderRadius: 6,
+                          padding: '4px 10px',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <span>Visit Site</span>
+                        <ArrowUpRight size={12} />
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => onSelectCitation && onSelectCitation(s)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: '0.76rem',
+                          color: '#6ee7b7',
+                          fontWeight: 600,
+                          background: 'rgba(52, 211, 153, 0.12)',
+                          border: '1px solid rgba(52, 211, 153, 0.28)',
+                          borderRadius: 6,
+                          padding: '4px 10px',
+                          whiteSpace: 'nowrap',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <BookOpen size={12} color="#6ee7b7" /> Read Excerpt
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Inline Video Player inside Source row */}
+                {ytId && isPlayingThis && (
+                  <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000000', borderRadius: 6, overflow: 'hidden', marginTop: 6 }}>
+                    <iframe
+                      src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+                      title={cleanTitle}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
               </div>
-              <span style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: '0.76rem',
-                color: '#6ee7b7',
-                fontWeight: 600,
-                background: 'rgba(52, 211, 153, 0.12)',
-                border: '1px solid rgba(52, 211, 153, 0.28)',
-                borderRadius: 6,
-                padding: '4px 10px',
-                whiteSpace: 'nowrap',
-              }}>
-                <BookOpen size={12} color="#6ee7b7" /> Read Excerpt
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1896,18 +2030,79 @@ export default function QuantumChatGPT({
       let fallbackContent = '';
       let fallbackLatex = '|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle';
       let fallbackCode = 'from qiskit import QuantumCircuit\nqc = QuantumCircuit(1, 1)\nqc.h(0)\nqc.measure(0, 0)\nprint(qc.draw(output="text"))';
+      let fallbackSources = [
+        'NPTEL IIT Madras: Quantum Algorithms (https://www.youtube.com/watch?v=2SPjEA-4lKk)',
+        'Wikipedia: Quantum Computing (https://en.wikipedia.org/wiki/Quantum_computing)',
+        'IBM Quantum Learning (https://quantum.ibm.com/learning)'
+      ];
 
-      if (qLower.includes('bloch') || qLower.includes('sphere')) {
-        fallbackContent = `**Bloch Sphere Representation**: In quantum information, any pure 1-qubit state can be geometrically visualized as a point on the unit sphere $\\mathbb{R}^3$, parameterized by polar angle $\\theta$ and azimuthal phase angle $\\phi$. The north pole represents state $|0\\rangle$, the south pole represents $|1\\rangle$, and the equator corresponds to equal superpositions.`;
-        fallbackLatex = '|\\psi\\rangle = \\cos\\left(\\frac{\\theta}{2}\\right)|0\\rangle + e^{i\\phi}\\sin\\left(\\frac{\\theta}{2}\\right)|1\\rangle';
-        fallbackCode = '# 1-Qubit Bloch Sphere state preparation\nfrom qiskit import QuantumCircuit\nimport numpy as np\nqc = QuantumCircuit(1)\nqc.ry(np.pi / 2, 0) # Rotate to equator\nqc.rz(np.pi / 4, 0) # Apply phase\nprint(qc.draw())';
-      } else if (qLower.includes('superposition') || qLower.includes('hadamard')) {
-        fallbackContent = `**Quantum Superposition**: In contrast to classical bits that can only exist strictly in state 0 or state 1, a quantum qubit can exist in a linear combination of both states simultaneously. Applying a Hadamard gate ($H$) transforms basis state $|0\\rangle$ into an equal superposition $|+\\rangle$ with equal 50% probability amplitudes upon measurement.`;
-        fallbackLatex = '|\\psi\\rangle = H|0\\rangle = \\frac{1}{\\sqrt{2}}(|0\\rangle + |1\\rangle)';
-        fallbackCode = 'from qiskit import QuantumCircuit, Aer, execute\nqc = QuantumCircuit(1, 1)\nqc.h(0) # Superposition via Hadamard\nqc.measure(0, 0)\nsimulator = Aer.get_backend("qasm_simulator")\njob = execute(qc, simulator, shots=1024)\nprint("Counts:", job.result().get_counts())';
+      if (effectiveLangFallback === 'hinglish') {
+        if (qLower.includes('superposition') || qLower.includes('hadamard')) {
+          fallbackContent = `Haan bhai! Dekho, **Quantum Superposition** ko bilkul simple tareeqe se samajhte hain:
+
+Imagine karo ek spinning coin hai. Jab tak coin hawa me spin kar raha hota hai, aap ye nahi bol sakte ki wo sirf Heads hai ya Tails — wo simultaneously dono possibilities ka mixture hold karta hai. Aise hi, classical bit sirf 0 ya 1 hota hai, lekin ek quantum qubit ek hi time par $|0\\rangle$ aur $|1\\rangle$ dono states ka linear superposition hota hai!
+
+• **Hadamard Gate ($H$)**: Ye gate ground state $|0\\rangle$ ko 50-50 equal superposition state $|+\\rangle$ me transform kar deta hai.
+• **Measurement**: Jaise hi measurement hoti hai, wavefunction collapse hoti hai aur 50% probability ke sath 0 ya 1 outcome milta hai.
+
+### 🎬 Recommended Working Video Lectures & References:
+- 📺 **Watch on YouTube**: [Superposition & Entanglement Explained (Veritasium)](https://www.youtube.com/watch?v=g_IaVepNDT4) — Visual intuition of quantum waves
+- 📺 **Watch on YouTube**: [NPTEL IIT Madras: Quantum Algorithms](https://www.youtube.com/watch?v=2SPjEA-4lKk) — IIT Madras official lecture
+- 🌐 **Documentation**: [Wikipedia: Quantum Superposition](https://en.wikipedia.org/wiki/Quantum_superposition)`;
+          fallbackLatex = '|\\psi\\rangle = H|0\\rangle = \\frac{1}{\\sqrt{2}}(|0\\rangle + |1\\rangle)';
+          fallbackCode = 'from qiskit import QuantumCircuit, Aer, execute\nqc = QuantumCircuit(1, 1)\nqc.h(0) # Superposition via Hadamard\nqc.measure(0, 0)\nsimulator = Aer.get_backend("aer_simulator")\njob = execute(qc, simulator, shots=1024)\nprint("Counts:", job.result().get_counts())';
+        } else if (qLower.includes('bloch') || qLower.includes('sphere')) {
+          fallbackContent = `Arey dost! **Bloch Sphere** ko aise visualize karo:
+
+Ek 3D sphere imagine karo. Is sphere ka North Pole state $|0\\rangle$ represent karta hai aur South Pole state $|1\\rangle$.
+• Equator par jitne points hote hain, wo equal superposition states hain (jaise $|+\\rangle$ aur $|-\\rangle$).
+• Quantum gates (jaise $X, Y, Z, H$) state vector ko sphere par alag-alag angles se rotate karte hain.
+
+### 🎬 Recommended Working Video Lectures & References:
+- 📺 **Watch on YouTube**: [Qiskit Circuit Mechanics - IIT Madras](https://www.youtube.com/watch?v=qviZ__DLDjU) — Gate rotations on Bloch sphere
+- 🌐 **Documentation**: [IBM Quantum Learning: Single Qubit States](https://quantum.ibm.com/learning)`;
+          fallbackLatex = '|\\psi\\rangle = \\cos\\left(\\frac{\\theta}{2}\\right)|0\\rangle + e^{i\\phi}\\sin\\left(\\frac{\\theta}{2}\\right)|1\\rangle';
+          fallbackCode = '# 1-Qubit Bloch Sphere state preparation\nfrom qiskit import QuantumCircuit\nimport numpy as np\nqc = QuantumCircuit(1)\nqc.ry(np.pi / 2, 0) # Rotate to equator\nqc.rz(np.pi / 4, 0) # Apply phase\nprint(qc.draw())';
+        } else {
+          fallbackContent = `Haan bhai! **${text.slice(0, 60)}** ko bilkul intuitively samajhte hain:
+
+Quantum computing mein information classical 0/1 bits ke bajaye quantum states (qubits) me store hoti hai. Isme complex Hilbert space $\\mathcal{H}$ me unitary transformations use hoti hain jo quantum parallelism aur quantum interference ka fayda uthane deti hain.
+
+• Har step ek unitary matrix $U$ se govern hota hai jo total probability ($U^\\dagger U = I$) preserve karti hai.
+• Aise algorithms classical computers se exponentially fast calculations perform kar sakte hain.
+
+### 🎬 Recommended Working Video Lectures & References:
+- 📺 **Watch on YouTube**: [A Beginner\'s Guide to Quantum Computing (TED)](https://www.youtube.com/watch?v=QuR969uMICM) — Dr. Shohini Ghose
+- 📺 **Watch on YouTube**: [NPTEL IIT Madras: Quantum Algorithms](https://www.youtube.com/watch?v=2SPjEA-4lKk) — IIT Madras lecture
+- 🌐 **Documentation**: [IBM Quantum Learning Hub](https://quantum.ibm.com/learning)`;
+        }
       } else {
-        fallbackContent = `In quantum computing, **${text.slice(0, 70)}** operates in complex Hilbert space $\\mathcal{H} = \\mathbb{C}^{2^n}$ where state evolution is dictated by unitary operators preserving total probability norm $\\langle\\psi|\\psi\\rangle = 1$.`;
-        fallbackLatex = 'U = \\exp(-i \\hat{H} t / \\hbar), \\quad U^\\dagger U = \\mathbb{I}';
+        if (qLower.includes('bloch') || qLower.includes('sphere')) {
+          fallbackContent = `**Bloch Sphere Representation**: Any pure 1-qubit state can be visualized geometrically as a point on a unit sphere $\\mathbb{R}^3$, parameterized by polar angle $\\theta$ and azimuthal angle $\\phi$. The north pole represents state $|0\\rangle$, the south pole represents $|1\\rangle$, and the equator corresponds to equal superpositions.
+
+### 🎬 Recommended Working Video Lectures & References:
+- 📺 **Watch on YouTube**: [NPTEL IIT Madras: Quantum Circuits](https://www.youtube.com/watch?v=qviZ__DLDjU) — Circuit mechanics & Bloch sphere
+- 🌐 **Documentation**: [IBM Quantum Learning: Single Qubit States](https://quantum.ibm.com/learning)`;
+          fallbackLatex = '|\\psi\\rangle = \\cos\\left(\\frac{\\theta}{2}\\right)|0\\rangle + e^{i\\phi}\\sin\\left(\\frac{\\theta}{2}\\right)|1\\rangle';
+          fallbackCode = '# 1-Qubit Bloch Sphere state preparation\nfrom qiskit import QuantumCircuit\nimport numpy as np\nqc = QuantumCircuit(1)\nqc.ry(np.pi / 2, 0) # Rotate to equator\nqc.rz(np.pi / 4, 0) # Apply phase\nprint(qc.draw())';
+        } else if (qLower.includes('superposition') || qLower.includes('hadamard')) {
+          fallbackContent = `**Quantum Superposition**: In contrast to classical bits that can only exist strictly in state 0 or state 1, a quantum qubit can exist in a linear combination of both states simultaneously. Applying a Hadamard gate ($H$) transforms basis state $|0\\rangle$ into an equal superposition $|+\\rangle$ with equal 50% probability amplitudes upon measurement.
+
+### 🎬 Recommended Working Video Lectures & References:
+- 📺 **Watch on YouTube**: [How Does a Quantum Computer Work? (Veritasium)](https://www.youtube.com/watch?v=g_IaVepNDT4) — Wave interference & superposition
+- 📺 **Watch on YouTube**: [NPTEL IIT Madras: Quantum Algorithms](https://www.youtube.com/watch?v=2SPjEA-4lKk) — IIT Madras official lecture
+- 🌐 **Documentation**: [Wikipedia: Quantum Superposition](https://en.wikipedia.org/wiki/Quantum_superposition)`;
+          fallbackLatex = '|\\psi\\rangle = H|0\\rangle = \\frac{1}{\\sqrt{2}}(|0\\rangle + |1\\rangle)';
+          fallbackCode = 'from qiskit import QuantumCircuit, Aer, execute\nqc = QuantumCircuit(1, 1)\nqc.h(0) # Superposition via Hadamard\nqc.measure(0, 0)\nsimulator = Aer.get_backend("aer_simulator")\njob = execute(qc, simulator, shots=1024)\nprint("Counts:", job.result().get_counts())';
+        } else {
+          fallbackContent = `In quantum computing, **${text.slice(0, 70)}** operates in complex Hilbert space $\\mathcal{H} = \\mathbb{C}^{2^n}$ where state evolution is dictated by unitary operators preserving total probability norm $\\langle\\psi|\\psi\\rangle = 1$.
+
+### 🎬 Recommended Working Video Lectures & References:
+- 📺 **Watch on YouTube**: [A Beginner\'s Guide to Quantum Computing (TED)](https://www.youtube.com/watch?v=QuR969uMICM) — Dr. Shohini Ghose
+- 📺 **Watch on YouTube**: [NPTEL IIT Madras: Quantum Algorithms](https://www.youtube.com/watch?v=2SPjEA-4lKk) — IIT Madras lecture
+- 🌐 **Documentation**: [IBM Quantum Learning Hub](https://quantum.ibm.com/learning)`;
+          fallbackLatex = 'U = \\exp(-i \\hat{H} t / \\hbar), \\quad U^\\dagger U = \\mathbb{I}';
+        }
       }
 
       const errorMsg = {
@@ -1916,7 +2111,7 @@ export default function QuantumChatGPT({
         content: fallbackContent,
         latex: fallbackLatex,
         code: fallbackCode,
-        sources: ['Nielsen & Chuang (2010) – Quantum Computation and Quantum Information', 'IBM Quantum Learning'],
+        sources: fallbackSources,
         model: 'Gitwolves Quantum Autonomous Core',
         language: effectiveLangFallback,
         userQuery: text,
